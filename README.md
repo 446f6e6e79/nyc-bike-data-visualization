@@ -1,39 +1,45 @@
-# _ProjectName
-Project description
+# Data Visualization Project
 
-<p align="center">
-  <img src="docs/media" width="300" alt="Visualization of results">
-</p>
-The project was developed as part of the course "CourseName", held by Prof. ProfessorName at the University of Trento, Master's Degree in Computer Science.
-<table align="center">
-  <tr>
-    <td align="center">
-      <strong>
-        <a href="report.pdf">View Full Report (PDF)</a>
-      </strong><br><br>
-      <a href="report.pdf">
-        <img src="docs/media/report_preview.png" width="200" alt="Report preview">
-      </a>
-    </td>
-    <td align="center">
-      <strong>
-        <a href="presentation.pdf">View Full Presentation (PDF)</a>
-      </strong><br><br>
-      <a href="presentation.pdf">
-        <img src="docs/media/presentation_preview.png" width="350" alt="Presentation preview">
-      </a>
-    </td>
-  </tr>
-</table>
+A comprehensive data visualization solution developed for advanced coursework at the University of Trento, Master's Degree in Computer Science.
+
+**Course:** Data Visualization Lab  
+**Professors:** Prof. Monica Moroni, Prof. Shahryar Noei  
+**Authors:** Davide Donà, 
 
 ---
 
-## Table of Contents
+## Overview
+
+This project delivers a complete data visualization solution comprising three key deliverables:
+
+1. **Data Visualization Proposal** – Initial project concept and visualization strategy
+2. **Technical Report with Dataset Description** – Detailed analysis of the dataset and technical implementation
+3. **Written and Video Report** – Final comprehensive documentation with multimedia presentation
+
+The accompanying source code provides the complete Python implementation of the visualization solution.
 
 ---
 
-##  Repository Structure
+## Repository Structure
 
-Contributions are welcome! Here's how you can help:
-
-## Run the Code
+```
+data-visualisation/
+├── README.md                          # Project overview (this file)
+├── src/
+│   └── main.py                       # Python visualization implementation
+├── docs/
+│   ├── setup.tex                     # Shared LaTeX preamble and configuration
+│   ├── chapters/                     # Shared LaTeX chapter content
+│   │   └── example.tex              
+│   ├── media/                        # Images, logos, and media assets
+│   │   └── uni_logo.jpg
+│   ├── proposal/                     # First deliverable: Data Visualization Proposal
+│   │   ├── main.tex
+│   │   └── proposal.pdf
+│   ├── technical-report/             # Second deliverable: Technical Report
+│   │   ├── main.tex
+│   │   └── technical-report.pdf
+│   └── report/                       # Third deliverable: Final Report
+│       ├── main.tex
+│       └── report.pdf
+```

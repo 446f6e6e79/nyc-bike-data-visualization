@@ -1,4 +1,6 @@
 /build
 .DS_Store
-/docs/presentation/build
-/docs/LaTeX/build
+build/
+/.vscode
+**/.DS_Store
+**/*build*/
