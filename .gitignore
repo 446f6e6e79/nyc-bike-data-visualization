@@ -6,4 +6,6 @@ build/
 **/*build*/
 .venv/
 data/
+data_storage/
 *.pyc
+src/start_station_heatmap.html
