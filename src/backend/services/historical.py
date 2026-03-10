@@ -31,11 +31,27 @@ def load_historical_data() -> pd.DataFrame:
 
 def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    TODO: Implement any necessary data cleaning and preprocessing steps here, such as:
-    - Handling missing values
-    - Converting date columns to datetime objects
-    - Creating new features (e.g., trip duration, day of week)
-    - Filtering out invalid records
-    SEE example on how to clean data in the Jupyter notebook for reference.
+    Perform basic cleaning on the historical data:
+    - Handle missing values by dropping rows with critical missing fields
+    - Convert date columns to datetime objects
+    - Extract useful features like year, month, day of week, and hour from the start time
+    - Create a trip duration column and filter out trips with non-positive duration
     """
+    # Handle missing values
+    df = df.dropna(subset=['start_station_name', 'start_station_id', 'end_station_name', 'end_station_id', 'start_lat', 'start_lng', 'end_lat', 'end_lng', 'member_casual'])
+
+    # Convert date columns to datetime
+    df['started_at'] = pd.to_datetime(df['started_at'], errors='coerce')
+    df['ended_at'] = pd.to_datetime(df['ended_at'], errors='coerce')
+    
+    # Extract year, month, day of week, and hour from the start time
+    df['start_year'] = df['started_at'].dt.year
+    df['start_month'] = df['started_at'].dt.month
+    df['start_day_of_week'] = df['started_at'].dt.dayofweek
+    df['start_hour'] = df['started_at'].dt.hour
+    
+    # Create a trip duration column in seconds and filter out trips with non-positive duration
+    df['trip_duration'] = (df['ended_at'] - df['started_at']).dt.total_seconds()
+    df = df[df['trip_duration'] > 0]
+
     return df
