@@ -4,11 +4,21 @@ from pydantic import BaseModel
 
 
 class RideableType(str, Enum):
+    """
+    Enum for the type of rideable used in the CitiBike system. Possible values include:
+    - classic_bike: A traditional pedal bike
+    - electric_bike: A bike with an electric motor assist;
+    """
     CLASSIC_BIKE = "classic_bike"
     ELECTRIC_BIKE = "electric_bike"
 
 
 class MemberCasual(str, Enum):
+    """
+    Enum for the type of user in the CitiBike system. Possible values include:
+    - member: A registered member of the CitiBike system
+    - casual: A non-member user, typically a one-time or infrequent rider
+    """
     MEMBER = "member"
     CASUAL = "casual"
 

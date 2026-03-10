@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from backend import routes
 from routes import stations
 from services.historical import load_historical_data
 
@@ -17,4 +18,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(stations.router)
+# Include the defined API routers
+app.include_router(stations.router)             # Real-time station related endpoints
+app.include_router(routes.rides.router)         # Historical ride data endpoints
+app.include_router(routes.statistics.router)    # Historical statistics endpoints

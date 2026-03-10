@@ -1,6 +1,10 @@
 import pandas as pd
 from pathlib import Path
 
+"""
+    TODO: check for other possible data cleaning steps / feature extraction.
+    E.g., check if it is possible to extract the length of the trip from the start and end station coordinates
+"""
 _df: pd.DataFrame | None = None
 DATA_DIR = "../../data/"
 
