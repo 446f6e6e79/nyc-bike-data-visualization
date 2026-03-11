@@ -1,1 +1,46 @@
-\section{Solution}
+\section{Editorial Choices}
+%# TODO: Fill out this section
+Here we describe how these translate into concrete editorial choices the viewpoints we adopt, what we include or exclude, and how we guide the viewer's attention.
+
+% Corresponds to Angles
+% choose viewpoint(s) in the analysis. choose the dimensions to break down the subject into. 
+% why these angles? why it is woth showing to the audience?
+% Framing: filtering which data to include or to exclude
+% Focusing: emphasizing what is more important? provide a visual hierarchy.
+
+\subsection{Viewpoints} % Can be expandend in the context.tex
+We decompose the subject along four complementary dimensions, each motivated by its relevance to the target audience:
+As said before, we focus on the following dimensions:
+\begin{itemize}
+  \item \textbf{Temporal dimension} 
+  \item \textbf{Spatial dimension}
+  \item \textbf{User type} (member vs.\ casual)
+  \item \textbf{Rideable type} (classic vs.\ electric)
+\end{itemize}
+
+\paragraph{Framing} % Can be expanded in the context.tex
+We restrict our analysis to completed trips with valid station coordinates and exclude rides longer than four hours, which our exploratory analysis identified as outliers likely caused by unreturned bikes.
+Weather data is integrated at the hourly level to contextualize usage fluctuations, but weather itself is not a primary viewpoint -- it serves as an explanatory overlay rather than a standalone dimension.
+Likewise, we do not incorporate additional NYC Open Data sources unless a specific insight requires external context, in order to keep the narrative focused on the bike-sharing system.
+
+\paragraph{Focusing} % Can be expanded in the context.tex
+We establish a visual hierarchy that mirrors the stakeholders' priorities.
+
+Temporal and spatial patterns receive the most prominent placement in the dashboard, as they directly inform operational decisions like station placement and fleet management.
+Meanwhile, user type and rideable type are presented in secondary charts that support deeper dives into customer segmentation and product performance, but do not overshadow the core spatial-temporal analysis.
+Those are more relevant for marketing and customer experience teams, who can use those insights to tailor promotions and service offerings.
+However, at the same time, they result less actionable for operations teams, who are more interested in the overall demand patterns than the specific breakdowns by user or rideable type.
+
+Meanwhile weather data is integrated as a contextual layer within the temporal charts, allowing users to correlate demand fluctuations with weather conditions without dedicating separate space to weather analysis, which is not a primary focus of our project.
+
+% This is the only one that I think needs to be further expanded and kept separated
+\subsection{Early Design Considerations}
+
+While specific chart types and encodings will be refined during development, a few design decisions follow directly from the editorial choices above:
+
+\begin{itemize}
+  \item \textbf{Map-centric spatial view}: Spatial data is inherently geographic, so an interactive map is the natural primary choice for our project.
+  An heatmap layer can emphasize demand intensity at a glance.
+  \item \textbf{Faceted temporal charts}: Temporal data we be used mainly to compare behaviour across different time periods, so faceted line charts or small multiples will allow us to show multiple time series (e.g., by user type) without cluttering a single chart.
+  \item \textbf{Interactive filtering over static views}: Rather than producing separate dashboards for each dimension, we favour cross-filtering: selecting a time range, station, or user type in one chart updates the others, supporting exploratory analysis without overwhelming the interface.
+\end{itemize}
