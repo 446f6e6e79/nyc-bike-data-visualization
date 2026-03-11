@@ -1,38 +1,32 @@
 \section{Dataset}
-%#TODO: maybe i would shorten the structure of the dataset section (second deliverable)
-The dataset we are working with is the \href{https://citibikenyc.com/system-data}{Citi Bike System Data}, which contains information about bike rentals in New York City.
+Before selecting the datasets used in this project, we explored several mobility datasets from different cities in order to identify a suitable source of data.
+However, we found that many of these datasets were either incomplete, not regularly updated, or lacked the necessary granularity for our analysis.
+\\
+After careful consideration, we decided to focus on the Citi Bike System Data for New York City, which is well maintained and reflects the complexity of the city.
 
-The data are provided by the private company \textit{Lyft}, which operates the bike-sharing service in the city.
-The company regularly publishes the trip records as open data, making them accessible to the public.
+\subsection{Citi Bike System Data}
+The \href{https://citibikenyc.com/system-data}{Citi Bike System Data} is published by \textit{Lyft}, a company that operates the bike-sharing service in New York City.
+Trip records are released monthly as open data, making them publicly accessible.
 
-All data are updated on a monthly basis and distributed as structured CSV files, accessible also through API calls.
-Since the company keeps track until the 2013, we have not only short-term data but also an historical record of them.
+The data are distributed as structured CSV files and can also be accessed through API calls.
+The available records date back to 2013, providing a long-term historical perspective.
 
-Each trip record contains several attributes describing the rental, such as:
-\begin{itemize}
-    \item Rental start and end times
-    \item Rental start and end stations
-    \item User type (e.g., member or casual ride)
-    \item Rideable Type
-\end{itemize}
-Those attributes allow us to analyze various aspects of bike rentals, such as temporal patterns and spatial distribution.
+Each trip record includes key attributes such as start and end times, start and end stations, and user type.
+These variables allow us to analyze temporal and spatial patterns in bike rentals.
 
 \subsection{Weather Data}
-Since weather conditions can influence mobility patterns, we also plan to integrate weather data into our analysis.
-This is possible through the use of APIs of \href{https://openmeteo.com/}{OpenWeatherMap}, which can provide historical weather data for New York City, combining it with the bike rental data.
+Weather conditions can significantly influence urban mobility, so we plan to take into consideration the weather data.
 
-This integration has data until 2013, so we can analyze the influence of weather conditions on bike rentals over all the dataset.
-Then it's open source, with only an API request limit, so we can easily retrieve the data we need for our analysis.
+To do this, we use the \href{https://open-meteo.com/}{Open-Meteo} API, which provides historical weather data for New York City.
+The dataset covers more than 80 years of observations with hourly temporal resolution and a spatial resolution between 1 and 11 km.
 
-The data are provided with an hourly granurality, and permits to get the weather conditions for each longitude and latitude, so we can also analyze the influence of weather conditions with more precision.
-The API provides a lot of different weather attributes, but we are only interested in:
-\begin{itemize}
-    \item Temperature
-    \item Precipitation
-    \item Wind Speed
-    \item Humidity
-\end{itemize}
+As an open-source service, Open-Meteo offers a broad set of weather variables, allowing us to evaluate how environmental conditions affect bike usage patterns.
+
 
 \subsection{New York City Datasets}
-We also take into consideration \href{https://www.nyc.gov/html/dot/html/about/datafeeds.shtml\#Bikes}{NYC Bicycling Data}, which can provide additional information such as bike lane locations, traffic data, and other relevant context that can help us understand bike rentals and mobility patterns in New York City.
-We can also consider other datasets that provide information about the city's infrastructure, such as public transportation data, to gain a more comprehensive understanding of mobility patterns.
+During our exploration, we also reviewed official New York City datasets available on the \href{https://www.nyc.gov/data}{NYC Open Data} platform.
+
+This platform offers a wide range of datasets, dashboards, and maps related to the city's transportation system, including bike lanes, traffic data, and other contextual information.
+
+However, we want to keep our analysis focused on the bike-sharing system, and the Citi Bike System Data already provides a comprehensive view of bike rentals in the city, reducing complexity by avoiding unnecessary additional NYC datasets.
+If needed, we will incorporate additional NYC Open Data sources to provide further context and support specific insights.

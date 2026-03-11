@@ -17,6 +17,7 @@ If effectively analyzed and visualized, this data could provide valuable insight
 
 Our visualization tool directly addresses these gaps by making complex mobility data accessible and actionable.
 Our primary objective is to transform raw \texttt{Citi Bike} operational data into clear, actionable insights for stakeholders.
+%#TODO: unify with the target audience section
 Specifically, we aim to reveal:\begin{itemize}
   \item \textbf{Temporal patterns} -- peak usage hours, seasonal trends, and demand cyclicity
   \item \textbf{Spatial hotspots} -- high-demand stations, commute corridors, and underutilized infrastructure
@@ -34,10 +35,6 @@ The idea is to create a tool that provides for each of these audiences the follo
   \item \textbf{City planners} -- understand commute flows and modal patterns to inform infrastructure investment and urban planning decisions.
   \item \textbf{General public} -- develop awareness of urban mobility and sustainable transportation alternatives
 \end{itemize}
-
-\subsubsection*{Constraints}
-%#TODO  Pressure: how much time do you have and what milestones along the realisation path?
-%       rules: layout/size restrictions, style guidelines, functional restrictions
 
 \subsubsection*{Deliverables Vision}
 We deliver an interactive web-based dashboard as the primary output.
@@ -61,4 +58,11 @@ Our tech stack combines:
   \item \textbf{Frontend (JavaScript/D3.js)} -- custom, interactive visualizations tailored to mobility pattern analysis.
 \end{itemize}
 This modular architecture enables rapid iteration during development while remaining scalable as data volumes grow.
+
+\subsubsection*{Constraints} %#TODO: check and fix this section
+The project is constrained by time, data quality, and implementation limits.
+Since the final deliverable is due in June, we must keep the feature scope focused on the analyses with the highest practical value.
+
+At the same time, historical \texttt{Citi Bike} records may include missing values and format differences across years, which makes preprocessing an essential step before analysis.
+In addition, the dataset size requires efficient aggregation and filtering strategies to ensure that the dashboard remains responsive.
 
