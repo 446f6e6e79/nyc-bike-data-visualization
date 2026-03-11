@@ -9,3 +9,17 @@ data/
 data_storage/
 *.pyc
 src/start_station_heatmap.html
+
+//latex auxiliary files
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.synctex.gz
+*.fdb_latexmk
