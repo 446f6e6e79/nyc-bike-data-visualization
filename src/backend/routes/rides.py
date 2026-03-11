@@ -2,7 +2,6 @@ import pandas as pd
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
-from pydantic import validator
 
 from models.ride import Ride
 from services.historical import load_historical_data
@@ -16,8 +15,8 @@ def get_rides():
     df = load_historical_data()
     return df.to_dict(orient="records")
 
-@router.get("/{ride_id}", response_model=Ride)
-def get_ride(ride_id: int):
+@router.get("/by_ride_id/{ride_id}", response_model=Ride)
+def get_ride(ride_id: str):
     """Get a single ride by its ID."""
     # Check the validity of the ride_id format
     if not isinstance(ride_id, str):
@@ -32,7 +31,7 @@ def get_ride(ride_id: int):
         raise HTTPException(status_code=404, detail="Ride not found")
     return ride.iloc[0].to_dict()
 
-@router.get("/{date}", response_model=list[Ride])
+@router.get("/by_date/{date}", response_model=list[Ride])
 def get_rides_by_date(date: str):
     """Get all rides for a specific date."""
     # Check the validity of the date format

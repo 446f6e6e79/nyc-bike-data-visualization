@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import Dict, List
 
 from models.ride import MemberCasual, RideableType
 

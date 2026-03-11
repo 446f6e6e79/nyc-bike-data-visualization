@@ -24,7 +24,7 @@ class MemberCasual(str, Enum):
 
 
 class Ride(BaseModel):
-    id: str
+    ride_id: str
     rideable_type: RideableType
     started_at: datetime
     ended_at: datetime
