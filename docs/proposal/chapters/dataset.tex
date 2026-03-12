@@ -1,32 +1,29 @@
-\section{Dataset}
+\section{Proposed Datasets}
 Before selecting the datasets used in this project, we explored several mobility datasets from different cities in order to identify a suitable source of data.
 However, we found that many of these datasets were either incomplete, not regularly updated, or lacked the necessary granularity for our analysis.
-\\
+
 After careful consideration, we decided to focus on the Citi Bike System Data for New York City, which is well maintained and reflects the complexity of the city.
 
 \subsection{Citi Bike System Data}
 The \href{https://citibikenyc.com/system-data}{Citi Bike System Data} is published by \textit{Lyft}, a company that operates the bike-sharing service in New York City.
-Trip records are released monthly as open data, making them publicly accessible.
-
-The data are distributed as structured CSV files and can also be accessed through API calls.
-The available records date back to 2013, providing a long-term historical perspective.
+Trip records, dating back to 2013, are released monthly as open data, and they are available for download in CSV format.
 
 Each trip record includes key attributes such as start and end times, start and end stations, and user type.
 These variables allow us to analyze temporal and spatial patterns in bike rentals.
 
+Through API access, we can also obtain real-time data on bike availability and station status, which can be integrated into our dashboard for up-to-date insights.
+
 \subsection{Weather Data}
 Weather conditions can significantly influence urban mobility, so we plan to take into consideration the weather data.
 
-To do this, we use the \href{https://open-meteo.com/}{Open-Meteo} API, which provides historical weather data for New York City.
+To do this, we plan to use the \href{https://open-meteo.com/}{Open-Meteo} API, which provides historical weather data for any location worldwide, including New York City.
+
 The dataset covers more than 80 years of observations with hourly temporal resolution and a spatial resolution between 1 and 11 km.
-
-As an open-source service, Open-Meteo offers a broad set of weather variables, allowing us to evaluate how environmental conditions affect bike usage patterns.
-
+As an open-source service, Open-Meteo offers a broad set of weather variables, allowing us to also evaluate how environmental conditions affect bike usage patterns.
 
 \subsection{New York City Datasets}
-During our exploration, we also reviewed official New York City datasets available on the \href{https://www.nyc.gov/data}{NYC Open Data} platform.
+During our exploration, we also considered various datasets available on the \href{https://opendata.cityofnewyork.us/}{NYC Open Data} platform.
+It offers a wide range of datasets, dashboards, and maps related to the city's transportation system, including bike lanes, traffic data, and other contextual information.
 
-This platform offers a wide range of datasets, dashboards, and maps related to the city's transportation system, including bike lanes, traffic data, and other contextual information.
-
-However, we want to keep our analysis focused on the bike-sharing system, and the Citi Bike System Data already provides a comprehensive view of bike rentals in the city, reducing complexity by avoiding unnecessary additional NYC datasets.
-If needed, we will incorporate additional NYC Open Data sources to provide further context and support specific insights.
+However, we want to keep our analysis focused only on the bike-sharing system, and the Citi Bike System Data already provides a comprehensive view of the city's bike rental patterns.
+Therefore, we decided to avoid adding unnecessary complexity by incorporating additional datasets from NYC Open Data, unless they are needed to provide further context or support specific insights.
