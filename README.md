@@ -48,3 +48,7 @@ data-visualisation/
 The backend server implementation for the bike-sharing data visualization project is located in the `src/backend`.
 Go to [src/backend/README.md](src/backend/README.md) for detailed instructions on how to start the server and access the API documentation.
 
+## Frontend
+The frontend application implementation for the bike-sharing data visualization project is located in the `src/frontend`.
+Go to [src/frontend/README.md](src/frontend/README.md) for detailed instructions on how to start the frontend application and access the user interface.
+
