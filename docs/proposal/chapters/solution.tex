@@ -1,3 +1,50 @@
+\section{Solution}
+\subsection{Vision}
+We deliver an interactive web-based dashboard as the primary output.
+This allows all users to explore mobility patterns through a unified, user-friendly interface.
+Our design approach is to present clear, immediate insights at first impactful while also allowing deeper exploration for users who want to examine the details.
+
+Regarding update frequency, we expect the dashboard to be refreshed automatically on a regular basis, since the data are continuously collected.
+This ensures that the insights remain useful and relevant over time, while also enabling historical analysis and comparisons across different periods.
+
+\subsection{Design Philosophy}
+Our visualization prioritizes clarity and analytical depth over visual polish.
+We employ a dual-level approach: high-level dashboards present immediate summary insights (e.g., daily ridership totals, top stations), while detailed views enable granular exploration (e.g., hourly breakdowns, user type comparisons).
+All design choices remain data-centric, avoiding decorative elements or misleading visual encodings that could obscure underlying patterns.
+
+\subsection{Resources}
+Since we are working with a large dataset and aim to create an interactive dashboard, we need programming skills and experience with data and visualization tools.
+
+Our tech stack combines:
+\begin{itemize}[beginpenalty=10000]
+  \item \textbf{Backend (Python)} -- efficient data processing, cleaning, and REST API development via FastAPI;
+  \item \textbf{Frontend (React/D3.js)} -- custom, interactive visualizations tailored to mobility pattern analysis.
+\end{itemize}
+This modular architecture enables rapid iteration during development while remaining scalable as data volumes grow.
+
+\subsection{Early Design Considerations}
+While specific chart types and encodings will be refined during development, a few design decisions follow directly from the editorial choices above:
+
+\begin{itemize}
+  \item \textbf{Map-centric spatial view}: Spatial data is inherently geographic, so an interactive map is the natural primary choice for our project.
+  An heatmap layer can emphasize demand intensity at a glance.
+  \item \textbf{Faceted temporal charts}: Temporal data we be used mainly to compare behaviour across different time periods, so faceted line charts or small multiples will allow us to show multiple time series (e.g., by user type) without cluttering a single chart.
+  \item \textbf{Interactive filtering over static views}: Rather than producing separate dashboards for each dimension, we favour cross-filtering: selecting a time range, station, or user type in one chart updates the others, supporting exploratory analysis without overwhelming the interface.
+\end{itemize}
+
+\subsection{Constraints}
+In general, trying to obtain the most value from the data while respecting project constraints is a key challenge. 
+The project must balance the ambition of performing meaningful analyses with practical limitations such as time availability, data quality, and implementation complexity. 
+Since the final deliverable is scheduled for June, it is necessary to keep the feature scope focused and prioritize analyses that can provide the most relevant and actionable insights.
+
+Another important aspect concerns the quality and consistency of the available data. Historical \texttt{Citi Bike} records were collected over multiple years, 
+and they may contain missing values, inconsistencies, or differences in formatting and schema across datasets. For this reason, a careful preprocessing phase is required to clean, 
+standardize, and integrate the data before any reliable analysis can be performed.
+
+Finally, the large size of the dataset introduces additional technical challenges. Efficient aggregation, filtering, 
+and data handling strategies must be implemented to manage the volume of information effectively. 
+These optimizations are particularly important to ensure that the dashboard remains responsive and interactive, allowing users to explore the data smoothly without performance issues.
+
 \section{Editorial Choices}
 %# TODO: Fill out this section
 Here we describe how these translate into concrete editorial choices the viewpoints we adopt, what we include or exclude, and how we guide the viewer's attention.
@@ -34,13 +81,3 @@ However, at the same time, they result less actionable for operations teams, who
 Meanwhile, weather data is integrated as a contextual layer within the temporal charts, allowing users to correlate demand fluctuations with weather conditions without dedicating separate space to weather analysis, which is not a primary focus of our project.
 
 % This is the only one that I think needs to be further expanded and kept separated
-\subsection{Early Design Considerations}
-
-While specific chart types and encodings will be refined during development, a few design decisions follow directly from the editorial choices above:
-
-\begin{itemize}
-  \item \textbf{Map-centric spatial view}: Spatial data is inherently geographic, so an interactive map is the natural primary choice for our project.
-  An heatmap layer can emphasize demand intensity at a glance.
-  \item \textbf{Faceted temporal charts}: Temporal data we be used mainly to compare behaviour across different time periods, so faceted line charts or small multiples will allow us to show multiple time series (e.g., by user type) without cluttering a single chart.
-  \item \textbf{Interactive filtering over static views}: Rather than producing separate dashboards for each dimension, we favour cross-filtering: selecting a time range, station, or user type in one chart updates the others, supporting exploratory analysis without overwhelming the interface.
-\end{itemize}
