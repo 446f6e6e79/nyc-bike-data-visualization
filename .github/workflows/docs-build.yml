@@ -1,0 +1,54 @@
+name: Docs Build
+# This workflow compiles the LaTeX documents in the docs directory whenever changes 
+#are pushed to the main branch or when a pull request is opened targeting the main branch
+#but only if the changes affect files in the docs directory or this workflow file itself.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs-build.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs-build.yml"
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile proposal document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: proposal.tex
+          working_directory: docs/proposal
+
+      - name: Compile report document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: report.tex
+          working_directory: docs/report
+
+      - name: Compile technical report document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: technical-report.tex
+          working_directory: docs/technical-report
+      
+      - name: Update PDF in repository
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/proposal.pdf
+          git add docs/report.pdf
+          git add docs/technical-report.pdf
+          git commit -m "Update compiled PDF documents" || echo "No changes to commit"
+          git push origin main
+
