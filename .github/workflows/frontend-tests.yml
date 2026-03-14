@@ -40,6 +40,10 @@ jobs:
         run: |
           npm ci --include=optional
 
+      - name: Run tests
+        run: |
+          npm run test
+
       - name: Build frontend
         run: |
           npm run build
