@@ -12,8 +12,6 @@ from models.ride import Weather
     E.g., check if it is possible to extract the length of the trip from the start and end station coordinates
 """
 _df: pd.DataFrame | None = None
-_weather_by_hour: dict[str, dict] | None = None
-_weather_range: tuple[str, str] | None = None
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -28,7 +26,6 @@ DATA_DIR_ENV_VAR = "HISTORICAL_DATA_DIR"
 
 # Fixed representative coordinates for NYC weather.
 NYC_COORDS = (40.7823234, -73.9654161)
-
 
 def _resolve_data_path(test: bool = False) -> Path:
     """
@@ -77,9 +74,17 @@ def load_historical_data(test=False) -> pd.DataFrame:
     print(f"Loaded {len(_df)} records from {len(csv_files)} files.")
     
     print("Cleaning data...")
+    time = datetime.now()
     _df = _clean_data(_df)
+    print(f"Data cleaned in {(datetime.now() - time).total_seconds():.2f} seconds.")
+    print("Extracting ride features...")
+    time = datetime.now()
+    _df = _extract_features(_df)
+    print(f"Ride features extracted in {(datetime.now() - time).total_seconds():.2f} seconds.")
     print("Fetching weather data...")
+    time = datetime.now()
     _df = enrich_rides_with_weather(_df)
+    print(f"Weather data fetched in {(datetime.now() - time).total_seconds():.2f} seconds.")
     print("Data loaded and cleaned successfully.")
     
     return _df
@@ -89,8 +94,6 @@ def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     Perform basic cleaning on the historical data:
     - Handle missing values by dropping rows with critical missing fields
     - Convert date columns to datetime objects
-    - Extract useful features like year, month, day of week, and hour from the start time
-    - Create a trip duration column and filter out trips with non-positive duration
     """
     # Handle missing values
     df = df.dropna(subset=['start_station_name', 'start_station_id', 'end_station_name', 'end_station_id', 'start_lat', 'start_lng', 'end_lat', 'end_lng', 'member_casual'])
@@ -98,7 +101,18 @@ def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     # Convert date columns to datetime
     df['started_at'] = pd.to_datetime(df['started_at'], errors='coerce')
     df['ended_at'] = pd.to_datetime(df['ended_at'], errors='coerce')
-    
+
+    # Drop rows where ended_at is before started_at or where either is missing after conversion
+    df = df.dropna(subset=['started_at', 'ended_at'])
+    df = df[df['ended_at'] >= df['started_at']]
+    return df
+
+def _extract_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Extract ride-level features from cleaned historical data:
+    - Time-based features (year, month, day of week, hour, day type)
+    - Trip duration and distance
+    """
     # Extract year, month, day of week, and hour from the start time
     df['start_year'] = df['started_at'].dt.year
     df['start_month'] = df['started_at'].dt.month
@@ -112,7 +126,6 @@ def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     
     # Create a trip duration column in seconds and filter out trips with non-positive duration
     df['trip_duration'] = (df['ended_at'] - df['started_at']).dt.total_seconds()
-    df = df[df['trip_duration'] > 0]
 
     # Create a trip distance column using the Haversine formula
     """
@@ -161,7 +174,6 @@ def _haversine_distance(lat1, lon1, lat2, lon2):
     R = 6371  # Radius of Earth in kilometers
     return c * R
 
-
 def load_weather_data(min_ride_time: datetime, max_ride_time: datetime) -> dict[str, dict]:
     """
     Load hourly weather data once for the full ride time range.
@@ -169,14 +181,8 @@ def load_weather_data(min_ride_time: datetime, max_ride_time: datetime) -> dict[
     The result is cached by inclusive start/end date range and keyed by hour string
     in the format YYYY-MM-DDTHH:00.
     """
-    global _weather_by_hour, _weather_range
-
     start_date = min_ride_time.date().isoformat()
     end_date = max_ride_time.date().isoformat()
-    requested_range = (start_date, end_date)
-
-    if _weather_by_hour is not None and _weather_range == requested_range:
-        return _weather_by_hour
 
     response = requests.get(
         "https://archive-api.open-meteo.com/v1/archive",
@@ -211,17 +217,14 @@ def load_weather_data(min_ride_time: datetime, max_ride_time: datetime) -> dict[
         )
         _weather_by_hour[hour] = weather.model_dump()
 
-    _weather_range = requested_range
     return _weather_by_hour
 
-
 def enrich_rides_with_weather(df: pd.DataFrame) -> pd.DataFrame:
-    """Attach cached hourly weather data directly to each ride in place."""
-    if df.empty or df["started_at"].dropna().empty:
-        df["weather"] = None
-        print("Weather enrichment skipped: no rides with valid start timestamps.")
-        return df
-
+    """
+    Enrich the rides DataFrame with weather data by mapping the start time of 
+    each ride to the corresponding hourly weather conditions.
+    """
+    # Load weather data for the full range of ride start times
     weather_by_hour = load_weather_data(
         df["started_at"].min(),
         df["started_at"].max(),
@@ -229,18 +232,7 @@ def enrich_rides_with_weather(df: pd.DataFrame) -> pd.DataFrame:
     hour_keys = df["started_at"].dt.strftime("%Y-%m-%dT%H:00")
     df["weather"] = hour_keys.map(weather_by_hour)
 
-    total_rides = len(df)
-    rides_with_weather = int(df["weather"].notna().sum())
-    missing_weather = total_rides - rides_with_weather
-
-    if missing_weather == 0:
-        print(f"Weather enrichment successful for all rides: {rides_with_weather}/{total_rides}.")
-    else:
-        missing_hours = sorted(hour_keys[df["weather"].isna()].unique().tolist())
-        sample_missing_hours = ", ".join(missing_hours[:5])
-        print(
-            f"Weather enrichment incomplete: {rides_with_weather}/{total_rides} rides enriched. "
-            f"Missing hours (up to 5 shown): {sample_missing_hours}"
-        )
-
+    if df["weather"].isnull().any():
+        missing_hours = df[df["weather"].isnull()]["started_at"].dt.strftime("%Y-%m-%dT%H:00").unique()
+        print(f"Warning: Missing weather data for the following hours: {missing_hours}")
     return df
