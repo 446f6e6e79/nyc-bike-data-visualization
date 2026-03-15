@@ -1,5 +1,7 @@
 from enum import Enum
 from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -21,7 +23,14 @@ class MemberCasual(str, Enum):
     """
     MEMBER = "member"
     CASUAL = "casual"
-
+    
+class Weather(BaseModel):
+    """Model representing hourly weather conditions for NYC."""
+    time: datetime  # Hourly timestamp (Eastern Time)
+    temperature: float  # Temperature at 2 m (C)
+    wind_speed: float  # Wind speed at 10 m (km/h)
+    precipitation: float  # Total precipitation in the hour (mm)
+    weather_code: int  # WMO weather interpretation code
 
 class Ride(BaseModel):
     ride_id: str
@@ -37,3 +46,4 @@ class Ride(BaseModel):
     end_lat: float
     end_lng: float
     member_casual: MemberCasual
+    weather: Optional[Weather] = None # Considered weather at start
