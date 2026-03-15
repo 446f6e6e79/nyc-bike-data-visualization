@@ -55,12 +55,12 @@ Go to [src/frontend/README.md](src/frontend/README.md) for detailed instructions
 ## Downloading the datasets
 The datasets needed for the project can be downloaded from the Citi Bike Trip Data page at https://s3.amazonaws.com/tripdata/index.html
 
-To make the process easier, we provided a Python script that automates the downloading and merging of the trip data files based on specified date ranges. The script is located in `scripts/download_and_merge_tripdata.py`.
+To make the process easier, we provided a Python script that automates the downloading and merging of the trip data files based on specified date ranges. The script is located in `scripts/download_data.py`.
 
 To use the script, run the following command in your terminal:
 
 ```bash
-python scripts/download_and_merge_tripdata.py
+python scripts/download_data.py
 ```
 The available options for the script are:
 - `--start-date`: The start date for filtering files (in YYYYMM format). Default is "202601".

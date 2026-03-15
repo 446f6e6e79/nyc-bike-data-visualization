@@ -13,11 +13,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 
 DATA_DIR = PROJECT_ROOT / "data"
+TRIP_DATA_DIR = DATA_DIR / "trips"
+STATION_DATA_DIR = DATA_DIR / "stations"
 TEST_DATA_DIR = BACKEND_ROOT / "tests" / "test_data"
 
 # Environment variable name for configuring the historical data directory
 DATA_DIR_ENV_VAR = "HISTORICAL_DATA_DIR"
-
 
 def _resolve_data_path(test: bool = False) -> Path:
     """
@@ -31,7 +32,7 @@ def _resolve_data_path(test: bool = False) -> Path:
         return Path(configured_data_dir).expanduser()
     if test:
         return TEST_DATA_DIR
-    return DATA_DIR
+    return TRIP_DATA_DIR
 
 def load_historical_data(test=False) -> pd.DataFrame:
     """
@@ -51,7 +52,17 @@ def load_historical_data(test=False) -> pd.DataFrame:
         raise FileNotFoundError(f"No CSV files found in {data_path!r}")
 
     # Read all CSV files and concatenate them into a single DataFrame
-    dfs = [pd.read_csv(file) for file in csv_files]
+    dfs = [
+        pd.read_csv(
+            file,
+            # Specify data types for station IDs to ensure they are read as strings
+            dtype={
+                "start_station_id": "string",
+                "end_station_id": "string",
+            },
+        )
+        for file in csv_files
+    ]
     _df = pd.concat(dfs, ignore_index=True)
     print(f"Loaded {len(_df)} records from {len(csv_files)} files.")
     
@@ -71,7 +82,7 @@ def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     # Handle missing values
     df = df.dropna(subset=['start_station_name', 'start_station_id', 'end_station_name', 'end_station_id', 'start_lat', 'start_lng', 'end_lat', 'end_lng', 'member_casual'])
-
+    
     # Convert date columns to datetime
     df['started_at'] = pd.to_datetime(df['started_at'], errors='coerce')
     df['ended_at'] = pd.to_datetime(df['ended_at'], errors='coerce')
@@ -102,11 +113,27 @@ def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-
 def _haversine_distance(lat1, lon1, lat2, lon2):
     """
     Calculate the Haversine distance between two points on the Earth specified in decimal degrees.
     Returns distance in kilometers.
+    
+    TODO: analyze possible performance improvement approaches: 
+    1) instead of computing the distance for every trip,
+       we could compute the distance for each unique pair of start and end stations and then map it back to the trips.
+
+       Also, since it considers the straight line distance between two points, it can be approximated
+       to the actual distance traveled along the streets by multiplying it by a factor (e.g., 1.3)
+       SEARCH: "Circuity factor for estimating actual travel distance from straight line distance in urban areas"
+       circuty_factor = 1.3
+       c_f = actual_distance / straight_line_distance --> actual_distance = straight_line_distance * c_f
+    
+    2) Consider manhattan distance as a simpler alternative to the Haversine distance.
+       This is both computationally cheaper and more appropriate for a city like New York with a grid-like street layout.
+       Requires for projection of the coordinates to a suitable coordinate reference system 
+
+    3) Also, we could consider caching the computed distances for station pairs to avoid redundant calculations.
+
     """
     # Convert decimal degrees to radians
     lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])

@@ -10,6 +10,14 @@
     Take in consideration also the features that we extracted from the original dataset 
     (trip duration, distance, day of the week, etc. that can be found in src/backend/services/historical.py)
 \end{comment}
+\subsubsection{Original Structure}
+\subsubsection{Extracted Features}
+\begin{comment}
+    Take in consideration the choices made for computing the distance (Haversine distance vs Manhattan distance)
+    1) Haversine distance is more accurate for long distances gives a straight line distance between two points, correct for the curvature of the Earth
+       but might be computationally expensive and underestimate the actual distance traveled along the streets
+    2) Manhattan distance is simpler and more appropriate for a city like New York with a grid-like street layout, it gives the distance traveled along the streets rather than a straight line distance
+\end{comment}
 
 \subsection{Analysis and Insights}
 \begin{comment}
@@ -18,6 +26,7 @@
 \subsection{Data Quality}
 \begin{comment}
     Discussion of any data quality issues, such as missing values, outliers, or inconsistencies, and how they were addressed in the analysis.
+    Two UUID (short name and station id) were used to uniquely identify stations, but they are not consistent across the dataset, so we had to use the short name as the unique identifier for stations.
 \end{comment}
 
 

@@ -39,7 +39,7 @@ def fetch_station_data(force_refresh: bool = False) -> tuple[list, dict]:
     Falls back to stale cache if the upstream API is unavailable.
     """
     now = time.monotonic()
-
+    # Check cache validity under lock to ensure thread safety
     with _cache_lock:
         cache_valid = (
             not force_refresh
@@ -47,6 +47,7 @@ def fetch_station_data(force_refresh: bool = False) -> tuple[list, dict]:
             and _cache["status_map"] is not None
             and (now - _cache["timestamp"] < CACHE_TTL_SECONDS)
         )
+        # If the cache is valid, return it immediately
         if cache_valid:
             return _cache["info"], _cache["status_map"]
 

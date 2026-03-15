@@ -13,7 +13,6 @@ router = APIRouter(prefix="/rides", tags=["rides"])
 def get_rides():
     """Get all historical rides."""
     df = load_historical_data()
-    print(df[['start_station_id', 'end_station_id']].head())  # Debugging: Print the first few rows of the DataFrame
     return df.to_dict(orient="records")
 
 @router.get("/by_ride_id/{ride_id}", response_model=Ride)
