@@ -14,7 +14,6 @@ import zipfile
 BASE_DATA_URL = "https://s3.amazonaws.com/tripdata/"
 DOWNLOAD_DIR = "data/"
 TRIP_DATA_DIR = os.path.join(DOWNLOAD_DIR, "trips")
-STATION_DATA_DIR = os.path.join(DOWNLOAD_DIR, "stations")
 
 # Filter files by date range (MUST BE IN THE FORMAT YYYYMM)
 DEFAULT_START_DATE = "202601"
@@ -49,7 +48,6 @@ def find_files(base_data_url: str) -> list[str]:
     print(f"Found {len(files)} files")
     return files
 
-
 def validate_yyyymm(date_value: str, arg_name: str) -> None:
     """
     Validate that the provided date value is in the format YYYYMM and represents a valid month.
@@ -70,7 +68,6 @@ def validate_yyyymm(date_value: str, arg_name: str) -> None:
     month = int(date_value[4:6])
     if month < 1 or month > 12:
         raise ValueError(f"{arg_name} must be in YYYYMM format")
-
 
 def extract_coverage_from_filename(file_name: str) -> tuple[int, int]:
     """
@@ -96,7 +93,6 @@ def extract_coverage_from_filename(file_name: str) -> tuple[int, int]:
         return int(date_part), int(date_part)
 
     raise ValueError(f"Unsupported date format in file name: {file_name}")
-
 
 def filter_files(files: list, start_date: str, end_date: str, download_jc: bool) -> list:
     """
@@ -161,7 +157,6 @@ def download_and_extract_files(filtered_files: list, base_data_url: str, downloa
                     target.write(source.read())
         print(f"Finished extracting {f}")
 
-
 def parse_args() -> argparse.Namespace:
     """
     Parse command-line arguments for the script.
@@ -183,8 +178,10 @@ def main():
     # Validate that start date is less than or equal to end date
     if args.start_date and args.end_date and int(args.start_date) > int(args.end_date):
         raise ValueError("--start-date must be less than or equal to --end-date")
-
+    
+    # Create the download directory if it doesn't exist
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+    os.makedirs(TRIP_DATA_DIR, exist_ok=True)
 
     # Find all files in the S3 bucket
     files = find_files(BASE_DATA_URL)
@@ -193,9 +190,7 @@ def main():
     filtered_files = filter_files(files, args.start_date, args.end_date, args.download_jc)
 
     # Download and extract the filtered files
-    download_and_extract_files(filtered_files, BASE_DATA_URL, DOWNLOAD_DIR)
-
-    # TODO: download station data as well and save it
+    download_and_extract_files(filtered_files, BASE_DATA_URL, TRIP_DATA_DIR)
 
 if __name__ == "__main__":
     main()

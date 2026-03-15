@@ -2,11 +2,12 @@ from pathlib import Path
 import sys
 import requests
 
+RIDE_IDS = ["85744AF35D7F2DF5", "9D18958E5788880B"]
+STATION_INFO = [("6602.05", "W 42 St & 8 Ave"), ("6839.04", "E 58 St & Madison Ave")]
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
-
 
 BASE_URL = "http://127.0.0.1:8000"
 DEFAULT_TIMEOUT = 10
@@ -18,6 +19,30 @@ def test_docs_endpoint_is_available():
 
     assert response.status_code == 200
 
+"""
+STATION ENDPOINTS
+"""
+def test_get_station_info():
+    """Test that the /stations/{station_id} endpoint returns the expected station information."""
+    for station_id, station_name in STATION_INFO:
+        response = requests.get(f"{BASE_URL}/stations/{station_id}", timeout=DEFAULT_TIMEOUT)
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["id"] == station_id
+        assert payload["name"] == station_name
+
+def test_get_empty_stations():
+    """Test that the /stations/empty endpoint returns the expected list of empty stations."""
+    response = requests.get(f"{BASE_URL}/stations/empty", timeout=DEFAULT_TIMEOUT)
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    for station in payload:
+        assert station["bikes"] == 0
+
+"""
+RIDE ENDPOINTS
+"""
 def test_get_rides_returns_mock_dataset_records():
     """Test that the /rides endpoint returns the expected mock dataset records."""
     response = requests.get(f"{BASE_URL}/rides/", timeout=DEFAULT_TIMEOUT)

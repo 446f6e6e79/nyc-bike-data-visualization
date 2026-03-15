@@ -12,10 +12,10 @@ _df: pd.DataFrame | None = None
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 
-DATA_DIR = os.path.join(PROJECT_ROOT, "data")
-TRIP_DATA_DIR = os.path.join(DATA_DIR, "trips")
-STATION_DATA_DIR = os.path.join(DATA_DIR, "stations")
-TEST_DATA_DIR = os.path.join(BACKEND_ROOT, "tests", "test_data")
+DATA_DIR = PROJECT_ROOT / "data"
+TRIP_DATA_DIR = DATA_DIR / "trips"
+STATION_DATA_DIR = DATA_DIR / "stations"
+TEST_DATA_DIR = BACKEND_ROOT / "tests" / "test_data"
 
 # Environment variable name for configuring the historical data directory
 DATA_DIR_ENV_VAR = "HISTORICAL_DATA_DIR"
@@ -82,9 +82,6 @@ def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     # Handle missing values
     df = df.dropna(subset=['start_station_name', 'start_station_id', 'end_station_name', 'end_station_id', 'start_lat', 'start_lng', 'end_lat', 'end_lng', 'member_casual'])
-
-    # Map the station IDs to the correct format
-    df = _fix_uuid(df)
     
     # Convert date columns to datetime
     df['started_at'] = pd.to_datetime(df['started_at'], errors='coerce')
@@ -151,26 +148,3 @@ def _haversine_distance(lat1, lon1, lat2, lon2):
     c = 2 * asin(sqrt(a)) 
     R = 6371  # Radius of Earth in kilometers
     return c * R
-
-def _fix_uuid(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Fix the UUIDs for the start and end station IDs by mapping them to the correct one
-    based on the station data. 
-    This is necessary because historical data have some inconsistencies in the station IDs
-
-    TODO: think about if this is the best approach:
-    1) Save the station data in a separate file and load it to create a mapping from station name to station ID
-    2) Load the station data from the API and create a mapping from station name to station ID
-    """
-    return df
-    # Load station data
-    station_df = pd.read_csv(STATION_DATA_DIR / "stations.csv", dtype={"id": "string"})
-    
-    # Create a mapping from station name to station ID
-    station_mapping = dict(zip(station_df["name"], station_df["id"]))
-    
-    # Map the start and end station names to their corresponding IDs
-    df['start_station_id'] = df['start_station_name'].map(station_mapping)
-    df['end_station_id'] = df['end_station_name'].map(station_mapping)
-    
-    return df

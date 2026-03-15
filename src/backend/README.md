@@ -39,7 +39,7 @@ In a second terminal, run:
 
 ```bash
 cd src/backend
-pytest /tests/test_backend.py -q
+pytest tests/test_backend.py -q
 ```
 
 ## API Documentation

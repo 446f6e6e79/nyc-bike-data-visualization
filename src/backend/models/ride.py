@@ -29,7 +29,7 @@ class Ride(BaseModel):
     started_at: datetime
     ended_at: datetime
     start_station_name: str
-    start_station_id: str 
+    start_station_id: str
     end_station_name: str
     end_station_id: str
     start_lat: float
