@@ -110,3 +110,41 @@ def test_user_type_statistics_uses_mock_dataset():
     assert payload["stats"]["total_rides"] == 2
 
 
+"""
+WEATHER ENDPOINTS
+"""
+def test_weather_endpoint_rejects_invalid_datetime():
+    """Test that /weather validates datetime query parameter format."""
+    response = requests.get(
+        f"{BASE_URL}/weather/",
+        params={"lat": 40.71, "lng": -74.00, "dt": "not-a-date"},
+        timeout=DEFAULT_TIMEOUT,
+    )
+
+    assert response.status_code == 422
+
+
+def test_weather_endpoint_returns_expected_shape():
+    """Test that /weather returns the expected response shape for a valid historical datetime."""
+    response = requests.get(
+        f"{BASE_URL}/weather/",
+        params={"lat": 40.71, "lng": -74.00, "dt": "2026-01-15T14:00:00"},
+        timeout=DEFAULT_TIMEOUT,
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    for field in [
+        "time",
+        "temperature",
+        "feels_like",
+        "humidity",
+        "wind_speed",
+        "precipitation",
+        "weather_code",
+        "description",
+    ]:
+        assert field in payload
+
+

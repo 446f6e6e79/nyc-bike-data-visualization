@@ -4,7 +4,7 @@ from fastapi import FastAPI
 # Middleware to handle CORS for development with Vite
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes import stations, rides, stats
+from routes import stations, rides, stats, weather
 from services.historical import load_historical_data
 
 
@@ -30,3 +30,4 @@ app.add_middleware(
 app.include_router(stations.router)
 app.include_router(rides.router)
 app.include_router(stats.router)
+app.include_router(weather.router)
