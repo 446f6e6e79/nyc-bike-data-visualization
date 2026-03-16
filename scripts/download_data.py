@@ -10,7 +10,7 @@ import re
 import zipfile
 import xml.etree.ElementTree as ET
 from calendar import monthrange
-from datetime import date
+from datetime import date, timedelta
 
 import polars as pl
 import requests
@@ -146,28 +146,6 @@ def filter_files(files: list, start_date: str, end_date: str, download_jc: bool)
     print(f"Selected {len(filtered_files)} files")
     return filtered_files
 
-def _parse_yyyymm_to_date(date_value: str, *, end_of_month: bool = False) -> date:
-    """
-    Convert a YYYYMM string to a date at the start or end of that month.
-    """
-    year = int(date_value[:4])
-    month = int(date_value[4:6])
-    if end_of_month:
-        return date(year, month, monthrange(year, month)[1])
-    return date(year, month, 1)
-
-def resolve_filtered_date_bounds(filtered_files: list[str]) -> tuple[str, str]:
-    """
-    Resolve the minimum and maximum YYYYMM coverage from the filtered trip files.
-    """
-    if not filtered_files:
-        raise ValueError("Cannot resolve date bounds from an empty file list")
-
-    file_ranges = [extract_coverage_from_filename(file_name) for file_name in filtered_files]
-    min_coverage = min(start for start, _ in file_ranges)
-    max_coverage = max(end for _, end in file_ranges)
-    return str(min_coverage), str(max_coverage)
-
 def download_weather_data(min_date: str, max_date: str) -> None:
     """
     Download hourly weather data for exactly the ride coverage range
@@ -177,11 +155,14 @@ def download_weather_data(min_date: str, max_date: str) -> None:
         raise ValueError("At least one of min_date or max_date must be provided")
 
     range_start = min_date or max_date
-    range_end   = max_date or min_date
+    # Rides are uploaded monthly, so weather should not include the current (incomplete) month.
+    previous_month_end = date.today().replace(day=1) - timedelta(days=1)
+    range_end = max_date or previous_month_end.strftime("%Y%m")
 
     # Downloaded the exact range
-    start_date = _parse_yyyymm_to_date(range_start)
-    end_date   = _parse_yyyymm_to_date(range_end, end_of_month=True)
+    start_date = date(int(range_start[:4]), int(range_start[4:6]), 1)
+    end_year, end_month = int(range_end[:4]), int(range_end[4:6])
+    end_date = date(end_year, end_month, monthrange(end_year, end_month)[1])
 
     # Bound end-date to today to avoid requesting future weather data
     end_date = min(end_date, date.today())
@@ -215,9 +196,9 @@ def download_weather_data(min_date: str, max_date: str) -> None:
             "precipitation":pl.Series(hourly["precipitation"],   dtype=pl.Float32),
             "weather_code": pl.Series(hourly["weather_code"],    dtype=pl.Int16),
         })
-        .with_columns([
+        .with_columns(
             pl.col("time").str.strptime(pl.Datetime, format="%Y-%m-%dT%H:%M"),
-        ])
+        )
         .with_columns(
             pl.col("time").dt.year().cast(pl.Int16).alias("year"),
         )
@@ -335,9 +316,8 @@ def main():
     # Download and convert the filtered files
     download_and_convert_files(filtered_files, BASE_DATA_URL, TRIP_DATA_DIR)
 
-    # Download hourly weather data spanning the selected trip coverage, with a one-year buffer on both sides
-    weather_min_date, weather_max_date = resolve_filtered_date_bounds(filtered_files)
-    download_weather_data(weather_min_date, weather_max_date)
+    # Download hourly weather data for the requested date range
+    download_weather_data(args.start_date, args.end_date)
 
 if __name__ == "__main__":
     main()
