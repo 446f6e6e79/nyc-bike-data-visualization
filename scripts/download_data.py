@@ -314,6 +314,12 @@ def main():
     # Validate that start date is less than or equal to end date
     if args.start_date and args.end_date and int(args.start_date) > int(args.end_date):
         raise ValueError("--start-date must be less than or equal to --end-date")
+    # Validate that the dataset doesn't go beyond the current month 
+    current_yyyymm = date.today().strftime("%Y%m")
+    if args.start_date and int(args.start_date) > int(current_yyyymm):
+        raise ValueError("--start-date cannot be in the future")
+    if args.end_date and int(args.end_date) > int(current_yyyymm):
+        raise ValueError("--end-date cannot be in the future")
     
     # Create the download directory if it doesn't exist
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
