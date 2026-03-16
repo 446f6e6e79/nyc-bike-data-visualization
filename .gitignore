@@ -27,3 +27,4 @@ src/start_station_heatmap.html
 //Frontend modules
 node_modules/
 /src/frontend/dist
+.github/prompts/plan-polarsParquetStrategy.prompt.md

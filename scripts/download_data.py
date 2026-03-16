@@ -1,19 +1,21 @@
 """
     Script to download and merge the bike-sharing trip data from the S3 bucket.
     The script will filter files by date range and dataset type (JC or non-JC)
-    and extract the CSV files from the downloaded ZIP files into a specified directory.
+    and convert the CSV files inside each downloaded ZIP into a single parquet file.
 """
 import argparse
-import re
-import requests
-import xml.etree.ElementTree as ET
-import os
 import io
+import os
+import re
 import zipfile
+import xml.etree.ElementTree as ET
+
+import polars as pl
+import requests
 
 BASE_DATA_URL = "https://s3.amazonaws.com/tripdata/"
 DOWNLOAD_DIR = "data/"
-TRIP_DATA_DIR = os.path.join(DOWNLOAD_DIR, "trips")
+TRIP_DATA_DIR = os.path.join(DOWNLOAD_DIR, "rides/")
 
 # Filter files by date range (MUST BE IN THE FORMAT YYYYMM)
 DEFAULT_START_DATE = "202601"
@@ -22,6 +24,7 @@ DEFAULT_END_DATE = ""
 # Set to True to also download files from the JC dataset
 DOWNLOAD_JC = False
 YEARLY_CUTOFF = 2023
+PARQUET_COMPRESSION = "zstd"
 
 def find_files(base_data_url: str) -> list[str]:
     """
@@ -76,6 +79,11 @@ def extract_coverage_from_filename(file_name: str) -> tuple[int, int]:
     - JC-YYYYMM-tripdata.csv.zip (for JC dataset)
     - YYYYMM-tripdata.csv.zip (for non-JC dataset)
     - YYYY-tripdata.csv.zip (for files before 2024)
+    Args:
+        file_name (str): The name of the file to extract coverage from.
+    Returns:
+        tuple: A tuple containing the start and end coverage periods in the format (YYYYMM, YYYYMM).
+    Raises:
     """
     normalized = file_name
     if normalized.startswith("JC-"):
@@ -131,31 +139,68 @@ def filter_files(files: list, start_date: str, end_date: str, download_jc: bool)
     print(f"Selected {len(filtered_files)} files")
     return filtered_files
 
-def download_and_extract_files(filtered_files: list, base_data_url: str, download_dir: str):
+def download_and_convert_files(filtered_files: list, base_data_url: str, output_dir: str) -> None:
     """
-    Download and extract the filtered files from the S3 bucket.
+    Download each filtered ZIP file from the S3 bucket and convert all CSV files
+    inside it into a single parquet file.
+
     Args:
-        filtered_files (list): The list of file keys to download and extract.
+        filtered_files (list): The list of file keys to download and convert.
         base_data_url (str): The base URL of the S3 bucket.
-        download_dir (str): The directory to save the extracted CSV files.
+        output_dir (str): The directory to save the parquet files.
     """
     for f in filtered_files:
+        # Extract year and month for partitioning from the file name
+        start_date, _ = extract_coverage_from_filename(f)
+        year = start_date // 100
+        month = start_date % 100
+
         print(f"Downloading {f}...")
         response = requests.get(base_data_url + f)
         response.raise_for_status()
-        print(f"Finished downloading {f}, extracting...")
+        print(f"Finished downloading {f}, converting to parquet...")
+
+        csv_frames = []
         with zipfile.ZipFile(io.BytesIO(response.content)) as zip_file:
+            # For each file in the ZIP
             for name in zip_file.namelist():
                 if not name.endswith(".csv"):
                     continue
-
-                output_name = os.path.basename(name)
-                output_path = os.path.join(download_dir, output_name)
-
-                print(f"Extracting {output_name}...")
-                with zip_file.open(name) as source, open(output_path, "wb") as target:
-                    target.write(source.read())
-        print(f"Finished extracting {f}")
+                
+                csv_name = os.path.basename(name)
+                print(f"Reading {csv_name}...")
+                # Read each CSV file into a Polars DataFrame and append it to the list
+                with zip_file.open(name) as source:
+                    csv_frames.append(
+                        pl.read_csv(
+                            io.BytesIO(source.read()),
+                            # Override station ID columns to string to handle any potential non-numeric IDs
+                            schema_overrides={
+                                "start_station_id": pl.Utf8,
+                                "end_station_id": pl.Utf8,
+                            },
+                        )
+                    )
+        # If no CSV files were found in the ZIP, skip it
+        if not csv_frames:
+            print(f"No CSV files found in {f}, skipping.")
+            continue
+        
+        # Concatenate all CSV DataFrames into a single DataFrame
+        trip_data = pl.concat(csv_frames, how="diagonal_relaxed")
+        
+        # Extract year and month from the started_at column for partitioning
+        trip_data = trip_data.with_columns([
+            pl.lit(year).alias("year"),
+            pl.lit(month).alias("month"),
+        ])
+        # Write the combined DataFrame to a parquet file, partitioned by year and month
+        trip_data.write_parquet(
+            output_dir,
+            partition_by=["year", "month"], 
+            compression=PARQUET_COMPRESSION)
+        
+        print(f"Wrote {trip_data.height} rows to {output_dir} for file {f}")
 
 def parse_args() -> argparse.Namespace:
     """
@@ -163,7 +208,7 @@ def parse_args() -> argparse.Namespace:
     Returns:
         argparse.Namespace: The parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="Download and extract Citi Bike tripdata files")
+    parser = argparse.ArgumentParser(description="Download Citi Bike tripdata ZIP files and convert them to parquet")
     parser.add_argument("--start-date", default=DEFAULT_START_DATE, help="Start date in YYYYMM")
     parser.add_argument("--end-date", default=DEFAULT_END_DATE, help="End date in YYYYMM")
     parser.add_argument("--download-jc", action="store_true", default=DOWNLOAD_JC, help="Include JC files")
@@ -189,8 +234,8 @@ def main():
     # Filter files by date range and dataset type
     filtered_files = filter_files(files, args.start_date, args.end_date, args.download_jc)
 
-    # Download and extract the filtered files
-    download_and_extract_files(filtered_files, BASE_DATA_URL, TRIP_DATA_DIR)
+    # Download and convert the filtered files
+    download_and_convert_files(filtered_files, BASE_DATA_URL, TRIP_DATA_DIR)
 
 if __name__ == "__main__":
     main()
