@@ -5,6 +5,7 @@
 """
 import argparse
 import io
+import math
 import os
 import re
 import zipfile
@@ -15,11 +16,19 @@ from datetime import date, timedelta
 import polars as pl
 import requests
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from src.backend.services.gbfs import fetch_station_data
+
 BASE_DATA_URL = "https://s3.amazonaws.com/tripdata/"
 DOWNLOAD_DIR = "data/"
 TRIP_DATA_DIR = os.path.join(DOWNLOAD_DIR, "rides/")
 STATION_DATA_DIR = os.path.join(DOWNLOAD_DIR, "stations/")
 WEATHER_DATA_DIR = os.path.join(DOWNLOAD_DIR, "weather/")
+STATION_DISTANCES_PATH = os.path.join(STATION_DATA_DIR, "station_pair_distances.parquet")
 WEATHER_API_URL = "https://archive-api.open-meteo.com/v1/archive"
 NYC_COORDS = (40.7823234, -73.9654161)
 WEATHER_TIMEZONE = "America/New_York"
@@ -32,6 +41,7 @@ DEFAULT_END_DATE = ""
 DOWNLOAD_JC = False
 YEARLY_CUTOFF = 2023
 PARQUET_COMPRESSION = "zstd"
+STREET_CIRCUITY_FACTOR = 1.3
 
 def find_files(base_data_url: str) -> list[str]:
     """
@@ -211,6 +221,66 @@ def download_weather_data(min_date: str, max_date: str) -> None:
     )
     print(f"Wrote {weather_data.height} hourly weather rows to {WEATHER_DATA_DIR}")
 
+#TODO: This is a placeholder for now, it's harvesine distance multiplied by a circuity factor to approximate real-world distances (street).
+def distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculate straight-line distance in kilometers between two coordinates.
+    """
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    d_lon = lon2 - lon1
+    d_lat = lat2 - lat1
+    a = math.sin(d_lat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(d_lon / 2) ** 2
+    c = 2 * math.asin(math.sqrt(a))
+    return 6371 * c
+
+
+def compute_and_save_station_distances() -> None:
+    """
+    Compute unique undirected station-pair distances (haversine * 1.3) and save as parquet.
+    Only keep GBFS stations that appear in ride data to avoid impossible pairs.
+    """
+    raw_stations = fetch_station_data()[0]
+
+    stations = []
+    for station in raw_stations:
+        stations.append(
+            {
+                "id": station.get("short_name", ""),
+                "lat": float(station.get("lat", 0)),
+                "lon": float(station.get("lon", 0)),
+            }
+        )
+
+    # Keep deterministic ordering for pair generation and output stability.
+    stations.sort(key=lambda s: s["id"])
+
+    pair_rows = []
+
+    print(f"Computing station-pair distances for {len(stations)} stations")
+    for i, station_a in enumerate(stations):
+        for station_b in stations[i + 1 :]:
+            straight_line_km = distance_km(
+                station_a["lat"],
+                station_a["lon"],
+                station_b["lat"],
+                station_b["lon"],
+            )
+            distance = straight_line_km * STREET_CIRCUITY_FACTOR
+            pair_rows.append(
+                {
+                    "station_id_a": station_a["id"],
+                    "station_id_b": station_b["id"],
+                    "distance_km": distance,
+                }
+            )
+
+    distances_df = pl.DataFrame(pair_rows)
+    distances_df.write_parquet(
+        STATION_DISTANCES_PATH,
+        compression=PARQUET_COMPRESSION,
+    )
+    print(f"Wrote {distances_df.height} station-pair distances to {STATION_DISTANCES_PATH}")
+
 def download_and_convert_files(filtered_files: list, base_data_url: str, output_dir: str) -> None:
     """
     Download each filtered ZIP file from the S3 bucket and convert all CSV files
@@ -305,6 +375,7 @@ def main():
     # Create the download directory if it doesn't exist
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     os.makedirs(TRIP_DATA_DIR, exist_ok=True)
+    os.makedirs(STATION_DATA_DIR, exist_ok=True)
     os.makedirs(WEATHER_DATA_DIR, exist_ok=True)
 
     # Find all files in the S3 bucket
@@ -315,6 +386,9 @@ def main():
 
     # Download and convert the filtered files
     download_and_convert_files(filtered_files, BASE_DATA_URL, TRIP_DATA_DIR)
+
+    # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
+    compute_and_save_station_distances()
 
     # Download hourly weather data for the requested date range
     download_weather_data(args.start_date, args.end_date)
