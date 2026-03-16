@@ -38,7 +38,7 @@ jobs:
 
       - name: Run backend integration tests
         env:
-          HISTORICAL_DATA_DIR: tests/test_data
+          TEST_MODE: "true"
         run: |
           cd src/backend
           python -m uvicorn main:app --host 127.0.0.1 --port 8000 &

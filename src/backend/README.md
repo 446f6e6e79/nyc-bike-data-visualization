@@ -22,16 +22,16 @@ It offers endpoints to retrieve real-time and historical data about bike station
 To start the backend server, run the following command in your terminal:
 
 ```bash
-UNSET HISTORICAL_DATA_DIR  # Remove the environment variable to use the default data directory
+UNSET TEST_MODE  # Remove the environment variable to use the default data directory
 uvicorn main:app --reload
 ```
-This will launch the FastAPI server with hot-reloading enabled, allowing you to see changes in real-time as you edit the code.
+This will launch the FastAPI server with hot-reloading enabled, allowing you to see changes in real-time as you edit the code. The server will be accessible at `http://localhost:8000`.
 
 ## Running Backend Tests
 Run the backend integration tests against the committed mock dataset:
 
 ```bash
-export HISTORICAL_DATA_DIR=tests/test_data
+export TEST_MODE=true
 uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 

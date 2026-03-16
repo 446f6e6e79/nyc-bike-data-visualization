@@ -1,17 +1,28 @@
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
 # Middleware to handle CORS for development with Vite
 from fastapi.middleware.cors import CORSMiddleware
 
 from routes import stations, rides, stats
-from services.historical import load_historical_data
+from services.historical import load_ride_data
 
+TEST_ENV_VAR = "TEST_MODE"
+
+def _is_historical_test_mode_enabled() -> bool:
+    """
+    Determine whether historical data should load in test mode from env var.
+
+    Accepted truthy values: 1, true, yes, on (case-insensitive).
+    """
+    raw_value = os.getenv(TEST_ENV_VAR, "false")
+    return raw_value.strip().lower() in {"1", "true", "yes", "on"}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Load historical data once on startup."""
-    load_historical_data()
+    load_ride_data(test=_is_historical_test_mode_enabled())
     yield
 
 

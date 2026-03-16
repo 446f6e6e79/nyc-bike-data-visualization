@@ -25,10 +25,12 @@ from src.backend.services.gbfs import fetch_station_data
 
 BASE_DATA_URL = "https://s3.amazonaws.com/tripdata/"
 DOWNLOAD_DIR = "data/"
-TRIP_DATA_DIR = os.path.join(DOWNLOAD_DIR, "rides/")
+
+RIDES_DATA_DIR = os.path.join(DOWNLOAD_DIR, "rides/")
 STATION_DATA_DIR = os.path.join(DOWNLOAD_DIR, "stations/")
-WEATHER_DATA_DIR = os.path.join(DOWNLOAD_DIR, "weather/")
 STATION_DISTANCES_PATH = os.path.join(STATION_DATA_DIR, "station_pair_distances.parquet")
+WEATHER_DATA_DIR = os.path.join(DOWNLOAD_DIR, "weather/")
+
 WEATHER_API_URL = "https://archive-api.open-meteo.com/v1/archive"
 NYC_COORDS = (40.7823234, -73.9654161)
 WEATHER_TIMEZONE = "America/New_York"
@@ -374,7 +376,7 @@ def main():
     
     # Create the download directory if it doesn't exist
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    os.makedirs(TRIP_DATA_DIR, exist_ok=True)
+    os.makedirs(RIDES_DATA_DIR, exist_ok=True)
     os.makedirs(STATION_DATA_DIR, exist_ok=True)
     os.makedirs(WEATHER_DATA_DIR, exist_ok=True)
 
@@ -385,7 +387,7 @@ def main():
     filtered_files = filter_files(files, args.start_date, args.end_date, args.download_jc)
 
     # Download and convert the filtered files
-    download_and_convert_files(filtered_files, BASE_DATA_URL, TRIP_DATA_DIR)
+    download_and_convert_files(filtered_files, BASE_DATA_URL, RIDES_DATA_DIR)
 
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances()
