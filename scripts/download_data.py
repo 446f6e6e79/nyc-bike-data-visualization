@@ -9,6 +9,8 @@ import os
 import re
 import zipfile
 import xml.etree.ElementTree as ET
+from calendar import monthrange
+from datetime import date
 
 import polars as pl
 import requests
@@ -16,6 +18,11 @@ import requests
 BASE_DATA_URL = "https://s3.amazonaws.com/tripdata/"
 DOWNLOAD_DIR = "data/"
 TRIP_DATA_DIR = os.path.join(DOWNLOAD_DIR, "rides/")
+STATION_DATA_DIR = os.path.join(DOWNLOAD_DIR, "stations/")
+WEATHER_DATA_DIR = os.path.join(DOWNLOAD_DIR, "weather/")
+WEATHER_API_URL = "https://archive-api.open-meteo.com/v1/archive"
+NYC_COORDS = (40.7823234, -73.9654161)
+WEATHER_TIMEZONE = "America/New_York"
 
 # Filter files by date range (MUST BE IN THE FORMAT YYYYMM)
 DEFAULT_START_DATE = "202601"
@@ -139,6 +146,90 @@ def filter_files(files: list, start_date: str, end_date: str, download_jc: bool)
     print(f"Selected {len(filtered_files)} files")
     return filtered_files
 
+def _parse_yyyymm_to_date(date_value: str, *, end_of_month: bool = False) -> date:
+    """
+    Convert a YYYYMM string to a date at the start or end of that month.
+    """
+    year = int(date_value[:4])
+    month = int(date_value[4:6])
+    if end_of_month:
+        return date(year, month, monthrange(year, month)[1])
+    return date(year, month, 1)
+
+def resolve_filtered_date_bounds(filtered_files: list[str]) -> tuple[str, str]:
+    """
+    Resolve the minimum and maximum YYYYMM coverage from the filtered trip files.
+    """
+    if not filtered_files:
+        raise ValueError("Cannot resolve date bounds from an empty file list")
+
+    file_ranges = [extract_coverage_from_filename(file_name) for file_name in filtered_files]
+    min_coverage = min(start for start, _ in file_ranges)
+    max_coverage = max(end for _, end in file_ranges)
+    return str(min_coverage), str(max_coverage)
+
+def download_weather_data(min_date: str, max_date: str) -> None:
+    """
+    Download hourly weather data for exactly the ride coverage range
+    and save as parquet partitioned by year only.
+    """
+    if not min_date and not max_date:
+        raise ValueError("At least one of min_date or max_date must be provided")
+
+    range_start = min_date or max_date
+    range_end   = max_date or min_date
+
+    # Downloaded the exact range
+    start_date = _parse_yyyymm_to_date(range_start)
+    end_date   = _parse_yyyymm_to_date(range_end, end_of_month=True)
+
+    # Bound end-date to today to avoid requesting future weather data
+    end_date = min(end_date, date.today())
+
+    print(f"Downloading weather data from {start_date.isoformat()} to {end_date.isoformat()}...")
+
+    response = requests.get(
+        WEATHER_API_URL,
+        params={
+            "latitude":        NYC_COORDS[0],
+            "longitude":       NYC_COORDS[1],
+            "start_date":      start_date.isoformat(),
+            "end_date":        end_date.isoformat(),
+            "hourly":          "temperature_2m,precipitation,weather_code,wind_speed_10m",
+            "timezone":        WEATHER_TIMEZONE,
+            "wind_speed_unit": "kmh",
+        },
+        timeout=(5, 120),
+    )
+    response.raise_for_status()
+
+    hourly = response.json().get("hourly")
+    if not hourly or not hourly.get("time"):
+        raise ValueError("Weather API response did not include hourly data")
+
+    weather_data = (
+        pl.DataFrame({
+            "time":         pl.Series(hourly["time"]),
+            "temperature":  pl.Series(hourly["temperature_2m"],  dtype=pl.Float32),
+            "wind_speed":   pl.Series(hourly["wind_speed_10m"],  dtype=pl.Float32),
+            "precipitation":pl.Series(hourly["precipitation"],   dtype=pl.Float32),
+            "weather_code": pl.Series(hourly["weather_code"],    dtype=pl.Int16),
+        })
+        .with_columns([
+            pl.col("time").str.strptime(pl.Datetime, format="%Y-%m-%dT%H:%M"),
+        ])
+        .with_columns(
+            pl.col("time").dt.year().cast(pl.Int16).alias("year"),
+        )
+    )
+
+    weather_data.write_parquet(
+        WEATHER_DATA_DIR,
+        partition_by=["year"],          
+        compression=PARQUET_COMPRESSION,
+    )
+    print(f"Wrote {weather_data.height} hourly weather rows to {WEATHER_DATA_DIR}")
+
 def download_and_convert_files(filtered_files: list, base_data_url: str, output_dir: str) -> None:
     """
     Download each filtered ZIP file from the S3 bucket and convert all CSV files
@@ -227,6 +318,7 @@ def main():
     # Create the download directory if it doesn't exist
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     os.makedirs(TRIP_DATA_DIR, exist_ok=True)
+    os.makedirs(WEATHER_DATA_DIR, exist_ok=True)
 
     # Find all files in the S3 bucket
     files = find_files(BASE_DATA_URL)
@@ -236,6 +328,10 @@ def main():
 
     # Download and convert the filtered files
     download_and_convert_files(filtered_files, BASE_DATA_URL, TRIP_DATA_DIR)
+
+    # Download hourly weather data spanning the selected trip coverage, with a one-year buffer on both sides
+    weather_min_date, weather_max_date = resolve_filtered_date_bounds(filtered_files)
+    download_weather_data(weather_min_date, weather_max_date)
 
 if __name__ == "__main__":
     main()
