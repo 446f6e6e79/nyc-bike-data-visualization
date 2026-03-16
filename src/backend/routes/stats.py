@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from services.stats import *
-from services.historical import load_historical_data
+from services.rides import load_historical_data
 from models.stats import *
 
 router = APIRouter(prefix="/statistics", tags=["statistics"])

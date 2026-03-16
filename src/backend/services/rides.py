@@ -1,12 +1,6 @@
-#import pandas as pd
 import polars as pl
-import os
-import requests
 from datetime import datetime
 from pathlib import Path
-from math import radians, cos, sin, asin, sqrt
-
-from models.ride import Weather
 
 """
     TODO: check for other possible data cleaning steps / feature extraction.
@@ -19,7 +13,6 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 
 DATA_DIR = PROJECT_ROOT / "data"
 RIDE_DATA_DIR = DATA_DIR / "rides"
-STATION_DATA_DIR = DATA_DIR / "stations"
 TEST_DATA_DIR = BACKEND_ROOT / "tests" / "test_data"
 
 def load_ride_data(test=False) -> pl.DataFrame:

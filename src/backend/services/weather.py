@@ -1,0 +1,1 @@
+#TODO: implement weather data loading and processing as in the rides data

@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routes import stations, rides, stats
-from services.historical import load_ride_data
+from services.rides import load_ride_data
 
 TEST_ENV_VAR = "TEST_MODE"
 

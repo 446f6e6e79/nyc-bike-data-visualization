@@ -2,6 +2,8 @@ from pathlib import Path
 import sys
 import requests
 
+#TODO: check their correctness and add more test cases as needed.
+
 RIDE_IDS = ["85744AF35D7F2DF5", "9D18958E5788880B"]
 STATION_INFO = [("6602.05", "W 42 St & 8 Ave"), ("6839.04", "E 58 St & Madison Ave")]
 
