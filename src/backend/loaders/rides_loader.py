@@ -1,5 +1,4 @@
 import polars as pl
-from datetime import datetime
 from typing import Union
 from src.backend.config import RIDE_DATA_DIR, TEST_DATA_DIR
 
@@ -30,6 +29,7 @@ def load_ride_data(inMemory: bool=False, test=False) -> RideFrame:
     else:
         # Otherwise, scan all parquet files recursively from partitioned folders
         _rides_df = pl.scan_parquet(str(RIDE_DATA_DIR / "**/*.parquet"), hive_partitioning=True)
+    
     print("Ride data loaded successfully.")
     
     print("Final data schema:")

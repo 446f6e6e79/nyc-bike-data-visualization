@@ -41,7 +41,6 @@ def clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
     - Handle missing values by dropping rows with critical missing fields
     - Convert date columns to datetime objects
     """
-    # Drop rows missing critical fields
     required_cols = [
         "start_station_name", "start_station_id",
         "end_station_name", "end_station_id",
@@ -54,8 +53,12 @@ def clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
     return (
         df.drop_nulls(subset=required_cols)
         .with_columns(
-            pl.col("started_at").cast(pl.Utf8).str.strptime(pl.Datetime, strict=False),
-            pl.col("ended_at").cast(pl.Utf8).str.strptime(pl.Datetime, strict=False),
+            pl.col("started_at")
+            .str.to_datetime(format="%Y-%m-%d %H:%M:%S%.f", strict=True)
+            .alias("started_at"),
+            pl.col("ended_at")
+            .str.to_datetime(format="%Y-%m-%d %H:%M:%S%.f", strict=True)
+            .alias("ended_at"),
         )
         .drop_nulls(subset=["started_at", "ended_at"])
         .filter(pl.col("ended_at") >= pl.col("started_at"))
