@@ -4,7 +4,7 @@ import polars as pl
 from fastapi import APIRouter, HTTPException, Query
 
 from services.rides import get_filtered_rides
-from services.distances import load_distances_data
+from loaders.distances_loader import load_distances_data
 from models.stats import UserTypeStats
 from models.ride import MemberCasual
 

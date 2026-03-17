@@ -9,8 +9,9 @@ from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from routes import stations, rides, stats
-from services.rides import load_ride_data
-from services.distances import load_distances_data
+from loaders.distances_loader import load_distances_data
+from loaders.rides_loader import load_ride_data
+from loaders.weather_loader import load_weather_data   
 
 TEST_ENV_VAR = "TEST_MODE"
 IN_MEMORY = False  # Set to True to load data into memory on startup for faster access during requests
@@ -47,7 +48,7 @@ async def lifespan(app: FastAPI):
     test = _is_historical_test_mode_enabled()
     load_ride_data(inMemory=IN_MEMORY, test=test)
     load_distances_data(inMemory=IN_MEMORY, test=test)
-
+    load_weather_data(test=test)
     yield
 
 

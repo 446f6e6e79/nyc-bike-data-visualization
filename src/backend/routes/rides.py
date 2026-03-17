@@ -2,7 +2,7 @@ import polars as pl
 from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from models.ride import Ride
-from services.rides import load_ride_data
+from loaders.rides_loader import load_ride_data
 
 router = APIRouter(prefix="/rides", tags=["rides"])
 
