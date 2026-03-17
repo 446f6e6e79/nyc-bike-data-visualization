@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.backend.services.gbfs import fetch_station_data
 
-from utils.config import STREET_CIRCUITY_FACTOR, PARQUET_COMPRESSION, STATION_DISTANCES_PATH
+from src.backend.config import STREET_CIRCUITY_FACTOR, PARQUET_COMPRESSION, STATION_DISTANCES_PATH
 
 #TODO: This is a placeholder for now, it's harvesine distance multiplied by a circuity factor to approximate real-world distances (street).
 def distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

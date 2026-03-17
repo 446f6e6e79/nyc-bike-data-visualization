@@ -3,7 +3,7 @@ import polars as pl
 from calendar import monthrange
 from datetime import date, timedelta
 
-from utils.config import WEATHER_API_URL, NYC_COORDS, WEATHER_TIMEZONE, PARQUET_COMPRESSION, WEATHER_DATA_DIR
+from src.backend.config import WEATHER_API_URL, NYC_COORDS, WEATHER_TIMEZONE, PARQUET_COMPRESSION, WEATHER_DATA_DIR
 
 def download_weather_data(min_date: str, max_date: str) -> None:
     """

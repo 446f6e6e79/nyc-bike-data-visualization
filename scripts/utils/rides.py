@@ -3,7 +3,7 @@ import os
 import requests
 import zipfile
 import polars as pl
-from utils.config import PARQUET_COMPRESSION, YEARLY_CUTOFF
+from src.backend.config import PARQUET_COMPRESSION, YEARLY_CUTOFF
 
 def extract_coverage_from_filename(file_name: str) -> tuple[int, int]:
     """

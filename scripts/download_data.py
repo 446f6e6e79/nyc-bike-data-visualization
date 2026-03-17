@@ -13,7 +13,16 @@ import xml.etree.ElementTree as ET
 from utils.distances import compute_and_save_station_distances
 from utils.rides import download_and_convert_files, extract_coverage_from_filename
 from utils.weather import download_weather_data
-from utils.config import BASE_DATA_URL, DOWNLOAD_DIR, RIDES_DATA_DIR, WEATHER_DATA_DIR, STATION_DATA_DIR, DEFAULT_START_DATE, DEFAULT_END_DATE, DOWNLOAD_JC
+from src.backend.config import (
+    BASE_DATA_URL,
+    DOWNLOAD_DIR,
+    RIDES_DATA_DIR,
+    WEATHER_DATA_DIR,
+    STATION_DATA_DIR,
+    DEFAULT_START_DATE,
+    DEFAULT_END_DATE,
+    DOWNLOAD_JC,
+)
 
 def find_files(base_data_url: str) -> list[str]:
     """
