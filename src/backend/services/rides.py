@@ -8,6 +8,28 @@ from loaders.rides_loader import load_ride_data, RideFrame
     E.g., check if it is possible to extract the length of the trip from the start and end station coordinates
 """
 
+def list_rides() -> list[dict]:
+    """Return all historical rides."""
+    df = load_ride_data()
+    if isinstance(df, pl.LazyFrame):
+        return df.collect()
+    return df.to_dicts()
+
+def get_ride_by_id(ride_id: str) -> dict:
+    """Return a single ride by ID."""
+    ride = load_ride_data().filter(pl.col("ride_id") == ride_id).limit(1)
+    ride_df = ride.collect() if isinstance(ride, pl.LazyFrame) else ride
+    if ride_df.height == 0:
+        raise LookupError("Ride not found")
+    return ride_df.row(0, named=True)
+
+def list_rides_by_date(parsed_date: date) -> list[dict]:
+    """Return all rides for a specific parsed date."""
+    rides = load_ride_data().filter(pl.col("started_at").dt.date() == pl.lit(parsed_date))
+    if isinstance(rides, pl.LazyFrame):
+        return rides.collect().to_dicts()
+    return rides.to_dicts()
+
 #TODO: remove this. Think if we have to add it to the download_data script or if we can do it on the fly in the stats computation
 def _extract_features(df: RideFrame) -> RideFrame:
     """
