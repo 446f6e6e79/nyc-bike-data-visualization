@@ -31,16 +31,6 @@ def load_ride_data(inMemory: bool=False, test=False) -> RideFrame:
         # Otherwise, scan all parquet files recursively from partitioned folders
         _rides_df = pl.scan_parquet(str(RIDE_DATA_DIR / "**/*.parquet"), hive_partitioning=True)
     print("Ride data loaded successfully.")
-
-    print("Cleaning data...")
-    time = datetime.now()
-    #_rides_df = _clean_data(_rides_df)
-    print(f"Data cleaned in {(datetime.now() - time).total_seconds():.2f} seconds.")
-
-    print("Extracting ride features...")
-    time = datetime.now()
-    #_rides_df = _extract_features(_rides_df)
-    print(f"Ride features extracted in {(datetime.now() - time).total_seconds():.2f} seconds.")
     
     print("Final data schema:")
     if isinstance(_rides_df, pl.LazyFrame):
@@ -48,7 +38,29 @@ def load_ride_data(inMemory: bool=False, test=False) -> RideFrame:
     else:
         print(_rides_df.schema)
 
-    print("Data loaded and cleaned successfully.")
     # Collect into memory if inMemory is True or if we are in test mode
     _rides_df = _rides_df.collect() if isinstance(_rides_df, pl.LazyFrame) and inMemory else _rides_df
     return _rides_df
+
+#TODO: remove this. Think if we have to add it to the download_data script or if we can do it on the fly in the stats computation
+def _extract_features(df: RideFrame) -> RideFrame:
+    """
+    Extract ride-level features from cleaned historical data:
+    - Time-based features (year, month, day of week, hour, day type)
+    - Trip duration
+    """
+    return df.with_columns(
+        pl.col("started_at").dt.year().alias("start_year"),
+        pl.col("started_at").dt.month().alias("start_month"),
+        pl.col("started_at").dt.to_string("%A").alias("start_day_of_week"),
+        pl.col("started_at").dt.hour().alias("start_hour"),
+        pl.when(
+            pl.col("started_at").dt.weekday().is_in([0, 1, 2, 3, 4])
+        )
+        .then(pl.lit("Weekday"))
+        .otherwise(pl.lit("Weekend"))
+        .alias("day_type"),
+        (
+            (pl.col("ended_at") - pl.col("started_at")).dt.total_milliseconds() / 1000
+        ).alias("trip_duration"),
+    )
