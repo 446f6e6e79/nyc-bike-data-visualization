@@ -1,8 +1,16 @@
 from fastapi import APIRouter, HTTPException
 
-from services.stats import *
+from services.stats import (
+    compute_all_ride_type_stats,
+    compute_ride_type_stats,
+    compute_all_user_type_stats,
+    compute_user_type_stats,
+    compute_daily_stats,
+)
 from services.rides import load_ride_data
-from models.stats import *
+from services.distances import load_distances_data
+from models.stats import DailyStats, RideTypeStats, UserTypeStats
+from models.ride import MemberCasual, RideableType
 
 router = APIRouter(prefix="/statistics", tags=["statistics"])
 
@@ -11,8 +19,9 @@ router = APIRouter(prefix="/statistics", tags=["statistics"])
 def get_all_ride_type_stats():
     """Get statistics for all rideable types."""
     # Load ride data and compute statistics for all rideable types
-    df = load_ride_data()
-    return stats.compute_all_ride_type_stats(df)
+    rides = load_ride_data()
+    distances = load_distances_data()
+    return compute_all_ride_type_stats(rides, distances)
 
 @router.get("/ride-types/{rideable_type}", response_model=RideTypeStats)
 def get_ride_type_stats(rideable_type: RideableType):
@@ -21,15 +30,17 @@ def get_ride_type_stats(rideable_type: RideableType):
     if rideable_type not in RideableType:
         raise HTTPException(status_code=400, detail="Invalid rideable type")
     # Load ride data and compute statistics for the specified rideable type
-    df = load_ride_data()
-    return stats.compute_ride_type_stats(df, rideable_type)
+    rides = load_ride_data()
+    distances = load_distances_data()
+    return compute_ride_type_stats(rides, distances, rideable_type)
 
 @router.get("/user-types", response_model=list[UserTypeStats])
 def get_all_user_type_stats():
     """Get statistics for all user types."""
     # Load ride data and compute statistics for all user types
-    df = load_ride_data()
-    return stats.compute_all_user_type_stats(df)
+    rides = load_ride_data()
+    distances = load_distances_data()
+    return compute_all_user_type_stats(rides, distances)
 
 @router.get("/user-types/{user_type}", response_model=UserTypeStats)
 def get_user_type_stats(user_type: MemberCasual):
@@ -38,12 +49,14 @@ def get_user_type_stats(user_type: MemberCasual):
     if user_type not in MemberCasual:
         raise HTTPException(status_code=400, detail="Invalid user type")
     # Load ride data and compute statistics for the specified user type
-    df = load_ride_data()
-    return stats.compute_user_type_stats(df, user_type)
+    rides = load_ride_data()
+    distances = load_distances_data()
+    return compute_user_type_stats(rides, distances, user_type)
 
 @router.get("/day", response_model=list[DailyStats])
 def get_daily_stats():
     """Get daily statistics for each day of the week."""
     # Load ride data and compute daily statistics
-    df = load_ride_data()
-    return stats.compute_daily_stats(df)
+    rides = load_ride_data()
+    distances = load_distances_data()
+    return compute_daily_stats(rides, distances)

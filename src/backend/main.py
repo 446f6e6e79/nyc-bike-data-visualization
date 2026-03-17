@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routes import stations, rides, stats
 from services.rides import load_ride_data
+from services.distances import load_distances_data
 
 TEST_ENV_VAR = "TEST_MODE"
 
@@ -22,7 +23,10 @@ def _is_historical_test_mode_enabled() -> bool:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Load historical data once on startup."""
-    load_ride_data(test=_is_historical_test_mode_enabled())
+    test = _is_historical_test_mode_enabled()
+    load_ride_data(test=test, inMemory=True)
+    load_distances_data(test=test, inMemory=True)
+
     yield
 
 

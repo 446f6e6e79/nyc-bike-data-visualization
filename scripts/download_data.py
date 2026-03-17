@@ -218,6 +218,8 @@ def download_weather_data(min_date: str, max_date: str) -> None:
 
     weather_data.write_parquet(
         WEATHER_DATA_DIR,
+        row_group_size=100_000,   # smaller = faster predicate pushdown
+        statistics=True,           # enables min/max skipping
         partition_by=["year"],          
         compression=PARQUET_COMPRESSION,
     )
@@ -279,6 +281,8 @@ def compute_and_save_station_distances() -> None:
     distances_df = pl.DataFrame(pair_rows)
     distances_df.write_parquet(
         STATION_DISTANCES_PATH,
+        row_group_size=100_000,   # smaller = faster predicate pushdown
+        statistics=True,           # enables min/max skipping
         compression=PARQUET_COMPRESSION,
     )
     print(f"Wrote {distances_df.height} station-pair distances to {STATION_DISTANCES_PATH}")
@@ -341,7 +345,9 @@ def download_and_convert_files(filtered_files: list, base_data_url: str, output_
         # Write the combined DataFrame to a parquet file, partitioned by year and month
         trip_data.write_parquet(
             output_dir,
-            partition_by=["year", "month"], 
+            row_group_size=100_000,   # smaller = faster predicate pushdown
+            statistics=True,           # enables min/max skipping
+            partition_by=["year", "month"],
             compression=PARQUET_COMPRESSION)
         
         print(f"Wrote {trip_data.height} rows to {output_dir} for file {f}")

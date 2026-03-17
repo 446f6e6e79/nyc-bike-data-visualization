@@ -17,11 +17,15 @@ DATA_DIR = PROJECT_ROOT / "data"
 RIDE_DATA_DIR = DATA_DIR / "rides"
 TEST_DATA_DIR = BACKEND_ROOT / "tests" / "test_data"
 
-def load_ride_data(test=False) -> RideFrame:
+def load_ride_data(test=False, inMemory=False) -> RideFrame:
     """
     Load all historical CitiBike trip CSV files from the given directory into
     a single DataFrame. The result is cached in memory after the first call using
     a singleton pattern
+
+    Parameters:
+    - test: if True, load the data from the committed test dataset instead of the full historical data. This is useful for testing and development to avoid loading large datasets.
+    - inMemory: if True, collect the LazyFrame into a DataFrame and keep it in memory for faster access on subsequent calls. If False, return a LazyFrame that will be executed on demand.
     """
     global _rides_df
     if _rides_df is not None:
@@ -36,16 +40,9 @@ def load_ride_data(test=False) -> RideFrame:
     
     else:
         # Otherwise, scan all parquet files recursively from partitioned folders
-        parquet_files = sorted(str(path) for path in RIDE_DATA_DIR.rglob("*.parquet"))
-        if not parquet_files:
-            raise FileNotFoundError(
-                f"No parquet ride files found under {RIDE_DATA_DIR}. "
-                "Expected partitioned data like year=*/month=*/*.parquet."
-            )
-        _rides_df = pl.scan_parquet(parquet_files)
-
+        _rides_df = pl.scan_parquet(str(RIDE_DATA_DIR / "**/*.parquet"), hive_partitioning=True)
     print("Ride data loaded successfully.")
-    
+
     print("Cleaning data...")
     time = datetime.now()
     _rides_df = _clean_data(_rides_df)
@@ -55,9 +52,16 @@ def load_ride_data(test=False) -> RideFrame:
     time = datetime.now()
     _rides_df = _extract_features(_rides_df)
     print(f"Ride features extracted in {(datetime.now() - time).total_seconds():.2f} seconds.")
+    
+    print("Final data schema:")
+    if isinstance(_rides_df, pl.LazyFrame):
+        print(_rides_df.collect_schema())
+    else:
+        print(_rides_df.schema)
 
     print("Data loaded and cleaned successfully.")
-
+    #TODO: consider the introduction of this line
+    _rides_df = _rides_df.collect() if isinstance(_rides_df, pl.LazyFrame) and inMemory else _rides_df
     return _rides_df
 
 def _clean_data(df: RideFrame) -> RideFrame:
@@ -82,7 +86,7 @@ def _clean_data(df: RideFrame) -> RideFrame:
         schema = df.collect_schema() if isinstance(df, pl.LazyFrame) else df.schema
     except Exception:
         schema = None
-        
+
     for col in ("started_at", "ended_at"):
         if schema is None or schema.get(col) == pl.Utf8:
             df = df.with_columns(
