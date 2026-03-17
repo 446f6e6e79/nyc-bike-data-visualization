@@ -3,10 +3,10 @@ from datetime import date
 import polars as pl
 from fastapi import APIRouter, HTTPException, Query
 
-from services.rides import get_filtered_rides
-from loaders.distances_loader import load_distances_data
-from models.stats import UserTypeStats
-from models.ride import MemberCasual
+from src.backend.services.rides import get_filtered_rides
+from src.backend.loaders.distances_loader import load_distances_data
+from src.backend.models.stats import UserTypeStats
+from src.backend.models.ride import MemberCasual
 
 router = APIRouter(prefix="/statistics", tags=["statistics"])
 

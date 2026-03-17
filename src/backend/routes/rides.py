@@ -1,9 +1,9 @@
 import polars as pl
 from datetime import date
 from fastapi import APIRouter, HTTPException, Query
-from models.ride import MemberCasual, Ride, RideableType
-from services.rides import get_filtered_rides
-from loaders.rides_loader import RideFrame
+from src.backend.models.ride import MemberCasual, Ride, RideableType
+from src.backend.services.rides import get_filtered_rides
+from src.backend.loaders.rides_loader import RideFrame
 
 router = APIRouter(prefix="/rides", tags=["rides"])
 

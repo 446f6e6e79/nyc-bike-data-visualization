@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from models.ride import MemberCasual, RideableType
+from src.backend.models.ride import MemberCasual, RideableType
 
 class Stats(BaseModel):
     """Base class for statistics models."""

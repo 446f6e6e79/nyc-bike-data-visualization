@@ -1,7 +1,7 @@
 import polars as pl
 from datetime import datetime
 
-from config import TEST_DATA_DIR, WEATHER_DATA_DIR
+from src.backend.config import TEST_DATA_DIR, WEATHER_DATA_DIR
 
 _weather_df: pl.DataFrame | None = None
 

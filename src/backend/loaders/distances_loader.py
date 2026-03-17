@@ -2,7 +2,7 @@ from datetime import datetime
 import polars as pl
 from typing import Union
 
-from config import TEST_DATA_DIR, STATION_DISTANCES_PATH
+from src.backend.config import TEST_DATA_DIR, STATION_DISTANCES_PATH
 
 DistanceFrame = Union[pl.DataFrame, pl.LazyFrame]
 _distances_df: DistanceFrame | None = None

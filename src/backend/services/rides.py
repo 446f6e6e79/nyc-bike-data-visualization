@@ -1,7 +1,7 @@
 import polars as pl
 from datetime import date
-from models.ride import MemberCasual, RideableType
-from loaders.rides_loader import load_ride_data
+from src.backend.models.ride import MemberCasual, RideableType
+from src.backend.loaders.rides_loader import load_ride_data
 
 # Filter rides based on various criteria.
 def get_filtered_rides(
@@ -24,8 +24,10 @@ def get_filtered_rides(
     - end_station_id: Filter by end station ID
     Returns a LazyFrame of filtered rides.
     """
-    print("Applying filters to ride data...")
-    rides = load_ride_data()
+    # TODO: check if this should be implemented in the data downloading step
+    rides = load_ride_data().with_columns(
+        pl.col("started_at").str.strptime(pl.Datetime, strict=False)
+    )
     
     # Build filter expression
     filter_expr = pl.lit(True)  # Start with always-true condition
@@ -38,6 +40,9 @@ def get_filtered_rides(
     
     if start_date is not None or end_date is not None:
         date_col = pl.col("started_at").dt.date()
+        print(f"Type of date_col: {type(date_col)}, value: {date_col}")
+        print(f"Type of start_date: {type(start_date)}, value: {start_date}")
+    
         if start_date is not None:
             filter_expr &= date_col >= start_date
         if end_date is not None:

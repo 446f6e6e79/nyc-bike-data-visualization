@@ -1,7 +1,7 @@
 import polars as pl
 from datetime import datetime
 from typing import Union
-from config import RIDE_DATA_DIR, TEST_DATA_DIR
+from src.backend.config import RIDE_DATA_DIR, TEST_DATA_DIR
 
 RideFrame = Union[pl.DataFrame, pl.LazyFrame]
 _rides_df: RideFrame | None = None

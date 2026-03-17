@@ -4,6 +4,8 @@ from threading import Lock
 import requests
 from fastapi import HTTPException
 
+from src.backend.models.station import Station
+
 # URLs provided by Lyft's GBFS feed
 INFO_URL = "https://gbfs.lyft.com/gbfs/2.3/bkn/en/station_information.json"
 STATUS_URL = "https://gbfs.lyft.com/gbfs/2.3/bkn/en/station_status.json"
@@ -30,7 +32,6 @@ def _fetch_from_source() -> tuple[list, dict]:
     status = requests.get(STATUS_URL, timeout=(3, 10)).json()["data"]["stations"]
     status_map = {s["station_id"]: s for s in status}
     return info, status_map
-
 
 def fetch_station_data(force_refresh: bool = False) -> tuple[list, dict]:
     """
@@ -69,3 +70,37 @@ def fetch_station_data(force_refresh: bool = False) -> tuple[list, dict]:
         _cache["status_map"] = status_map
 
     return info, status_map
+
+def _build_station_info(station_data: dict) -> Station:
+    """Build a Station response model with static station information only."""
+    return Station(
+        id=str(station_data["short_name"]),
+        name=station_data["name"],
+        lat=station_data["lat"],
+        lon=station_data["lon"],
+        bikes=None,
+        docks=None,
+    )
+
+def _find_station_by_id(station_data: list[dict], station_id: str) -> dict:
+    """Find a station by its public short_name identifier."""
+    for station in station_data:
+        if station["short_name"] == station_id:
+            return station
+
+    raise HTTPException(status_code=404, detail="Station not found")
+
+def _merge_station(station_data: dict, station_status_data: dict) -> Station:
+    """Build a Station response model from raw info + status data."""
+    # Retrieve the status for this station, defaulting to empty dict if not found
+    st = station_status_data.get(station_data["station_id"], {})
+    
+    return Station(
+        # To have consistency with historical data, we use the short_name as the station_id
+        id=str(station_data["short_name"]),
+        name=station_data["name"],
+        lat=station_data["lat"],
+        lon=station_data["lon"],
+        bikes=st.get("num_bikes_available", 0),
+        docks=st.get("num_docks_available", 0),
+    )
