@@ -16,7 +16,7 @@ STATION_DISTANCES_FILE = STATIONS_DATA_DIR / "station_pair_distances.parquet"
 TEST_DATA_DIR = BACKEND_ROOT / "tests" / "test_data"
 
 
-def load_distances_data(test=False, inMemory=False) -> DistanceFrame:
+def load_distances_data(inMemory=False, test=False) -> DistanceFrame:
     """
     Load all historical distances data from the given directory into
     a single DataFrame. The result is cached in memory after the first call using

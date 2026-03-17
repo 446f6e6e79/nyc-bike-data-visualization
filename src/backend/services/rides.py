@@ -17,7 +17,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 RIDE_DATA_DIR = DATA_DIR / "rides"
 TEST_DATA_DIR = BACKEND_ROOT / "tests" / "test_data"
 
-def load_ride_data(test=False, inMemory=False) -> RideFrame:
+def load_ride_data(inMemory: bool=False, test=False) -> RideFrame:
     """
     Load all historical CitiBike trip CSV files from the given directory into
     a single DataFrame. The result is cached in memory after the first call using
@@ -30,7 +30,7 @@ def load_ride_data(test=False, inMemory=False) -> RideFrame:
     global _rides_df
     if _rides_df is not None:
         return _rides_df
-
+    
     print("Loading ride data...")
 
     if test:
@@ -45,12 +45,12 @@ def load_ride_data(test=False, inMemory=False) -> RideFrame:
 
     print("Cleaning data...")
     time = datetime.now()
-    _rides_df = _clean_data(_rides_df)
+    #_rides_df = _clean_data(_rides_df)
     print(f"Data cleaned in {(datetime.now() - time).total_seconds():.2f} seconds.")
 
     print("Extracting ride features...")
     time = datetime.now()
-    _rides_df = _extract_features(_rides_df)
+    #_rides_df = _extract_features(_rides_df)
     print(f"Ride features extracted in {(datetime.now() - time).total_seconds():.2f} seconds.")
     
     print("Final data schema:")
@@ -60,7 +60,7 @@ def load_ride_data(test=False, inMemory=False) -> RideFrame:
         print(_rides_df.schema)
 
     print("Data loaded and cleaned successfully.")
-    #TODO: consider the introduction of this line
+    # Collect into memory if inMemory is True or if we are in test mode
     _rides_df = _rides_df.collect() if isinstance(_rides_df, pl.LazyFrame) and inMemory else _rides_df
     return _rides_df
 

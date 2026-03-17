@@ -6,7 +6,12 @@ from services.distances import DistanceFrame
 
 def _collect_if_lazy(df: RideFrame) -> pl.DataFrame:
     """Helper function to collect a LazyFrame if needed."""
-    return df.collect() if isinstance(df, pl.LazyFrame) else df
+    if isinstance(df, pl.LazyFrame):
+        print("Collecting LazyFrame into memory...")
+        collected_df = df.collect()
+        print(f"Collected LazyFrame.")
+        return collected_df
+    return df
 
 def _to_float(value: float | None) -> float:
     return float(value) if value is not None else 0.0
@@ -27,30 +32,34 @@ def _enrich_with_trip_distance(rides: RideFrame, distances: DistanceFrame) -> pl
 
     enriched = enriched.with_columns(
         pl.col("distance_km").fill_null(0.0)
-    )
+    ).drop(["station_id_a", "station_id_b"])
     return enriched
 
-def _compute_base_stats(rides: RideFrame, distances: DistanceFrame, year: int=2026) -> Stats:
-    print(f"Filtering for year {year}...")
+def _compute_base_stats(rides: RideFrame, distances: DistanceFrame, year: int = 2026) -> Stats:
+    # Filter first if needed (more efficient before enrichment)
     if year:
-        rides = rides.filter(pl.col('start_year') == year)
-    print(f"Filtered")
-    print("Enriching with trip distance...")
-    rides_with_distance = _enrich_with_trip_distance(rides, distances)
-    print("Enriched with trip distance.")
+        rides = rides.filter(pl.col('year') == year)
+    # Only keep columns needed for the enrichment and final stats
+    rides_subset = rides.select([
+        'start_station_id', 
+        'end_station_id', 
+        'trip_duration'
+    ])
+    
+    rides_with_distance = _enrich_with_trip_distance(rides_subset, distances)
 
-    print("Aggregating statistics...")
+    # Single pass aggregation with expressions
     aggregated = rides_with_distance.select(
         pl.len().alias("total_rides"),
-        pl.col("trip_duration").mean().alias("average_duration_seconds"),
+        pl.col().mean().alias("average_duration_seconds"),
         pl.col("distance_km").mean().alias("average_distance_km"),
         pl.col("trip_duration").sum().alias("total_duration_seconds"),
         pl.col("distance_km").sum().alias("total_distance_km"),
     )
-    print("Aggregated statistics.")
-    print("Collecting results...")
+    
     row = _collect_if_lazy(aggregated).row(0, named=True)
-    print("Collected results.")
+    
+    # Direct dictionary unpacking - cleaner and faster
     return Stats(
         total_rides=int(row["total_rides"]),
         average_duration_seconds=_to_float(row["average_duration_seconds"]),
@@ -58,7 +67,6 @@ def _compute_base_stats(rides: RideFrame, distances: DistanceFrame, year: int=20
         total_duration_seconds=_to_float(row["total_duration_seconds"]),
         total_distance_km=_to_float(row["total_distance_km"]),
     )
-
 
 def compute_all_ride_type_stats(rides_df: RideFrame, distances_df: DistanceFrame) -> list[RideTypeStats]:
     """Compute statistics for all rideable types"""
