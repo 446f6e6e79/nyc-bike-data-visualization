@@ -28,3 +28,14 @@ It offers a wide range of datasets, dashboards, and maps related to the city's t
 
 However, we want to keep our analysis focused on the bike-sharing system, and the \texttt{Citi Bike} System Data already provides a comprehensive view of the city's bike rental patterns.
 Therefore, we decided to avoid adding unnecessary complexity by incorporating additional datasets from NYC Open Data, unless they are needed to provide further context or support specific insights.
+
+\subsection{Datasets Limitations}
+
+Another important aspect concerns the quality and consistency of the available data.
+Historical \texttt{Citi Bike} records were collected over multiple years, and they may contain missing values, inconsistencies, or differences in formatting and schema across datasets.
+For this reason, a careful preprocessing phase is required to clean, standardize, and integrate the data before any reliable analysis can be performed.
+
+Then, the integration of weather data also introduces challenges, as it requires aligning granularity in both time and space with the bike trip records.
+
+Finally, the large size of the dataset introduces additional technical challenges.
+Efficient aggregation, filtering, and data handling strategies must be implemented to manage the volume of information effectively. 
