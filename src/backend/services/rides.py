@@ -1,12 +1,14 @@
 import polars as pl
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 
 """
     TODO: check for other possible data cleaning steps / feature extraction.
     E.g., check if it is possible to extract the length of the trip from the start and end station coordinates
 """
-_rides_df: pl.DataFrame | None = None
+RideFrame = Union[pl.DataFrame, pl.LazyFrame]
+_rides_df: RideFrame | None = None
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -15,7 +17,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 RIDE_DATA_DIR = DATA_DIR / "rides"
 TEST_DATA_DIR = BACKEND_ROOT / "tests" / "test_data"
 
-def load_ride_data(test=False) -> pl.DataFrame:
+def load_ride_data(test=False) -> RideFrame:
     """
     Load all historical CitiBike trip CSV files from the given directory into
     a single DataFrame. The result is cached in memory after the first call using
@@ -33,8 +35,14 @@ def load_ride_data(test=False) -> pl.DataFrame:
         _rides_df = pl.read_csv(str(TEST_DATA_DIR / "trips.csv"))
     
     else:
-        # Otherwise, scan all the parquet files
-        _rides_df = pl.scan_parquet(str(RIDE_DATA_DIR / "*.parquet"))
+        # Otherwise, scan all parquet files recursively from partitioned folders
+        parquet_files = sorted(str(path) for path in RIDE_DATA_DIR.rglob("*.parquet"))
+        if not parquet_files:
+            raise FileNotFoundError(
+                f"No parquet ride files found under {RIDE_DATA_DIR}. "
+                "Expected partitioned data like year=*/month=*/*.parquet."
+            )
+        _rides_df = pl.scan_parquet(parquet_files)
 
     print("Ride data loaded successfully.")
     
@@ -52,7 +60,7 @@ def load_ride_data(test=False) -> pl.DataFrame:
 
     return _rides_df
 
-def _clean_data(df: pl.DataFrame) -> pl.DataFrame:
+def _clean_data(df: RideFrame) -> RideFrame:
     """
     Perform basic cleaning on the historical data:
     - Handle missing values by dropping rows with critical missing fields
@@ -69,10 +77,16 @@ def _clean_data(df: pl.DataFrame) -> pl.DataFrame:
     df = df.drop_nulls(subset=required_cols)
 
     # Parse timestamps if they are still strings (e.g. when loaded from CSV)
+    schema = None
+    try:
+        schema = df.collect_schema() if isinstance(df, pl.LazyFrame) else df.schema
+    except Exception:
+        schema = None
+        
     for col in ("started_at", "ended_at"):
-        if df[col].dtype == pl.Utf8:
+        if schema is None or schema.get(col) == pl.Utf8:
             df = df.with_columns(
-                pl.col(col).str.strptime(pl.Datetime, strict=False)
+                pl.col(col).cast(pl.Utf8).str.strptime(pl.Datetime, strict=False)
             )
 
     # Drop rows where timestamps could not be parsed or trip ends before it starts
@@ -80,7 +94,7 @@ def _clean_data(df: pl.DataFrame) -> pl.DataFrame:
     df = df.filter(pl.col("ended_at") >= pl.col("started_at"))
     return df
 
-def _extract_features(df: pl.DataFrame) -> pl.DataFrame:
+def _extract_features(df: RideFrame) -> RideFrame:
     """
     Extract ride-level features from cleaned historical data:
     - Time-based features (year, month, day of week, hour, day type)
