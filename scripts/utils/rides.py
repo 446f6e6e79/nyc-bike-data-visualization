@@ -117,7 +117,7 @@ def download_and_convert_files(filtered_files: list, base_data_url: str, output_
             pl.lit(month).alias("month"),
         ])
         print("Starting data cleaning...")
-        clean_rides_data(trip_data)
+        trip_data = clean_rides_data(trip_data)
         print("Data cleaning completed.")
         # Write the combined DataFrame to a parquet file, partitioned by year and month
         trip_data.write_parquet(
