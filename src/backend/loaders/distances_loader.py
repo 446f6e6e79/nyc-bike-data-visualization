@@ -17,9 +17,11 @@ def load_distances_data(inMemory=False, test=False) -> DistanceFrame:
     - inMemory: if True, collect the LazyFrame into a DataFrame and keep it in memory for faster access on subsequent calls.
     """
     global _distances_df
+    # If the data is already loaded and cached, return it directly
     if _distances_df is not None:
         return _distances_df
 
+    # Otherwise, load the data from the source (CSV for test mode, Parquet for production)
     print("Loading distances data...")
     start_time = datetime.now()
 

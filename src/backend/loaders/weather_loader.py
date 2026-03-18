@@ -14,9 +14,10 @@ def load_weather_data(inMemory: bool = False, test: bool = False) -> WeatherFram
     a singleton pattern
     """
     global _weather_df
+    # If the data is already loaded and cached, return it directly
     if _weather_df is not None:
         return _weather_df
-
+    # Otherwise, load the data from the source (CSV for test mode, Parquet for production)
     print("Loading weather data...")
     start_time = datetime.now()
 

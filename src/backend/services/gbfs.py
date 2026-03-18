@@ -15,7 +15,6 @@ _cache: dict = {
     "status_map": None,
 }
 
-
 def _fetch_from_source() -> tuple[list, dict]:
     """
     Fetch station information and status directly from the GBFS source API.

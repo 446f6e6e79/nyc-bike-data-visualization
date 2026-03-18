@@ -4,7 +4,6 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-
 class RideableType(str, Enum):
     """
     Enum for the type of rideable used in the CitiBike system. Possible values include:
@@ -13,7 +12,6 @@ class RideableType(str, Enum):
     """
     CLASSIC_BIKE = "classic_bike"
     ELECTRIC_BIKE = "electric_bike"
-
 
 class MemberCasual(str, Enum):
     """
@@ -46,4 +44,5 @@ class Ride(BaseModel):
     end_lat: float
     end_lng: float
     member_casual: MemberCasual
-    weather: Optional[Weather] = None # Considered weather at start
+    distance_km: Optional[float] = None # Precomputed distance between start and end stations, can be None if not yet computed
+    weather: Optional[Weather] = None # Considered weather at start time

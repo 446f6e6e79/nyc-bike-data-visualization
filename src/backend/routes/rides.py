@@ -2,8 +2,10 @@ import polars as pl
 from datetime import date
 from fastapi import APIRouter, HTTPException, Query
 from src.backend.models.ride import MemberCasual, Ride, RideableType
-from src.backend.services.rides import get_filtered_rides
+from src.backend.services.rides import get_filtered_rides, enrich_rides_with_weather, enrich_rides_with_distances
 from src.backend.loaders.rides_loader import RideFrame
+from src.backend.loaders.weather_loader import load_weather_data
+from src.backend.loaders.distances_loader import load_distances_data
 
 router = APIRouter(prefix="/rides", tags=["rides"])
 
@@ -21,13 +23,20 @@ def get_rides(
     end_station_id: str | None = Query(default=None),
 ):
     """Get all historical rides."""
-    df = get_filtered_rides(user_type=user_type, 
+    rides = get_filtered_rides(user_type=user_type, 
                             bike_type=bike_type,
                             start_date=start_date, 
                             end_date=end_date, 
                             start_station_id=start_station_id, 
                             end_station_id=end_station_id)
-    return _collect_if_lazy(df).to_dicts()
+    # Enrich rides with distances data
+    distances = load_distances_data()
+    rides = enrich_rides_with_distances(rides, distances)
+    # Enrich rides with weather data
+    weather = load_weather_data()
+    rides = enrich_rides_with_weather(rides, weather)
+
+    return _collect_if_lazy(rides).to_dicts()
 
 @router.get("/by_ride_id/{ride_id}", response_model=Ride)
 def get_ride(ride_id: str):
@@ -38,8 +47,18 @@ def get_ride(ride_id: str):
     if len(ride_id) != 16:
         raise HTTPException(status_code=400, detail="Invalid ride ID format. Must be 16 characters long.")
     
-    df = get_filtered_rides(ride_id=ride_id)
-    result = _collect_if_lazy(df).to_dicts()
-    if not result:
-        raise HTTPException(status_code=404, detail="Ride not found.")
-    return result[0]
+    rides = get_filtered_rides(ride_id=ride_id)   
+    
+    # Enrich rides with distances data
+    distances = load_distances_data()
+    result = enrich_rides_with_distances(rides, distances)
+    
+    # Enrich rides with weather data
+    weather = load_weather_data()
+    result = enrich_rides_with_weather(result, weather)
+    
+    result = _collect_if_lazy(result)
+    # Check if the result is empty after filtering by ride_id
+    if result.is_empty():
+        raise HTTPException(status_code=404, detail="Ride not found")
+    return _collect_if_lazy(result).to_dicts()[0]

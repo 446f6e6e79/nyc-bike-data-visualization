@@ -53,3 +53,52 @@ def get_filtered_rides(
         filter_expr &= pl.col("rideable_type") == bike_type.value
 
     return rides.filter(filter_expr)
+
+def enrich_rides_with_weather(rides: pl.LazyFrame, weather: pl.LazyFrame) -> pl.LazyFrame:
+    """
+    Enrich rides with nearest hourly weather record based on started_at.
+    Returns rides with a nested `weather` struct column.
+    """
+    weather_cols = [c for c in weather.columns if c != "time"]
+    
+    return (
+        rides
+        .join_asof(
+            weather,
+            left_on="started_at",
+            right_on="time",
+            strategy="nearest",
+            tolerance="30m",
+        )
+        .with_columns(
+            pl.struct("time", *weather_cols).alias("weather")
+        )
+        .drop("time", *weather_cols)
+    )
+
+def enrich_rides_with_distances(rides: pl.LazyFrame, distances: pl.LazyFrame) -> pl.LazyFrame:
+    """
+    Enrich rides with distance_km using unordered station pairs.
+    rides: start_station_id, end_station_id
+    distances: station_id_a, station_id_b (canonicalized with a < b)
+    """
+    # Issue: Redundant normalization if distances is already canonicalized
+    # Consider documenting whether distances MUST be pre-canonicalized
+    
+    rides_norm = rides.with_columns(
+        pl.min_horizontal("start_station_id", "end_station_id").alias("_station_min"),
+        pl.max_horizontal("start_station_id", "end_station_id").alias("_station_max"),
+    )
+    
+    # If distances is already canonicalized, simplify:
+    distances_select = distances.select([
+        pl.col("station_id_a").alias("_station_min"),
+        pl.col("station_id_b").alias("_station_max"),
+        "distance_km"
+    ])
+    
+    return (
+        rides_norm
+        .join(distances_select, on=["_station_min", "_station_max"], how="left")
+        .drop(["_station_min", "_station_max"])
+    )

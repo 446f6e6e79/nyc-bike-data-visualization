@@ -16,9 +16,10 @@ def load_ride_data(inMemory: bool=False, test=False) -> RideFrame:
     - inMemory: if True, collect the LazyFrame into a DataFrame and keep it in memory for faster access on subsequent calls. If False, return a LazyFrame that will be executed on demand.
     """
     global _rides_df
+    # If the data is already loaded and cached, return it directly
     if _rides_df is not None:
         return _rides_df
-    
+    # Otherwise, load the data from the source (CSV for test mode, Parquet for production)
     print("Loading ride data...")
 
     if test:
