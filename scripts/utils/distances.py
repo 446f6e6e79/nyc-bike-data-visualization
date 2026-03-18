@@ -9,17 +9,17 @@ from src.backend.services.gbfs import fetch_station_data
 
 from src.backend.config import STREET_CIRCUITY_FACTOR, PARQUET_COMPRESSION, STATION_DISTANCES_PATH
 
-#TODO: This is a placeholder for now, it's harvesine distance multiplied by a circuity factor to approximate real-world distances (street).
-def distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+def _distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
-    Calculate straight-line distance in kilometers between two coordinates.
+    Compute the ditance in kilometers between two lat/lon points using the Haversine formula,
+    multiplied by a circuity factor to approximate real-world travel distance.
     """
     lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
     d_lon = lon2 - lon1
     d_lat = lat2 - lat1
     a = math.sin(d_lat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(d_lon / 2) ** 2
     c = 2 * math.asin(math.sqrt(a))
-    return 6371 * c
+    return 6371 * c * STREET_CIRCUITY_FACTOR
 
 def compute_and_save_station_distances() -> None:
     """
@@ -46,13 +46,12 @@ def compute_and_save_station_distances() -> None:
     print(f"Computing station-pair distances for {len(stations)} stations")
     for i, station_a in enumerate(stations):
         for station_b in stations[i + 1 :]:
-            straight_line_km = distance_km(
+            distance = _distance_km(
                 station_a["lat"],
                 station_a["lon"],
                 station_b["lat"],
                 station_b["lon"],
             )
-            distance = straight_line_km * STREET_CIRCUITY_FACTOR
             pair_rows.append(
                 {
                     "station_id_a": station_a["id"],

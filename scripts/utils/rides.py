@@ -4,8 +4,10 @@ import requests
 import zipfile
 import polars as pl
 from src.backend.config import PARQUET_COMPRESSION, YEARLY_CUTOFF
+import xml.etree.ElementTree as ET
+import requests
 
-def extract_coverage_from_filename(file_name: str) -> tuple[int, int]:
+def _extract_coverage_from_filename(file_name: str) -> tuple[int, int]:
     """
     Extract the coverage period from the file name. 
     The file name can be in one of the following formats:
@@ -35,7 +37,7 @@ def extract_coverage_from_filename(file_name: str) -> tuple[int, int]:
 
     raise ValueError(f"Unsupported date format in file name: {file_name}")
 
-def clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
+def _clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
     """
     Perform basic cleaning on the historical data:
     - Handle missing values by dropping rows with critical missing fields
@@ -76,7 +78,7 @@ def download_and_convert_files(filtered_files: list, base_data_url: str, output_
     """
     for f in filtered_files:
         # Extract year and month for partitioning from the file name
-        start_date, _ = extract_coverage_from_filename(f)
+        start_date, _ = _extract_coverage_from_filename(f)
         year = start_date // 100
         month = start_date % 100
 
@@ -120,7 +122,7 @@ def download_and_convert_files(filtered_files: list, base_data_url: str, output_
             pl.lit(month).alias("month"),
         ])
         print("Starting data cleaning...")
-        trip_data = clean_rides_data(trip_data)
+        trip_data = _clean_rides_data(trip_data)
         print("Data cleaning completed.")
         # Write the combined DataFrame to a parquet file, partitioned by year and month
         trip_data.write_parquet(
@@ -132,3 +134,64 @@ def download_and_convert_files(filtered_files: list, base_data_url: str, output_
         
         print(f"Wrote {trip_data.height} rows to {output_dir} for file {f}")
 
+def filter_files(files: list, start_date: str, end_date: str, download_jc: bool) -> list:
+    """
+    Filter the list of files by date range and dataset type (JC or non-JC).
+    Args:
+        files (list): The list of file keys to filter.
+        start_date (str): The start date in the format YYYYMM.
+        end_date (str): The end date in the format YYYYMM.
+        download_jc (bool): Whether to include JC dataset files.
+    Returns:
+        list: A filtered list of file keys that match the criteria.
+    """
+    # Extract the date part from the file name and filter by date range
+    start_value = int(start_date) if start_date else None
+    end_value = int(end_date) if end_date else None
+    filtered_files = []
+
+    for f in files:
+        # If the file is from the JC dataset and we don't want to download it, skip it
+        if f.startswith("JC") and not download_jc:
+            continue
+        try:
+            # Extract the coverage period from the file name
+            file_start, file_end = _extract_coverage_from_filename(f)
+        except ValueError:
+            continue
+
+        # If the start value is set and the file ends before the start value, skip it
+        if start_value and file_end < start_value:
+            continue
+        # If the end value is set and the file starts after the end value, skip it
+        if end_value and file_start > end_value:
+            continue
+        # If the file passes all filters, add it to the list of filtered files
+        filtered_files.append(f)
+    print(f"Selected {len(filtered_files)} files")
+    return filtered_files
+
+def find_files(base_data_url: str) -> list[str]:
+    """
+    Get the list of files available in the S3 bucket.
+    Args:
+        base_data_url (str): The base URL of the S3 bucket.
+    Returns:
+        list: A list of file keys available in the S3 bucket.
+    """
+    # Get S3 bucket index
+    response = requests.get(base_data_url)
+    response.raise_for_status()
+    
+    # Parse the XML response
+    root = ET.fromstring(response.text)
+
+    # Extract file keys
+    files = []
+    for content in root.findall("{http://s3.amazonaws.com/doc/2006-03-01/}Contents"):
+        key = content.find("{http://s3.amazonaws.com/doc/2006-03-01/}Key").text
+        if key.endswith(".zip"):
+            files.append(key)
+
+    print(f"Found {len(files)} files")
+    return files
