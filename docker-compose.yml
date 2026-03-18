@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: dockers/Dockerfile.backend
+    container_name: data-visualisation-backend
+    init: true
+    environment:
+      HISTORICAL_DATA_DIR: /app/data/rides
+      DISTANCES_DATA_DIR: /app/data/stations
+      WEATHER_DATA_DIR: /app/data/weather
+    ports:
+      - "8000:8000"
+    stop_signal: SIGINT
+    stop_grace_period: 5s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: dockers/Dockerfile.frontend
+    container_name: data-visualisation-frontend
+    init: true
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    stop_signal: SIGINT
+    stop_grace_period: 5s
