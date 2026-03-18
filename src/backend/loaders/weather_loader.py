@@ -7,6 +7,17 @@ from src.backend.config import TEST_DATA_DIR, WEATHER_DATA_DIR
 WeatherFrame = Union[pl.DataFrame, pl.LazyFrame]
 _weather_df: WeatherFrame | None = None
 
+
+def _normalize_weather_types(df: WeatherFrame) -> WeatherFrame:
+    """Normalize weather column types to keep join and response schemas consistent."""
+    return df.with_columns(
+        pl.col("time").cast(pl.Datetime, strict=False),
+        pl.col("temperature").cast(pl.Float64, strict=False),
+        pl.col("wind_speed").cast(pl.Float64, strict=False),
+        pl.col("precipitation").cast(pl.Float64, strict=False),
+        pl.col("weather_code").cast(pl.Int64, strict=False),
+    )
+
 def load_weather_data(inMemory: bool = False, test: bool = False) -> WeatherFrame:
     """
     Load all historical weather data from the given directory into
@@ -25,7 +36,7 @@ def load_weather_data(inMemory: bool = False, test: bool = False) -> WeatherFram
         # If we are in test mode, load the csv file from the committed test dataset
         print("Test mode enabled: loading data from committed test dataset.")
         _weather_df = pl.read_csv(str(TEST_DATA_DIR / "weather.csv"))
-    
+        _weather_df = _normalize_weather_types(_weather_df)
     else:
         # Otherwise, scan all the parquet files
         _weather_df = pl.scan_parquet(str(WEATHER_DATA_DIR / "**/*.parquet"), hive_partitioning=True)

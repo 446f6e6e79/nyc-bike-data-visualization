@@ -7,6 +7,15 @@ from src.backend.config import TEST_DATA_DIR, STATION_DISTANCES_PATH
 DistanceFrame = Union[pl.DataFrame, pl.LazyFrame]
 _distances_df: DistanceFrame | None = None
 
+
+def _normalize_distances_types(df: DistanceFrame) -> DistanceFrame:
+    """Normalize distance column types to avoid mixed-type comparison/join errors."""
+    return df.with_columns(
+        pl.col("station_id_a").cast(str, strict=False),
+        pl.col("station_id_b").cast(str, strict=False),
+        pl.col("distance_km").cast(float, strict=False),
+    )
+
 def load_distances_data(inMemory=False, test=False) -> DistanceFrame:
     """
     Load all historical distances data from the given directory into
@@ -29,7 +38,7 @@ def load_distances_data(inMemory=False, test=False) -> DistanceFrame:
         # If we are in test mode, load the csv file from the committed test dataset
         print("Test mode enabled: loading data from committed test dataset.")
         _distances_df = pl.read_csv(str(TEST_DATA_DIR / "distances.csv"))
-    
+        _distances_df = _normalize_distances_types(_distances_df)
     else:
         _distances_df = pl.scan_parquet(str(STATION_DISTANCES_PATH))
 
