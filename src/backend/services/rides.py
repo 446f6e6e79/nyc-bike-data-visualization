@@ -2,6 +2,8 @@ import polars as pl
 from datetime import date
 from src.backend.models.ride import MemberCasual, RideableType
 from src.backend.loaders.rides_loader import load_ride_data
+from src.backend.loaders.weather_loader import load_weather_data
+from src.backend.loaders.distances_loader import load_distances_data
 
 # Filter rides based on various criteria.
 def get_filtered_rides(
@@ -12,6 +14,8 @@ def get_filtered_rides(
     end_date: date | None = None,
     start_station_id: str | None = None,
     end_station_id: str | None = None,
+    join_weather: bool = False,
+    join_distances: bool = False
 ) -> pl.LazyFrame:
     """
     Get rides filtered by various criteria.
@@ -22,6 +26,8 @@ def get_filtered_rides(
     - start_station_id, end_station_id: Filter by station IDs
     - end_date: Filter by ride end date range
     - end_station_id: Filter by end station ID
+    - join_weather: Whether to join with weather data
+    - join_distances: Whether to join with distance data
     Returns a LazyFrame of filtered rides.
     """
     rides = load_ride_data()
@@ -51,7 +57,12 @@ def get_filtered_rides(
    
     if bike_type is not None:
         filter_expr &= pl.col("rideable_type") == bike_type.value
-
+    if join_weather:
+        weather = load_weather_data()
+        rides = enrich_rides_with_weather(rides, weather)
+    if join_distances:
+        distances = load_distances_data()
+        rides = enrich_rides_with_distances(rides, distances)
     return rides.filter(filter_expr)
 
 def enrich_rides_with_weather(rides: pl.LazyFrame, weather: pl.LazyFrame) -> pl.LazyFrame:
