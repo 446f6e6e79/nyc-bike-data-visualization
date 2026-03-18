@@ -66,3 +66,64 @@ The available options for the script are:
 - `--start-date`: The start date for filtering files (in YYYYMM format). Default is "202601".
 - `--end-date`: The end date for filtering files (in YYYYMM format). Default is "" (no end date).
 - `--download-jc`: Include files from the Jersey City dataset (those starting with "JC-"). By default, these files are excluded.
+
+## Run with Docker (Windows, Linux, macOS)
+
+Prerequisites:
+- Docker Desktop (Windows/macOS) or Docker Engine + Compose plugin (Linux)
+- Run commands from the repository root (`data-visualisation/`)
+- Use the script in `scripts/download_data.py` to download the datasets before starting the services (see instructions below)
+
+### Start all services (build images and run backend + frontend):
+
+macOS/Linux:
+```bash
+cd /path/to/data-visualisation
+docker compose up --build
+```
+
+Windows PowerShell:
+```powershell
+cd C:\path\to\data-visualisation
+docker compose up --build
+```
+
+Windows CMD:
+```cmd
+cd C:\path\to\data-visualisation
+docker compose up --build
+```
+
+### Run in background (detached mode):
+
+macOS/Linux:
+```bash
+docker compose up --build -d
+```
+
+Windows PowerShell/CMD:
+```powershell
+docker compose up --build -d
+```
+
+### Stop services:
+
+macOS/Linux:
+```bash
+docker compose down
+```
+
+Windows PowerShell/CMD:
+```powershell
+docker compose down
+```
+
+### Useful checks:
+- Service status: `docker compose ps`
+- Follow logs: `docker compose logs -f`
+
+Application URLs:
+- Frontend: `http://localhost:5173`
+- Backend API docs: `http://localhost:8000/docs`
+
+Note: Use `docker compose` (with a space). If your system only supports the legacy command, replace it with `docker-compose`.

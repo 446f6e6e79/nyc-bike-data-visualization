@@ -1,0 +1,57 @@
+name: Docker Action Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - docker-compose.yml
+      - dockers/**
+      - .github/workflows/docker-action-check.yml
+  pull_request:
+    paths:
+      - docker-compose.yml
+      - dockers/**
+      - .github/workflows/docker-action-check.yml
+
+jobs:
+  validate-docker-setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Docker setup files
+        run: |
+          set -euo pipefail
+          test -f docker-compose.yml
+          test -f dockers/Dockerfile.backend
+          test -f dockers/Dockerfile.frontend
+          grep -q "dockerfile: dockers/Dockerfile.backend" docker-compose.yml
+          grep -q "dockerfile: dockers/Dockerfile.frontend" docker-compose.yml
+
+      - name: Validate compose syntax
+        run: docker compose -f docker-compose.yml config > /dev/null
+
+      - name: Build and start services
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.yml build
+          docker compose -f docker-compose.yml up -d
+
+      - name: Check backend and frontend liveness
+        run: |
+          set -euo pipefail
+          sleep 10
+          curl -fsS http://localhost:8000/docs > /dev/null
+          curl -fsS http://localhost:5173 > /dev/null
+          echo "Docker setup validation passed at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Tear down Docker compose setup
+        if: always()
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.yml down -v

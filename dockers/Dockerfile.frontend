@@ -1,0 +1,11 @@
+FROM node:20-alpine
+
+WORKDIR /app/src/frontend
+
+COPY src/frontend/package*.json /app/src/frontend/
+RUN npm ci
+
+COPY src/frontend/ /app/src/frontend/
+RUN npm run build
+
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]

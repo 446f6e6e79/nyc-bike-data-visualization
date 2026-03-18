@@ -1,0 +1,36 @@
+# VCS and editor files
+.git/
+.github/
+.gitignore
+.vscode/
+.idea/
+
+# Python cache and environments
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node artifacts
+node_modules/
+src/frontend/node_modules/
+src/frontend/dist/
+
+# Build/test artifacts
+htmlcov/
+.coverage
+coverage/
+
+# Project files not needed in runtime images
+docs/
+logs/
+src/notebooks/
+
+# OS junk
+.DS_Store
+Thumbs.db
