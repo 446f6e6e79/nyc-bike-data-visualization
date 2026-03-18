@@ -23,7 +23,6 @@ def load_distances_data(inMemory=False, test=False) -> DistanceFrame:
     print("Loading distances data...")
     start_time = datetime.now()
 
-    # TODO: should we implement a test dataset also for distances data?
     if test:
         # If we are in test mode, load the csv file from the committed test dataset
         print("Test mode enabled: loading data from committed test dataset.")
@@ -34,6 +33,7 @@ def load_distances_data(inMemory=False, test=False) -> DistanceFrame:
 
     end_time = datetime.now()
     print(f"Distances data loaded successfully in {end_time - start_time}.")
+    # If inMemory is True or in test mode, collect the LazyFrame into a DataFrame and keep it in memory for faster access on subsequent calls
     _distances_df = _distances_df.collect() if isinstance(_distances_df, pl.LazyFrame) and inMemory else _distances_df
 
     print("Final distances data schema:")

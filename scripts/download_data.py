@@ -12,8 +12,8 @@ from utils.distances import compute_and_save_station_distances
 from utils.rides import download_and_convert_files, filter_files, find_files
 from utils.weather import download_weather_data
 from src.backend.config import (
-    BASE_DATA_URL,
-    DOWNLOAD_DIR,
+    BASE_URL_RIDE_DATA,
+    DATA_DIR,
     RIDES_DATA_DIR,
     WEATHER_DATA_DIR,
     STATION_DATA_DIR,
@@ -72,19 +72,19 @@ def main():
         raise ValueError("--end-date cannot be in the future")
     
     # Create the download directory if it doesn't exist
-    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(RIDES_DATA_DIR, exist_ok=True)
     os.makedirs(STATION_DATA_DIR, exist_ok=True)
     os.makedirs(WEATHER_DATA_DIR, exist_ok=True)
 
     # Find all files in the S3 bucket
-    files = find_files(BASE_DATA_URL)
+    files = find_files(BASE_URL_RIDE_DATA)
 
     # Filter files by date range and dataset type
     filtered_files = filter_files(files, args.start_date, args.end_date, args.download_jc)
 
     # Download and convert the filtered files
-    download_and_convert_files(filtered_files, BASE_DATA_URL, RIDES_DATA_DIR)
+    download_and_convert_files(filtered_files, BASE_URL_RIDE_DATA, RIDES_DATA_DIR)
 
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances()

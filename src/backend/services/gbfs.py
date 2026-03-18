@@ -1,15 +1,10 @@
 import time
 from threading import Lock
-
 import requests
 from fastapi import HTTPException
 
 from src.backend.models.station import Station
-
-# URLs provided by Lyft's GBFS feed
-INFO_URL = "https://gbfs.lyft.com/gbfs/2.3/bkn/en/station_information.json"
-STATUS_URL = "https://gbfs.lyft.com/gbfs/2.3/bkn/en/station_status.json"
-
+from src.backend.config import INFO_URL, STATUS_URL
 # 3-minute cache TTL to reduce load on the external API
 CACHE_TTL_SECONDS = 60 * 3
 

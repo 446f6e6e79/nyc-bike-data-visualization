@@ -13,9 +13,7 @@ from src.backend.loaders.distances_loader import load_distances_data
 from src.backend.loaders.rides_loader import load_ride_data
 from src.backend.loaders.weather_loader import load_weather_data   
 
-TEST_ENV_VAR = "TEST_MODE"
-IN_MEMORY = False  # Set to True to load data into memory on startup for faster access during requests
-LOG_FILE_PATH = os.getenv("REQUEST_LOG_FILE", "logs/requests.log")
+from src.backend.config import IN_MEMORY_CACHE_ENABLED as IN_MEMORY, TEST_ENV_VAR, LOG_FILE_PATH, LOG_LEVEL
 
 logger = logging.getLogger("backend.request")
 if not logger.handlers:
@@ -30,7 +28,7 @@ if not logger.handlers:
     file_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
     logger.addHandler(file_handler)
-logger.setLevel(logging.INFO)
+logger.setLevel(LOG_LEVEL)
 logger.propagate = False
 
 def _is_historical_test_mode_enabled() -> bool:
@@ -48,7 +46,7 @@ async def lifespan(app: FastAPI):
     test = _is_historical_test_mode_enabled()
     load_ride_data(inMemory=IN_MEMORY, test=test)
     load_distances_data(inMemory=IN_MEMORY, test=test)
-    load_weather_data(test=test)
+    load_weather_data(inMemory=IN_MEMORY, test=test)
     yield
 
 
