@@ -40,8 +40,7 @@ jobs:
         env:
           TEST_MODE: "true"
         run: |
-          cd src/backend
-          python -m uvicorn main:app --host 127.0.0.1 --port 8000 &
+          python -m uvicorn src.backend.main:app --host 127.0.0.1 --port 8000 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID' EXIT
 
@@ -58,5 +57,5 @@ jobs:
           else:
               raise SystemExit("Backend server did not become ready in time.")
           PY
-
+          cd src/backend
           pytest tests/test_backend.py -q
