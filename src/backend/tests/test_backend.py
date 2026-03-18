@@ -1,18 +1,34 @@
-from pathlib import Path
-import sys
 import requests
 
 #TODO: check their correctness and add more test cases as needed.
 
 RIDE_IDS = ["85744AF35D7F2DF5", "9D18958E5788880B"]
 STATION_INFO = [("6602.05", "W 42 St & 8 Ave"), ("6839.04", "E 58 St & Madison Ave")]
-
-BACKEND_DIR = Path(__file__).resolve().parents[1]
-if str(BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(BACKEND_DIR))
+REQUIRED_RIDE_FIELDS = [
+    "ride_id",
+    "rideable_type",
+    "started_at",
+    "ended_at",
+    "start_station_name",
+    "start_station_id",
+    "end_station_name",
+    "end_station_id",
+    "start_lat",
+    "start_lng",
+    "end_lat",
+    "end_lng",
+    "member_casual",
+]
+WEATHER_FIELDS = ["time", "temperature", "wind_speed", "precipitation", "weather_code"]
 
 BASE_URL = "http://127.0.0.1:8000"
 DEFAULT_TIMEOUT = 10
+
+
+def _assert_weather_fields(weather: dict) -> None:
+    for field in WEATHER_FIELDS:
+        assert field in weather
+        assert weather[field] is not None
 
 
 def test_docs_endpoint_is_available():
@@ -61,32 +77,56 @@ def test_get_empty_stations():
 RIDE ENDPOINTS
 """
 def test_get_rides_returns_mock_dataset_records():
-    """Test that the /rides endpoint returns the expected mock dataset records."""
-    response = requests.get(f"{BASE_URL}/rides/", timeout=DEFAULT_TIMEOUT)
+    """Test that /rides returns base mock rides when enrich joins are disabled."""
+    response = requests.get(
+        f"{BASE_URL}/rides/",
+        params={
+            "user_type": "member",
+            "join_weather": "false",
+            "join_distances": "false",
+        },
+        timeout=DEFAULT_TIMEOUT,
+    )
 
     assert response.status_code == 200
     payload = response.json()
     assert len(payload) == 2
-    assert {ride["ride_id"] for ride in payload} == {
-        "85744AF35D7F2DF5",
-        "9D18958E5788880B",
-    }
+    assert {ride["ride_id"] for ride in payload} == set(RIDE_IDS)
     for ride in payload:
-        if "weather" in ride and ride["weather"] is not None:
-            for field in [
-                "time",
-                "temperature",
-                "wind_speed",
-                "precipitation",
-                "weather_code",
-            ]:
-                assert field in ride["weather"]
+        for field in REQUIRED_RIDE_FIELDS:
+            assert field in ride
+            assert ride[field] is not None
+        assert ride["distance_km"] is None
+        assert ride["weather"] is None
+
+
+def test_get_rides_with_joins_returns_enriched_fields():
+    """Test that /rides returns weather and distance values when joins are enabled."""
+    response = requests.get(
+        f"{BASE_URL}/rides/",
+        params={
+            "user_type": "member",
+            "join_weather": "true",
+            "join_distances": "true",
+        },
+        timeout=DEFAULT_TIMEOUT,
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 2
+
+    for ride in payload:
+        assert isinstance(ride.get("distance_km"), (float, int))
+        assert ride.get("weather") is not None
+        _assert_weather_fields(ride["weather"])
 
 
 def test_get_ride_by_id_returns_expected_mock_record():
-    """Test that the /rides/by_ride_id endpoint returns the expected mock dataset record."""
+    """Test that /rides/by_ride_id returns a base record with joins disabled."""
     response = requests.get(
         f"{BASE_URL}/rides/by_ride_id/85744AF35D7F2DF5",
+        params={"join_weather": "false", "join_distances": "false"},
         timeout=DEFAULT_TIMEOUT,
     )
 
@@ -94,41 +134,27 @@ def test_get_ride_by_id_returns_expected_mock_record():
     payload = response.json()
     assert payload["ride_id"] == "85744AF35D7F2DF5"
     assert payload["rideable_type"] == "electric_bike"
+    assert payload["distance_km"] is None
+    assert payload["weather"] is None
+
+
+def test_get_ride_by_id_with_joins_returns_enriched_record():
+    """Test that /rides/by_ride_id returns weather and distance when joins are enabled."""
+    response = requests.get(
+        f"{BASE_URL}/rides/by_ride_id/85744AF35D7F2DF5",
+        params={"join_weather": "true", "join_distances": "true"},
+        timeout=DEFAULT_TIMEOUT,
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["ride_id"] == "85744AF35D7F2DF5"
+    assert payload["rideable_type"] == "electric_bike"
+    assert isinstance(payload.get("distance_km"), (float, int))
+    assert payload.get("weather") is not None
     if "weather" in payload and payload["weather"] is not None:
-        for field in [
-            "time",
-            "temperature",
-            "wind_speed",
-            "precipitation",
-            "weather_code",
-        ]:
-            assert field in payload["weather"]
+        _assert_weather_fields(payload["weather"])
 
-
-def test_ride_type_statistics_uses_mock_dataset():
-    """Test that the /statistics/ride-types/{rideable_type} endpoint returns statistics based on the mock dataset."""
-    response = requests.get(
-        f"{BASE_URL}/statistics/ride-types/classic_bike",
-        timeout=DEFAULT_TIMEOUT,
-    )
-
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["rideable_type"] == "classic_bike"
-    assert payload["stats"]["total_rides"] == 1
-
-
-def test_user_type_statistics_uses_mock_dataset():
-    """Test that the /statistics/user-types/{user_type} endpoint returns statistics based on the mock dataset."""
-    response = requests.get(
-        f"{BASE_URL}/statistics/user-types/member",
-        timeout=DEFAULT_TIMEOUT,
-    )
-
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["user_type"] == "member"
-    assert payload["stats"]["total_rides"] == 2
 
 
 

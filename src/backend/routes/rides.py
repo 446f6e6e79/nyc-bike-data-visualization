@@ -46,7 +46,7 @@ def get_ride(ride_id: str, join_weather: bool = Query(default=False), join_dista
     
     rides = get_filtered_rides(ride_id=ride_id, join_weather=join_weather, join_distances=join_distances)
     
-    result = _collect_if_lazy(result)
+    result = _collect_if_lazy(rides)
     # Check if the result is empty after filtering by ride_id
     if result.is_empty():
         raise HTTPException(status_code=404, detail="Ride not found")
