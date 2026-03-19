@@ -38,12 +38,14 @@ jobs:
           docker build \
             -f dockers/Dockerfile.backend \
             -t ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }} \
+            -t ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }} \
             -t ${{ env.IMAGE_PREFIX }}-backend:latest \
             .
 
       - name: Push backend image
         run: |
           set -euo pipefail
+          docker push ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }}
           docker push ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }}
           docker push ${{ env.IMAGE_PREFIX }}-backend:latest
 
@@ -59,6 +61,7 @@ jobs:
       - name: Push frontend image
         run: |
           set -euo pipefail
+          docker push ${{ env.IMAGE_PREFIX }}-frontend:${{ steps.tag.outputs.value }}
           docker push ${{ env.IMAGE_PREFIX }}-frontend:${{ steps.tag.outputs.value }}
           docker push ${{ env.IMAGE_PREFIX }}-frontend:latest
 
