@@ -9,11 +9,15 @@ on:
       - docker-compose.yml
       - dockers/**
       - .github/workflows/docker-check.yml
+      - src/**
+      - scripts/**
   pull_request:
     paths:
       - docker-compose.yml
       - dockers/**
       - .github/workflows/docker-check.yml
+      - src/**
+      - scripts/**
 
 jobs:
   validate-docker-setup:
@@ -50,11 +54,31 @@ jobs:
 
       - name: Check backend and frontend liveness
         run: |
-          set -euo pipefail
-          sleep 10
-          curl -fsS http://localhost:8000/docs > /dev/null
-          curl -fsS http://localhost:5173 > /dev/null
-          echo "Docker setup validation passed at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          count=0
+          max_retries=20
+
+          until curl -fsS http://localhost:5173 > /dev/null; do
+            count=$((count + 1))
+            echo "Frontend not ready yet (${count}/${max_retries})..."
+            sleep 10
+          done
+          echo "Frontend is up!"  
+          count=0
+
+          until curl -fsS http://localhost:8000/docs > /dev/null; do
+            count=$((count + 1))
+            echo "Backend not ready yet (${count}/${max_retries})..."
+
+            if [ $count -ge $max_retries ]; then
+              echo "Backend failed to start in time" >&2
+              docker compose logs backend
+              exit 1
+            fi
+
+            sleep 20
+          done
+
+          echo "Backend is up!"
 
       - name: Tear down Docker compose setup
         if: always()
