@@ -100,16 +100,18 @@ def get_station_ride_counts(
         for row in station_counts.iter_rows(named=True)
     ]
 """
-#TODO: check the correctness of this endpoint. Also consider how we can limit the number of results returned 
-# (e.g. only return top 100 most popular station pairs), but still representing the whole dataset in a meaningful way.
+#TODO: check the correctness of this endpoint.
+Check how to group same station pairs together (e.g. A->B and B->A), but keeping the directionality of counts
 """
 @router.get("/tips_count_between_stations", response_model=list[TipsCountBetweenStations])
 def get_tips_count_between_stations(
     start_date: date | None = Query(default=None), 
     end_date: date | None = Query(default=None),
     start_station_id: str | None = Query(default=None),
-    end_station_id: str | None = Query(default=None)
+    end_station_id: str | None = Query(default=None),
+    limit: int | None = Query(default=100, ge=1, le=1000)   # Limit the number of results returned to avoid overwhelming the client
 ):
+
     """Get the count of rides between two stations."""
     rides = get_filtered_rides(start_date=start_date, end_date=end_date, start_station_id=start_station_id, end_station_id=end_station_id)
 
@@ -118,6 +120,8 @@ def get_tips_count_between_stations(
         rides.group_by(["start_station_id", "end_station_id"])
         .agg(pl.count().alias("ride_count"))
     )
+    # return the best {limit} station pairs by ride count, sorted in descending order
+    tips_count = tips_count.sort("ride_count", descending=True).limit(limit)
     tips_count = _collect_if_lazy(tips_count)
     return [
         TipsCountBetweenStations(
