@@ -6,14 +6,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 COPY requirements.txt /app/requirements.txt
-RUN grep -Ev '^(appnope|ipykernel|ipython|ipython_pygments_lexers|ipywidgets|jupyter|jupyter-console|jupyter-events|jupyter-lsp|jupyter_client|jupyter_core|jupyter_server|jupyter_server_terminals|jupyterlab|jupyterlab_pygments|jupyterlab_server|jupyterlab_widgets|nbclient|nbconvert|nbformat|notebook|notebook_shim|widgetsnbextension|matplotlib|matplotlib-inline|seaborn)==' requirements.txt > /tmp/requirements.docker.txt \
+COPY dockers/excluded-packages.txt /tmp/excluded-packages.txt
+
+RUN awk -F'==' 'NR==FNR { excluded[$1]=1; next } !($1 in excluded)' \
+    /tmp/excluded-packages.txt /app/requirements.txt > /tmp/requirements.docker.txt \
     && pip install --no-cache-dir -r /tmp/requirements.docker.txt \
-    && rm /tmp/requirements.docker.txt
+    && rm /tmp/requirements.docker.txt /tmp/excluded-packages.txt
 
 COPY src/backend /app/src/backend
 COPY scripts/ /app/scripts/
 
 # Run the data download script before starting the server (default setting)
-CMD ["python", "/app/scripts/download_data.py"]
-# After the data is downloaded, start the FastAPI server
-CMD ["uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "python /app/scripts/download_data.py && uvicorn src.backend.main:app --host 0.0.0.0 --port 8000"]

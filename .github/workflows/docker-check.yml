@@ -5,16 +5,15 @@ on:
   push:
     branches:
       - main
-      - master
     paths:
       - docker-compose.yml
       - dockers/**
-      - .github/workflows/docker-action-check.yml
+      - .github/workflows/docker-check.yml
   pull_request:
     paths:
       - docker-compose.yml
       - dockers/**
-      - .github/workflows/docker-action-check.yml
+      - .github/workflows/docker-check.yml
 
 jobs:
   validate-docker-setup:
@@ -32,6 +31,8 @@ jobs:
           test -f dockers/Dockerfile.frontend
           grep -q "dockerfile: dockers/Dockerfile.backend" docker-compose.yml
           grep -q "dockerfile: dockers/Dockerfile.frontend" docker-compose.yml
+          grep -q '"8000:8000"' docker-compose.yml
+          grep -q '"5173:5173"' docker-compose.yml
 
       - name: Validate compose syntax
         run: docker compose -f docker-compose.yml config > /dev/null
@@ -39,8 +40,13 @@ jobs:
       - name: Build and start services
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.yml build
-          docker compose -f docker-compose.yml up -d
+          docker compose -f docker-compose.yml up -d --build
+
+      - name: Verify published ports
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.yml port backend 8000
+          docker compose -f docker-compose.yml port frontend 5173
 
       - name: Check backend and frontend liveness
         run: |
