@@ -1,4 +1,7 @@
-# Data Visualization Project
+[![Backend Tests](https://github.com/446f6e6e79/nyc-bike-data-visualization/actions/workflows/backend-tests.yml/badge.svg?branch=main)](https://github.com/446f6e6e79/nyc-bike-data-visualization/actions/workflows/backend-tests.yml)
+[![Docker CI](https://github.com/446f6e6e79/nyc-bike-data-visualization/actions/workflows/docker-check.yml/badge.svg)](https://github.com/446f6e6e79/nyc-bike-data-visualization/actions/workflows/docker-check.yml)
+[![Frontend Tests](https://github.com/446f6e6e79/nyc-bike-data-visualization/actions/workflows/frontend-tests.yml/badge.svg)](https://github.com/446f6e6e79/nyc-bike-data-visualization/actions/workflows/frontend-tests.yml)
+# Nyc Bike Data Visualization
 
 A comprehensive data visualization solution developed for advanced coursework at the University of Trento, Master's Degree in Computer Science.
 
@@ -6,42 +9,25 @@ A comprehensive data visualization solution developed for advanced coursework at
 **Professors:** Prof. Monica Moroni, Prof. Shahryar Noei  
 **Authors:** Davide Donà, Andrea Blushi, Lorenzo Di Berardino
 
----
 
 ## Overview
-
-This project delivers a complete data visualization solution comprising three key deliverables:
-
-1. **Data Visualization Proposal** – Initial project concept and visualization strategy
-2. **Technical Report with Dataset Description** – Detailed analysis of the dataset and technical implementation
-3. **Written and Video Report** – Final comprehensive documentation with multimedia presentation
-
-The accompanying source code provides the complete Python implementation of the visualization solution.
-
----
+This project focuses on the visualization of bike-sharing data from New York City, specifically utilizing the Citi Bike Trip Data. The goal is to create an interactive web application that allows users to explore and analyze the bike-sharing patterns in NYC through various visualizations and insights derived from the dataset.
 
 ## Repository Structure
 
 ```
 data-visualisation/
-├── README.md                          # Project overview (this file)
+├── README.md                         # Project overview (this file)
 ├── src/
-│   └── main.py                       # Python visualization implementation
+│   └── backend                       # Backend server implementation (FastAPI)
+│   └── frontend                      # Frontend application implementation (React)
+├── scripts/
+│   └── download_data.py              # Script to automate dataset downloading and merging
 ├── docs/
-│   ├── setup.tex                     # Shared LaTeX preamble and configuration
-│   ├── chapters/                     # Shared LaTeX chapter content
-│   │   └── example.tex              
-│   ├── media/                        # Images, logos, and media assets
-│   │   └── uni_logo.jpg
-│   ├── proposal/                     # First deliverable: Data Visualization Proposal
-│   │   ├── main.tex
-│   │   └── proposal.pdf
-│   ├── technical-report/             # Second deliverable: Technical Report
-│   │   ├── main.tex
-│   │   └── technical-report.pdf
-│   └── report/                       # Third deliverable: Final Report
-│       ├── main.tex
-│       └── report.pdf
+│   └── proposal/                     # Project proposal latex files
+│   └── technical-report/             # Technical report latex files
+│   └── report/                       # Final report latex files
+
 ```
 
 ## Backend
