@@ -1,0 +1,55 @@
+name: Publish Docker Images
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/data-visualisation
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build backend image
+        run: |
+          set -euo pipefail
+          docker build \
+            -f dockers/Dockerfile.backend \
+            -t ${{ env.IMAGE_PREFIX }}-backend:latest \
+            .
+
+      - name: Push backend image
+        run: |
+          set -euo pipefail
+          docker push ${{ env.IMAGE_PREFIX }}-backend:latest
+
+      - name: Build frontend image
+        run: |
+          set -euo pipefail
+          docker build \
+            -f dockers/Dockerfile.frontend \
+            -t ${{ env.IMAGE_PREFIX }}-frontend:latest \
+            .
+
+      - name: Push frontend image
+        run: |
+          set -euo pipefail
+          docker push ${{ env.IMAGE_PREFIX }}-frontend:latest
