@@ -1,0 +1,41 @@
+name: Publish Docker Images
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/data-visualisation
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build images via docker compose
+        run: docker compose -f docker-compose.yml build
+
+      - name: Tag and push backend
+        run: |
+          docker tag data-visualisation-backend ${{ env.IMAGE_PREFIX }}-backend:latest
+          docker push ${{ env.IMAGE_PREFIX }}-backend:latest
+
+      - name: Tag and push frontend
+        run: |
+          docker tag data-visualisation-frontend ${{ env.IMAGE_PREFIX }}-frontend:latest
+          docker push ${{ env.IMAGE_PREFIX }}-frontend:latest
