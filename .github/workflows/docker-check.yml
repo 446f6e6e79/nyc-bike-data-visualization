@@ -9,11 +9,15 @@ on:
       - docker-compose.yml
       - dockers/**
       - .github/workflows/docker-check.yml
+      - src/**
+      - scripts/**
   pull_request:
     paths:
       - docker-compose.yml
       - dockers/**
       - .github/workflows/docker-check.yml
+      - src/**
+      - scripts/**
 
 jobs:
   validate-docker-setup:
@@ -52,9 +56,23 @@ jobs:
         run: |
           set -euo pipefail
           sleep 10
-          curl -fsS http://localhost:8000/docs > /dev/null
-          curl -fsS http://localhost:5173 > /dev/null
-          echo "Docker setup validation passed at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          count=0
+          while true; do
+            count=$((count + 1))
+            echo "Liveness check iteration ${count} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+            if ! curl -fsS http://localhost:8000/docs > /dev/null; then
+              echo "Backend liveness check failed on iteration ${count}" >&2
+              exit 1
+            fi
+
+            if ! curl -fsS http://localhost:5173 > /dev/null; then
+              echo "Frontend liveness check failed on iteration ${count}" >&2
+              exit 1
+            fi
+
+            sleep 5
+          done
 
       - name: Tear down Docker compose setup
         if: always()
