@@ -1,4 +1,4 @@
-name: Docker CD pipeline
+name: Docker Release Pipeline
 
 on:
   workflow_dispatch:
@@ -35,6 +35,7 @@ jobs:
       - name: Build backend image
         run: |
           set -euo pipefail
+          echo "Building backend image for tag '${{ steps.tag.outputs.value }}'."
           docker build \
             -f dockers/Dockerfile.backend \
             -t ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }} \
@@ -44,12 +45,14 @@ jobs:
       - name: Push backend image
         run: |
           set -euo pipefail
+          echo "Pushing backend image tags."
           docker push ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }}
           docker push ${{ env.IMAGE_PREFIX }}-backend:latest
 
       - name: Build frontend image
         run: |
           set -euo pipefail
+          echo "Building frontend image for tag '${{ steps.tag.outputs.value }}'."
           docker build \
             -f dockers/Dockerfile.frontend \
             -t ${{ env.IMAGE_PREFIX }}-frontend:${{ steps.tag.outputs.value }} \
@@ -59,6 +62,7 @@ jobs:
       - name: Push frontend image
         run: |
           set -euo pipefail
+          echo "Pushing frontend image tags."
           docker push ${{ env.IMAGE_PREFIX }}-frontend:${{ steps.tag.outputs.value }}
           docker push ${{ env.IMAGE_PREFIX }}-frontend:latest
 
@@ -68,6 +72,7 @@ jobs:
           IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
         run: |
           set -euo pipefail
+          echo "Generating docker-compose.release.yml with pinned image tags."
           pip install pyyaml -q
           python3 - << 'EOF'
           import os, yaml
@@ -92,8 +97,7 @@ jobs:
           with open("docker-compose.release.yml", "w") as f:
               yaml.dump(compose, f, default_flow_style=False, sort_keys=False)
 
-          print("Generated docker-compose.release.yml:")
-          print(open("docker-compose.release.yml").read())
+          print("docker-compose.release.yml generated.")
           EOF
 
       - name: Generate install script
@@ -103,6 +107,7 @@ jobs:
           IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
         run: |
           set -euo pipefail
+          echo "Generating setup.sh installer script."
           cat > setup.sh << SCRIPT
           #!/usr/bin/env bash
           set -euo pipefail
@@ -112,40 +117,78 @@ jobs:
           COMPOSE_URL="https://github.com/\${REPO}/releases/download/\${TAG}/docker-compose.release.yml"
           INSTALL_DIR="\${HOME}/.data-visualisation"
 
-          echo "==> Checking dependencies..."
+          echo "Checking Docker dependencies..."
           command -v docker >/dev/null 2>&1 || { echo "Docker is required but not installed. Aborting."; exit 1; }
           docker compose version >/dev/null 2>&1 || { echo "Docker Compose (v2) is required but not found. Aborting."; exit 1; }
 
-          echo "==> Pulling images..."
+          echo "Pulling Docker images for release tag \${TAG}..."
           docker pull ${IMAGE_PREFIX}-backend:\${TAG}
           docker pull ${IMAGE_PREFIX}-frontend:\${TAG}
 
-          echo "==> Downloading compose file to \${INSTALL_DIR}..."
+          echo "Downloading docker-compose file to \${INSTALL_DIR}..."
           mkdir -p "\${INSTALL_DIR}"
           curl -fsSL "\${COMPOSE_URL}" -o "\${INSTALL_DIR}/docker-compose.yml"
 
-          echo ""
-          echo "Done! To start the application run:"
-          echo ""
-          echo "  docker compose -f \${INSTALL_DIR}/docker-compose.yml up"
-          echo ""
+          echo "Installation complete."
+          echo "Start the application with:"
+          echo "docker compose -f \${INSTALL_DIR}/docker-compose.yml up -d"
           SCRIPT
           chmod +x setup.sh
 
-          echo "==> Generated setup.sh:"
-          cat setup.sh
+      - name: Generate release README
+        env:
+          TAG: ${{ steps.tag.outputs.value }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          echo "Generating README.md for release assets."
+          mkdir -p release-assets
+          cat > release-assets/README.md << EOF
+          # Data Visualisation Docker Release
+
+          This release ships Docker deployment assets only.
+
+          ## Quick start
+
+          Run the setup script directly from the release assets:
+
+          ```bash
+          curl -fsSL https://github.com/${REPO}/releases/download/${TAG}/setup.sh | bash
+          ```
+
+          Start services:
+
+          ```bash
+          docker compose -f \$HOME/.data-visualisation/docker-compose.yml up -d
+          ```
+
+          Stop services:
+
+          ```bash
+          docker compose -f \$HOME/.data-visualisation/docker-compose.yml down
+          ```
+
+          ## Included assets
+
+          - setup.sh
+          - docker-compose.release.yml
+          - README.md
+          EOF
 
       - name: Verify release assets exist
         run: |
           set -euo pipefail
           test -s docker-compose.release.yml || { echo "docker-compose.release.yml is missing or empty!"; exit 1; }
           test -s setup.sh                   || { echo "setup.sh is missing or empty!"; exit 1; }
-          echo "Both assets verified."
+          test -s release-assets/README.md   || { echo "release-assets/README.md is missing or empty!"; exit 1; }
+          echo "Release assets verified."
 
       - name: Attach assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.value }}
+          name: Data Visualisation Docker Release ${{ steps.tag.outputs.value }}
           files: |
             docker-compose.release.yml
             setup.sh
+            release-assets/README.md
