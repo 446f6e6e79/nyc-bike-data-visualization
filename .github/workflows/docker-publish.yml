@@ -6,6 +6,7 @@ on:
     types: [published]
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/data-visualisation
 
@@ -18,10 +19,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -32,10 +33,14 @@ jobs:
 
       - name: Tag and push backend
         run: |
-          docker tag data-visualisation-backend ${{ env.IMAGE_PREFIX }}-backend:latest
+          backend_image_id="$(docker compose -f docker-compose.yml images -q backend)"
+          test -n "${backend_image_id}"
+          docker tag "${backend_image_id}" ${{ env.IMAGE_PREFIX }}-backend:latest
           docker push ${{ env.IMAGE_PREFIX }}-backend:latest
 
       - name: Tag and push frontend
         run: |
-          docker tag data-visualisation-frontend ${{ env.IMAGE_PREFIX }}-frontend:latest
+          frontend_image_id="$(docker compose -f docker-compose.yml images -q frontend)"
+          test -n "${frontend_image_id}"
+          docker tag "${frontend_image_id}" ${{ env.IMAGE_PREFIX }}-frontend:latest
           docker push ${{ env.IMAGE_PREFIX }}-frontend:latest
