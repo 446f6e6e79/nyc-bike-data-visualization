@@ -58,4 +58,4 @@ jobs:
               raise SystemExit("Backend server did not become ready in time.")
           PY
           cd src/backend
-          pytest tests/test_backend.py -q
+          pytest tests -q

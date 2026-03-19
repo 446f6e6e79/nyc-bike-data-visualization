@@ -35,7 +35,7 @@ uvicorn src.backend.main:app --host 127.0.0.1 --port 8000
 In a second terminal, run:
 
 ```bash
-pytest src/backend/tests/test_backend.py -q
+pytest src/backend/tests -q
 ```
 
 ## API Documentation

@@ -52,10 +52,10 @@ def get_station_ride_counts(
     station_id: str | None = Query(default=None)
 ):
     """Get the count of rides starting or ending at each station."""
-    rides = get_filtered_rides(start_date=start_date, end_date=end_date, start_station_id=station_id, end_station_id=station_id)
-
+    outgoing_rides = get_filtered_rides(start_date=start_date, end_date=end_date, start_station_id=station_id)
+    incoming_rides = get_filtered_rides(start_date=start_date, end_date=end_date, end_station_id=station_id)
     # Compute outgoing table -> one row per ride with start station info and outgoing=1, incoming=0
-    outgoing = rides.select([
+    outgoing = outgoing_rides.select([
         pl.col("start_station_id").alias("station_id"),
         pl.col("start_lat").alias("lat"),
         pl.col("start_lng").alias("lon"),
@@ -64,7 +64,7 @@ def get_station_ride_counts(
     ])
 
     # Compute incoming table -> one row per ride with end station info and outgoing=0, incoming=1
-    incoming = rides.select([
+    incoming = incoming_rides.select([
         pl.col("end_station_id").alias("station_id"),
         pl.col("end_lat").alias("lat"),
         pl.col("end_lng").alias("lon"),
