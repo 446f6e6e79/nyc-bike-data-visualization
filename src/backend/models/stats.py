@@ -17,3 +17,9 @@ class StationRideCount(BaseModel):
     lon: float
     outgoing_rides: int
     incoming_rides: int
+
+class TipsCountBetweenStations(BaseModel):
+    """Model representing the count of rides between two stations."""
+    start_station_id: str
+    end_station_id: str
+    ride_count: int

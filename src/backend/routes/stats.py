@@ -2,7 +2,7 @@ import polars as pl
 from datetime import date
 from fastapi import APIRouter, HTTPException, Query
 from src.backend.models.ride import MemberCasual, RideableType
-from src.backend.models.stats import Stats, StationRideCount
+from src.backend.models.stats import Stats, StationRideCount, TipsCountBetweenStations
 from src.backend.services.rides import get_filtered_rides
 from src.backend.loaders.rides_loader import RideFrame
 
@@ -98,4 +98,32 @@ def get_station_ride_counts(
             incoming_rides=row["incoming"]
         )
         for row in station_counts.iter_rows(named=True)
+    ]
+"""
+#TODO: check the correctness of this endpoint. Also consider how we can limit the number of results returned 
+# (e.g. only return top 100 most popular station pairs), but still representing the whole dataset in a meaningful way.
+"""
+@router.get("/tips_count_between_stations", response_model=list[TipsCountBetweenStations])
+def get_tips_count_between_stations(
+    start_date: date | None = Query(default=None), 
+    end_date: date | None = Query(default=None),
+    start_station_id: str | None = Query(default=None),
+    end_station_id: str | None = Query(default=None)
+):
+    """Get the count of rides between two stations."""
+    rides = get_filtered_rides(start_date=start_date, end_date=end_date, start_station_id=start_station_id, end_station_id=end_station_id)
+
+    # Group by start and end station and count the number of rides
+    tips_count = (
+        rides.group_by(["start_station_id", "end_station_id"])
+        .agg(pl.count().alias("ride_count"))
+    )
+    tips_count = _collect_if_lazy(tips_count)
+    return [
+        TipsCountBetweenStations(
+            start_station_id=row["start_station_id"],
+            end_station_id=row["end_station_id"],
+            ride_count=row["ride_count"]
+        )
+        for row in tips_count.iter_rows(named=True)
     ]
