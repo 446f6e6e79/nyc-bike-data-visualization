@@ -1,4 +1,4 @@
-name: Docker Action Check
+name: Docker CI Check
 
 on:
   workflow_dispatch:
