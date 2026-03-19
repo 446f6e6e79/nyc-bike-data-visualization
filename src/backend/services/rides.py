@@ -12,6 +12,8 @@ def get_filtered_rides(
     bike_type: RideableType | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
+    day_of_week: int | None = None,
+    start_hour: int | None = None,
     start_station_id: str | None = None,
     end_station_id: str | None = None,
     join_weather: bool = False,
@@ -23,6 +25,8 @@ def get_filtered_rides(
     - ride_id: Filter by specific ride ID
     - user_type: Filter by user type (member or casual)
     - start_date, end_date: Filter by ride start date range
+    - day_of_week: Filter by day of the week (0=Monday, 6=Sunday)
+    - start_hour: Filter by start hour
     - start_station_id, end_station_id: Filter by station IDs
     - end_date: Filter by ride end date range
     - end_station_id: Filter by end station ID
@@ -48,6 +52,12 @@ def get_filtered_rides(
             filter_expr &= date_col >= start_date
         if end_date is not None:
             filter_expr &= date_col <= end_date
+    
+    if day_of_week is not None:
+        filter_expr &= pl.col("started_at").dt.weekday() == day_of_week
+    
+    if start_hour is not None:
+        filter_expr &= pl.col("started_at").dt.hour() == start_hour
     
     if start_station_id is not None:
         filter_expr &= pl.col("start_station_id") == start_station_id

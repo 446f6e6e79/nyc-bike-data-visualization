@@ -10,7 +10,10 @@ RUN grep -Ev '^(appnope|ipykernel|ipython|ipython_pygments_lexers|ipywidgets|jup
     && pip install --no-cache-dir -r /tmp/requirements.docker.txt \
     && rm /tmp/requirements.docker.txt
 
-COPY src /app/src
-COPY data /app/data
+COPY src/backend /app/src/backend
+COPY scripts/ /app/scripts/
 
+# Run the data download script before starting the server (default setting)
+CMD ["python", "/app/scripts/download_data.py"]
+# After the data is downloaded, start the FastAPI server
 CMD ["uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

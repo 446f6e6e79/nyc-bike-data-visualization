@@ -9,18 +9,3 @@ class Stats(BaseModel):
     average_distance_km: float
     total_duration_seconds: float
     total_distance_km: float
-    
-class RideTypeStats(BaseModel):
-    """Statistics grouped by rideable type"""
-    rideable_type: RideableType
-    stats : Stats
-
-class UserTypeStats(BaseModel):
-    """Statistics grouped by user type"""
-    user_type: MemberCasual
-    stats : Stats
-
-class DailyStats(BaseModel):
-    """Daily statistics."""
-    day_of_week: str
-    stats : Stats
