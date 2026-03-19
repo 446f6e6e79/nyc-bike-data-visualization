@@ -8,7 +8,7 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/data-visualisation
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/nyc-bike-data-visualisation
 
 jobs:
   build-and-push:
@@ -137,12 +137,6 @@ jobs:
           echo "docker compose -f \${INSTALL_DIR}/docker-compose.yml up -d"
           SCRIPT
           chmod +x setup.sh
-
-      - name: Generate release README
-        env:
-          TAG: ${{ steps.tag.outputs.value }}
-          REPO: ${{ github.repository }}
-        run: |
           set -euo pipefail
           echo "Generating README.md for release assets."
           mkdir -p release-assets
@@ -194,4 +188,3 @@ jobs:
           files: |
             docker-compose.release.yml
             setup.sh
-            release-assets/README.md
