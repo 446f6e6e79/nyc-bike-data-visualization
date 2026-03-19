@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: dockers/Dockerfile.backend
-    container_name: data-visualisation-backend
+    container_name: NYC-Bike-Visualisation-Backend
     init: true
     environment:
       HISTORICAL_DATA_DIR: /app/data/rides
@@ -18,7 +18,7 @@ services:
     build:
       context: .
       dockerfile: dockers/Dockerfile.frontend
-    container_name: data-visualisation-frontend
+    container_name: NYC-Bike-Visualisation-Frontend
     init: true
     depends_on:
       - backend
