@@ -28,19 +28,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build images via docker compose
-        run: docker compose -f docker-compose.yml build
-
-      - name: Tag and push backend
+      - name: Build backend image
         run: |
-          backend_image_id="$(docker compose -f docker-compose.yml images -q backend)"
-          test -n "${backend_image_id}"
-          docker tag "${backend_image_id}" ${{ env.IMAGE_PREFIX }}-backend:latest
+          set -euo pipefail
+          docker build \
+            -f dockers/Dockerfile.backend \
+            -t ${{ env.IMAGE_PREFIX }}-backend:latest \
+            .
+
+      - name: Push backend image
+        run: |
+          set -euo pipefail
           docker push ${{ env.IMAGE_PREFIX }}-backend:latest
 
-      - name: Tag and push frontend
+      - name: Build frontend image
         run: |
-          frontend_image_id="$(docker compose -f docker-compose.yml images -q frontend)"
-          test -n "${frontend_image_id}"
-          docker tag "${frontend_image_id}" ${{ env.IMAGE_PREFIX }}-frontend:latest
+          set -euo pipefail
+          docker build \
+            -f dockers/Dockerfile.frontend \
+            -t ${{ env.IMAGE_PREFIX }}-frontend:latest \
+            .
+
+      - name: Push frontend image
+        run: |
+          set -euo pipefail
           docker push ${{ env.IMAGE_PREFIX }}-frontend:latest
