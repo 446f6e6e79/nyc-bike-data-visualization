@@ -8,7 +8,7 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/data-visualisation
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/nyc-bike-data-visualisation
 
 jobs:
   build-and-push:
@@ -103,87 +103,10 @@ jobs:
           print("docker-compose.release.yml generated.")
           EOF
 
-      - name: Generate install script
-        env:
-          TAG: ${{ steps.tag.outputs.value }}
-          REPO: ${{ github.repository }}
-          IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
-        run: |
-          set -euo pipefail
-          echo "Generating setup.sh installer script."
-          cat > setup.sh << SCRIPT
-          #!/usr/bin/env bash
-          set -euo pipefail
-
-          TAG="${TAG}"
-          REPO="${REPO}"
-          COMPOSE_URL="https://github.com/\${REPO}/releases/download/\${TAG}/docker-compose.release.yml"
-          INSTALL_DIR="\${HOME}/.data-visualisation"
-
-          echo "Checking Docker dependencies..."
-          command -v docker >/dev/null 2>&1 || { echo "Docker is required but not installed. Aborting."; exit 1; }
-          docker compose version >/dev/null 2>&1 || { echo "Docker Compose (v2) is required but not found. Aborting."; exit 1; }
-
-          echo "Pulling Docker images for release tag \${TAG}..."
-          docker pull ${IMAGE_PREFIX}-backend:\${TAG}
-          docker pull ${IMAGE_PREFIX}-frontend:\${TAG}
-
-          echo "Downloading docker-compose file to \${INSTALL_DIR}..."
-          mkdir -p "\${INSTALL_DIR}"
-          curl -fsSL "\${COMPOSE_URL}" -o "\${INSTALL_DIR}/docker-compose.yml"
-
-          echo "Installation complete."
-          echo "Start the application with:"
-          echo "docker compose -f \${INSTALL_DIR}/docker-compose.yml up -d"
-          SCRIPT
-          chmod +x setup.sh
-
-      - name: Generate release README
-        env:
-          TAG: ${{ steps.tag.outputs.value }}
-          REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          echo "Generating README.md for release assets."
-          mkdir -p release-assets
-          cat > release-assets/README.md << EOF
-          # Data Visualisation Docker Release
-
-          This release ships Docker deployment assets only.
-
-          ## Quick start
-
-          Run the setup script directly from the release assets:
-
-          ```bash
-          curl -fsSL https://github.com/${REPO}/releases/download/${TAG}/setup.sh | bash
-          ```
-
-          Start services:
-
-          ```bash
-          docker compose -f \$HOME/.data-visualisation/docker-compose.yml up -d
-          ```
-
-          Stop services:
-
-          ```bash
-          docker compose -f \$HOME/.data-visualisation/docker-compose.yml down
-          ```
-
-          ## Included assets
-
-          - setup.sh
-          - docker-compose.release.yml
-          - README.md
-          EOF
-
       - name: Verify release assets exist
         run: |
           set -euo pipefail
           test -s docker-compose.release.yml || { echo "docker-compose.release.yml is missing or empty!"; exit 1; }
-          test -s setup.sh                   || { echo "setup.sh is missing or empty!"; exit 1; }
-          test -s release-assets/README.md   || { echo "release-assets/README.md is missing or empty!"; exit 1; }
           echo "Release assets verified."
 
       - name: Attach assets to GitHub Release
@@ -194,4 +117,3 @@ jobs:
           files: |
             docker-compose.release.yml
             setup.sh
-            release-assets/README.md
