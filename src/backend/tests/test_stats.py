@@ -29,8 +29,8 @@ def test_get_stats_user_type():
     assert payload["total_distance_km"] == 0
 
 def test_get_station_counts():
-    """Test that /stats/station_counts returns expected station counts."""
-    response = requests.get(f"{BASE_URL}/stats/station_counts", timeout=DEFAULT_TIMEOUT)
+    """Test that /stats/station_ride_counts returns expected station counts."""
+    response = requests.get(f"{BASE_URL}/stats/station_ride_counts", timeout=DEFAULT_TIMEOUT)
     assert response.status_code == 200
     payload = response.json()
     assert len(payload) == 4
@@ -45,9 +45,9 @@ def test_get_station_counts():
         assert station["incoming_rides"] >= 0
 
 def test_get_station_counts_with_invalid_station_id():
-    """Test that /stats/station_counts returns 200 with empty counts for an invalid station_id."""
+    """Test that /stats/station_ride_counts returns 200 with empty counts for an invalid station_id."""
     response = requests.get(
-        f"{BASE_URL}/stats/station_counts",
+        f"{BASE_URL}/stats/station_ride_counts",
         params={"station_id": "invalid_station_id"},
         timeout=DEFAULT_TIMEOUT,
     )
@@ -69,3 +69,33 @@ def test_get_station_stats_with_valid_station_id():
     assert payload["average_distance_km"] > 0
     assert payload["total_duration_seconds"] > 0
     assert payload["total_distance_km"] > 0
+
+def test_get_trips_between_stations():
+    """Test that /stats/trips_between_stations returns expected fields."""
+    response = requests.get(
+        f"{BASE_URL}/stats/trips_between_stations",
+        timeout=DEFAULT_TIMEOUT,
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    for pair in payload:
+        assert "station_a" in pair
+        assert "station_b" in pair
+        assert "a_to_b_count" in pair
+        assert "b_to_a_count" in pair
+        assert "total_rides" in pair
+        assert pair["a_to_b_count"] >= 0
+        assert pair["b_to_a_count"] >= 0
+        assert pair["total_rides"] == pair["a_to_b_count"] + pair["b_to_a_count"]
+
+def test_get_trips_between_stations_with_invalid_station_id():
+    """Test that /stats/trips_between_stations returns empty for unknown station_id."""
+    response = requests.get(
+        f"{BASE_URL}/stats/trips_between_stations",
+        params={"station_id": "invalid_station_id"},
+        timeout=DEFAULT_TIMEOUT,
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload == []

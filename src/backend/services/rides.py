@@ -75,6 +75,14 @@ def get_filtered_rides(
         rides = enrich_rides_with_distances(rides, distances)
     return rides.filter(filter_expr)
 
+def add_trip_duration(rides: pl.LazyFrame) -> pl.LazyFrame:
+    """Add a trip_duration_seconds column to the rides."""
+    return rides.with_columns(
+        (pl.col("ended_at") - pl.col("started_at"))
+        .dt.total_seconds() # convert to seconds
+        .alias("trip_duration_seconds")
+    )
+
 def enrich_rides_with_weather(rides: pl.LazyFrame, weather: pl.LazyFrame) -> pl.LazyFrame:
     """
     Enrich rides with nearest hourly weather record based on started_at.

@@ -18,8 +18,9 @@ class StationRideCount(BaseModel):
     outgoing_rides: int
     incoming_rides: int
 
-class TipsCountBetweenStations(BaseModel):
-    """Model representing the count of rides between two stations."""
-    start_station_id: str
-    end_station_id: str
-    ride_count: int
+class TripsCountBetweenStations(BaseModel):
+    station_a: str
+    station_b: str
+    a_to_b_count: int
+    b_to_a_count: int
+    total_rides: int
