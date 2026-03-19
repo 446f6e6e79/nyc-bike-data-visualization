@@ -2,7 +2,7 @@ import polars as pl
 from datetime import date
 from fastapi import APIRouter, HTTPException, Query
 from src.backend.models.ride import MemberCasual, RideableType
-from src.backend.models.stats import Stats
+from src.backend.models.stats import Stats, StationRideCount
 from src.backend.services.rides import get_filtered_rides
 from src.backend.loaders.rides_loader import RideFrame
 
@@ -44,3 +44,58 @@ def get_stats(
         total_duration_seconds=(df["ended_at"].cast(pl.Datetime).cast(pl.Int64) - df["started_at"].cast(pl.Datetime).cast(pl.Int64)).sum() / 1000000,  # Convert to seconds
         total_distance_km=df["distance_km"].sum()
     )
+
+@router.get("/station_counts", response_model=list[StationRideCount])
+def get_station_ride_counts(
+    start_date: date | None = Query(default=None), 
+    end_date: date | None = Query(default=None),
+    station_id: str | None = Query(default=None)
+):
+    """Get the count of rides starting or ending at each station."""
+    rides = get_filtered_rides(start_date=start_date, end_date=end_date, start_station_id=station_id, end_station_id=station_id)
+
+    # Compute outgoing table -> one row per ride with start station info and outgoing=1, incoming=0
+    outgoing = rides.select([
+        pl.col("start_station_id").alias("station_id"),
+        pl.col("start_lat").alias("lat"),
+        pl.col("start_lng").alias("lon"),
+        pl.lit(1).alias("outgoing"),
+        pl.lit(0).alias("incoming"),
+    ])
+
+    # Compute incoming table -> one row per ride with end station info and outgoing=0, incoming=1
+    incoming = rides.select([
+        pl.col("end_station_id").alias("station_id"),
+        pl.col("end_lat").alias("lat"),
+        pl.col("end_lng").alias("lon"),
+        pl.lit(0).alias("outgoing"),
+        pl.lit(1).alias("incoming"),
+    ])
+
+    # Compute the station counts by concatenating outgoing and incoming
+    # then grouping by station_id and summing outgoing and incoming
+    station_counts = (
+        pl.concat([outgoing, incoming])
+        .group_by("station_id")
+        .agg([
+            pl.sum("outgoing"),
+            pl.sum("incoming"),
+            pl.first("lat"),
+            pl.first("lon"),
+        ])
+    )
+    station_counts = _collect_if_lazy(station_counts)
+    # Check if the result is empty before trying to iterate over it
+    if station_counts.is_empty():
+        return []
+    # Build the list of StationRideCount objects from the aggregated DataFrame
+    return [
+        StationRideCount(
+            station_id=row["station_id"],
+            lat=row["lat"],
+            lon=row["lon"],
+            outgoing_rides=row["outgoing"],
+            incoming_rides=row["incoming"]
+        )
+        for row in station_counts.iter_rows(named=True)
+    ]
