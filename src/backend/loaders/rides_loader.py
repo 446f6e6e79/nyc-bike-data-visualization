@@ -1,15 +1,15 @@
 import polars as pl
 from typing import Union
-from datetime import datetime
 from src.backend.config import RIDES_DATA_DIR, TEST_DATA_DIR
+from src.backend.loaders.base_loader import load_cached_frame
 from src.backend.models.ride import RideableType, MemberCasual
 
 RideFrame = Union[pl.DataFrame, pl.LazyFrame]
 _rides_df: RideFrame | None = None
 
-
+# ONLY CALLED IN TEST MODE TO NORMALIZE TEST DATA TYPES
 def _normalize_ride_types(df: RideFrame) -> RideFrame:
-    """Normalize ride column types to avoid mixed-type errors across sources."""
+    """Normalize test ride column types to be consistent with production schema and avoid mixed-type comparison/join errors."""
     return df.with_columns(
         pl.col("ride_id").cast(str, strict=False),
         pl.col("rideable_type").cast(RideableType, strict=False),
@@ -40,28 +40,18 @@ def load_ride_data(inMemory: bool=False, test=False) -> RideFrame:
     # If the data is already loaded and cached, return it directly
     if _rides_df is not None:
         return _rides_df
-    # Otherwise, load the data from the source (CSV for test mode, Parquet for production)
-    print("Loading ride data...")
 
-    if test:
-        # If we are in test mode, load the csv file from the committed test dataset
-        print("Test mode enabled: loading data from committed test dataset.")
-        _rides_df = pl.read_csv(str(TEST_DATA_DIR / "trips.csv"))
-        _rides_df = _normalize_ride_types(_rides_df)
-    else:
-        # Otherwise, scan all parquet files recursively from partitioned folders
-        _rides_df = pl.scan_parquet(str(RIDES_DATA_DIR / "**/*.parquet"), hive_partitioning=True)
-    
-    print("Ride data loaded successfully.")
-    
-    print("Final data schema:")
-    if isinstance(_rides_df, pl.LazyFrame):
-        print(_rides_df.collect_schema())
-    else:
-        print(_rides_df.schema)
+    _rides_df = load_cached_frame(
+        label="ride",
+        in_memory=inMemory,
+        test=test,
+        load_test_data=lambda: pl.read_csv(str(TEST_DATA_DIR / "trips.csv")),
+        load_production_data=lambda: pl.scan_parquet(
+            str(RIDES_DATA_DIR / "**/*.parquet"), hive_partitioning=True
+        ),
+        normalize_test_data=_normalize_ride_types
+    )
 
-    # Collect into memory if inMemory is True or if we are in test mode
-    _rides_df = _rides_df.collect() if isinstance(_rides_df, pl.LazyFrame) and inMemory else _rides_df
     return _rides_df
 
 #TODO: remove this. Think if we have to add it to the download_data script or if we can do it on the fly in the stats computation

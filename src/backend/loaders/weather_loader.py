@@ -1,15 +1,15 @@
 import polars as pl
-from datetime import datetime
 from typing import Union
 
 from src.backend.config import TEST_DATA_DIR, WEATHER_DATA_DIR
+from src.backend.loaders.base_loader import load_cached_frame
 
 WeatherFrame = Union[pl.DataFrame, pl.LazyFrame]
 _weather_df: WeatherFrame | None = None
 
-
+# ONLY CALLED IN TEST MODE TO NORMALIZE TEST DATA TYPES
 def _normalize_weather_types(df: WeatherFrame) -> WeatherFrame:
-    """Normalize weather column types to keep join and response schemas consistent."""
+    """Normalize test weather column types to be consistent with production schema."""
     return df.with_columns(
         pl.col("time").cast(pl.Datetime, strict=False),
         pl.col("temperature").cast(pl.Float64, strict=False),
@@ -28,27 +28,16 @@ def load_weather_data(inMemory: bool = False, test: bool = False) -> WeatherFram
     # If the data is already loaded and cached, return it directly
     if _weather_df is not None:
         return _weather_df
-    # Otherwise, load the data from the source (CSV for test mode, Parquet for production)
-    print("Loading weather data...")
-    start_time = datetime.now()
 
-    if test:
-        # If we are in test mode, load the csv file from the committed test dataset
-        print("Test mode enabled: loading data from committed test dataset.")
-        _weather_df = pl.read_csv(str(TEST_DATA_DIR / "weather.csv"))
-        _weather_df = _normalize_weather_types(_weather_df)
-    else:
-        # Otherwise, scan all the parquet files
-        _weather_df = pl.scan_parquet(str(WEATHER_DATA_DIR / "**/*.parquet"), hive_partitioning=True)
+    _weather_df = load_cached_frame(
+        label="weather",
+        in_memory=inMemory,
+        test=test,
+        load_test_data=lambda: pl.read_csv(str(TEST_DATA_DIR / "weather.csv")),
+        load_production_data=lambda: pl.scan_parquet(
+            str(WEATHER_DATA_DIR / "**/*.parquet"), hive_partitioning=True
+        ),
+        normalize_test_data=_normalize_weather_types,
+    )
 
-    end_time = datetime.now()
-    print(f"Weather data loaded successfully in {end_time - start_time}.")
-    # If inMemory is True or in test mode, collect the LazyFrame into a DataFrame and keep it in memory for faster access on subsequent calls
-    _weather_df = _weather_df.collect() if isinstance(_weather_df, pl.LazyFrame) and inMemory else _weather_df
-
-    print("Final weather data schema:")
-    if isinstance(_weather_df, pl.LazyFrame):
-        print(_weather_df.collect_schema())
-    else:        
-        print(_weather_df.dtypes)
     return _weather_df

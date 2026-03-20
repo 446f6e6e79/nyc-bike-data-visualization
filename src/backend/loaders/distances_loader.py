@@ -1,15 +1,15 @@
-from datetime import datetime
 import polars as pl
 from typing import Union
 
 from src.backend.config import TEST_DATA_DIR, STATION_DISTANCES_PATH
+from src.backend.loaders.base_loader import load_cached_frame
 
 DistanceFrame = Union[pl.DataFrame, pl.LazyFrame]
 _distances_df: DistanceFrame | None = None
 
-
+# ONLY CALLED IN TEST MODE TO NORMALIZE TEST DATA TYPES
 def _normalize_distances_types(df: DistanceFrame) -> DistanceFrame:
-    """Normalize distance column types to avoid mixed-type comparison/join errors."""
+    """Normalize test distances column types to be consistent with production schema."""
     return df.with_columns(
         pl.col("station_id_a").cast(str, strict=False),
         pl.col("station_id_b").cast(str, strict=False),
@@ -30,26 +30,13 @@ def load_distances_data(inMemory=False, test=False) -> DistanceFrame:
     if _distances_df is not None:
         return _distances_df
 
-    # Otherwise, load the data from the source (CSV for test mode, Parquet for production)
-    print("Loading distances data...")
-    start_time = datetime.now()
+    _distances_df = load_cached_frame(
+        label="distances",
+        in_memory=inMemory,
+        test=test,
+        load_test_data=lambda: pl.read_csv(str(TEST_DATA_DIR / "distances.csv")),
+        load_production_data=lambda: pl.scan_parquet(str(STATION_DISTANCES_PATH)),
+        normalize_test_data=_normalize_distances_types,
+    )
 
-    if test:
-        # If we are in test mode, load the csv file from the committed test dataset
-        print("Test mode enabled: loading data from committed test dataset.")
-        _distances_df = pl.read_csv(str(TEST_DATA_DIR / "distances.csv"))
-        _distances_df = _normalize_distances_types(_distances_df)
-    else:
-        _distances_df = pl.scan_parquet(str(STATION_DISTANCES_PATH))
-
-    end_time = datetime.now()
-    print(f"Distances data loaded successfully in {end_time - start_time}.")
-    # If inMemory is True or in test mode, collect the LazyFrame into a DataFrame and keep it in memory for faster access on subsequent calls
-    _distances_df = _distances_df.collect() if isinstance(_distances_df, pl.LazyFrame) and inMemory else _distances_df
-
-    print("Final distances data schema:")
-    if isinstance(_distances_df, pl.LazyFrame):
-        print(_distances_df.collect_schema())
-    else:        
-        print(_distances_df.dtypes)
     return _distances_df
