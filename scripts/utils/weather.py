@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from src.backend.config import WEATHER_API_URL, NYC_COORDS, WEATHER_TIMEZONE, PARQUET_COMPRESSION, WEATHER_DATA_DIR
 
-def download_weather_data(min_date: str, max_date: str) -> None:
+def download_weather_data(min_date: str, max_date: str, force_download: bool = False) -> None:
     """
     Download hourly weather data for exactly the ride coverage range
     and save as parquet partitioned by year only.

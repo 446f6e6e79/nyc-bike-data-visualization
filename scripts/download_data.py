@@ -2,14 +2,18 @@
     Script to download and merge the bike-sharing trip data from the S3 bucket.
     The script will filter files by date range and dataset type (JC or non-JC)
     and convert the CSV files inside each downloaded ZIP into a single parquet file.
+
+    #TODO: Add functionality to download only missing data files from the specified date range
+    For weather data and station data, check if the data already exists and it is at most 1 month old before downloading again
 """
 import argparse
 import os
 import re
 from datetime import date
+from pathlib import Path
 
 from utils.distances import compute_and_save_station_distances
-from utils.rides import download_and_convert_files, filter_files, find_files
+from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from src.backend.config import (
     BASE_URL_RIDE_DATA,
@@ -53,6 +57,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--start-date", default=DEFAULT_START_DATE, help="Start date in YYYYMM")
     parser.add_argument("--end-date", default=DEFAULT_END_DATE, help="End date in YYYYMM")
     parser.add_argument("--download-jc", action="store_true", default=DOWNLOAD_JC, help="Include JC files")
+    parser.add_argument("--force-download", action="store_true", help="Force re-download of all files, even if they already exist")
     return parser.parse_args()
 
 def main():
@@ -77,20 +82,14 @@ def main():
     os.makedirs(STATION_DATA_DIR, exist_ok=True)
     os.makedirs(WEATHER_DATA_DIR, exist_ok=True)
 
-    # Find all files in the S3 bucket
-    files = find_files(BASE_URL_RIDE_DATA)
-
-    # Filter files by date range and dataset type
-    filtered_files = filter_files(files, args.start_date, args.end_date, args.download_jc)
-
     # Download and convert the filtered files
-    download_and_convert_files(filtered_files, BASE_URL_RIDE_DATA, RIDES_DATA_DIR)
+    download_ride_data(args.start_date, args.end_date, BASE_URL_RIDE_DATA, RIDES_DATA_DIR, download_jc=args.download_jc)
 
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
-    compute_and_save_station_distances()
+    compute_and_save_station_distances(force_download=args.force_download)
 
     # Download hourly weather data for the requested date range
-    download_weather_data(args.start_date, args.end_date)
+    download_weather_data(args.start_date, args.end_date, force_download=args.force_download)
 
 if __name__ == "__main__":
     main()

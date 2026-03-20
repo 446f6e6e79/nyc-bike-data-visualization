@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from src.backend.models.station import Station
 from src.backend.services.gbfs import fetch_station_data, _merge_station, _build_station_info, _find_station_by_id
