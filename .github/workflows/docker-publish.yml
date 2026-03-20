@@ -9,6 +9,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/nyc-bike-data-visualisation
+  PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   build-and-push:
@@ -28,46 +29,43 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up QEMU                
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ${{ env.PLATFORMS }}
+
+      - name: Set up Docker Buildx            
+        uses: docker/setup-buildx-action@v3
+
       - name: Extract release tag
         id: tag
         run: echo "value=${GITHUB_REF_NAME:-latest}" >> $GITHUB_OUTPUT
 
-      - name: Build backend image
-        run: |
-          set -euo pipefail
-          echo "Building backend image for tag '${{ steps.tag.outputs.value }}'."
-          docker build \
-            -f dockers/Dockerfile.backend \
-            -t ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }} \
-            -t ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }} \
-            -t ${{ env.IMAGE_PREFIX }}-backend:latest \
-            .
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: dockers/Dockerfile.backend
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE_PREFIX }}-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Push backend image
-        run: |
-          set -euo pipefail
-          echo "Pushing backend image tags."
-          docker push ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }}
-          docker push ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }}
-          docker push ${{ env.IMAGE_PREFIX }}-backend:latest
-
-      - name: Build frontend image
-        run: |
-          set -euo pipefail
-          echo "Building frontend image for tag '${{ steps.tag.outputs.value }}'."
-          docker build \
-            -f dockers/Dockerfile.frontend \
-            -t ${{ env.IMAGE_PREFIX }}-frontend:${{ steps.tag.outputs.value }} \
-            -t ${{ env.IMAGE_PREFIX }}-frontend:latest \
-            .
-
-      - name: Push frontend image
-        run: |
-          set -euo pipefail
-          echo "Pushing frontend image tags."
-          docker push ${{ env.IMAGE_PREFIX }}-frontend:${{ steps.tag.outputs.value }}
-          docker push ${{ env.IMAGE_PREFIX }}-frontend:${{ steps.tag.outputs.value }}
-          docker push ${{ env.IMAGE_PREFIX }}-frontend:latest
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: dockers/Dockerfile.frontend
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-frontend:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE_PREFIX }}-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Generate versioned docker-compose for release
         env:
@@ -116,4 +114,3 @@ jobs:
           name: Data Visualisation Docker Release ${{ steps.tag.outputs.value }}
           files: |
             docker-compose.release.yml
-            setup.sh
