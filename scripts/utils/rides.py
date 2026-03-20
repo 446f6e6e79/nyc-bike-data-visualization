@@ -7,35 +7,142 @@ from src.backend.config import PARQUET_COMPRESSION, YEARLY_CUTOFF
 import xml.etree.ElementTree as ET
 import requests
 
-def _extract_coverage_from_filename(file_name: str) -> tuple[int, int]:
+def _extract_coverage_from_filename(file_name: str) -> list[int]:
     """
     Extract the coverage period from the file name. 
     The file name can be in one of the following formats:
     - JC-YYYYMM-tripdata.csv.zip (for JC dataset)
     - YYYYMM-tripdata.csv.zip (for non-JC dataset)
-    - YYYY-tripdata.csv.zip (for files before 2024)
+    - YYYY-tripdata.csv.zip (for files before YEARLY_CUTOFF, which cover the entire year)
     Args:
         file_name (str): The name of the file to extract coverage from.
     Returns:
-        tuple: A tuple containing the start and end coverage periods in the format (YYYYMM, YYYYMM).
+        list: A list containing the months covered by the file
     Raises:
     """
     normalized = file_name
     if normalized.startswith("JC-"):
+        # Remove the "JC-" prefix to simplify parsing
         normalized = normalized[3:]
-
+    # Taking the part before the first dash to handle both YYYYMM and YYYY formats
     date_part = normalized.split("-")[0]
+    
+    # YYYY case
     if len(date_part) == 4:
         year = int(date_part)
         # If the year is less than or equal to the cutoff, we assume it covers the entire year (January to December)
         if year <= YEARLY_CUTOFF:
-            return int(f"{year}01"), int(f"{year}12")
-        return int(f"{year}01"), int(f"{year}12")
-
+            return [year * 100 + month for month in range(1, 13)]
+        else:
+            raise ValueError(f"Unsupported date format in file name: {file_name}")
+    # YYYYMM case
     if len(date_part) == 6:
-        return int(date_part), int(date_part)
+        month = int(date_part) % 100
+        year = int(date_part) // 100
+        return [year * 100 + month]
 
     raise ValueError(f"Unsupported date format in file name: {file_name}")
+
+def _filter_files(available_files: list, current_coverage: list, start_date: str, end_date: str, download_jc: bool) -> list:
+    """
+    Filter the list of files by date range and dataset type (JC or non-JC).
+    Args:
+        available_files (list): The list of file keys to filter.
+        current_coverage (list): A list of tuples containing the start and end coverage periods.
+        start_date (str): The start date in the format YYYYMM.
+        end_date (str): The end date in the format YYYYMM.
+        download_jc (bool): Whether to include JC dataset files.
+    Returns:
+        list: A filtered list of file keys that match the criteria.
+    """
+    # Extract the date part from the file name and filter by date range
+    start_value = int(start_date) if start_date else None
+    end_value = int(end_date) if end_date else None
+    filtered_files = []
+
+    for f in available_files:
+        # If the file is from the JC dataset and we don't want to download it, skip it
+        if f.startswith("JC") and not download_jc:
+            continue
+        try:
+            # Extract the coverage period from the file name
+            file_coverage = _extract_coverage_from_filename(f)
+            
+            # Check if all months covered by each file are already covered by existing files
+            is_covered = True
+            for month in file_coverage:
+                # If the month is already covered by existing files, skip it
+                if month not in current_coverage:
+                    is_covered = False
+                    break
+        except ValueError:
+            continue
+        if is_covered:
+            print(f"File {f} is already covered by existing files, skipping.")
+            continue
+
+        # If the start value is set and the file ends before the start value, skip it
+        if start_value and min(file_coverage) < start_value:
+            continue
+        # If the end value is set and the file starts after the end value, skip it
+        if end_value and max(file_coverage) > end_value:
+            continue
+        # If the file passes all filters, add it to the list of filtered files
+        filtered_files.append(f)
+
+    print(f"Selected {len(filtered_files)} files")
+    return filtered_files
+
+def _find_available_files(base_data_url: str) -> list[str]:
+    """
+    Get the list of files available in the S3 bucket.
+    Args:
+        base_data_url (str): The base URL of the S3 bucket.
+    Returns:
+        list: A list of file keys available in the S3 bucket.
+    """
+    print(f"Finding available files in S3 bucket at {base_data_url}...")
+    # Get S3 bucket index
+    response = requests.get(base_data_url)
+    response.raise_for_status()
+    
+    # Parse the XML response
+    root = ET.fromstring(response.text)
+
+    # Extract file keys
+    files = []
+    for content in root.findall("{http://s3.amazonaws.com/doc/2006-03-01/}Contents"):
+        key = content.find("{http://s3.amazonaws.com/doc/2006-03-01/}Key").text
+        if key.endswith(".zip"):
+            files.append(key)
+
+    print(f"Found {len(files)} files")
+    return files
+
+def _find_current_coverage(DIR_PATH: str) -> list[tuple[int, int]]:
+    """
+    Find the current coverage of already downloaded files to avoid unnecessary downloads.
+    Args:        
+        DIR_PATH (str): The directory path where the downloaded files are stored.
+    Returns:        
+        list: A list of tuples containing the start and end coverage periods in the format (YYYYMM, YYYYMM).
+    """
+    coverage = []
+    for year_dir in os.listdir(DIR_PATH):
+        for month_dir in os.listdir(os.path.join(DIR_PATH, year_dir)):
+            for file in os.listdir(os.path.join(DIR_PATH, year_dir, month_dir)):
+                if file.endswith(".parquet"):
+                    try:
+                        # Get last 4 digits of the year and last 2 digits of the month to reconstruct the YYYYMM format
+                        year = year_dir.split("=")[1]
+                        month = month_dir.split("=")[1]
+                        month = month.zfill(2)  # Ensure month is 2 digits
+
+                        file_coverage = year + month
+                        coverage.append(int(file_coverage))
+                    except ValueError:
+                        continue
+    return coverage
 
 def _clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
     """
@@ -66,7 +173,100 @@ def _clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
         .filter(pl.col("ended_at") >= pl.col("started_at"))
     )
 
-def download_and_convert_files(filtered_files: list, base_data_url: str, output_dir: str) -> None:
+def _download_file(file_key: str, base_data_url: str) -> bytes:
+    """Download a single file from the S3 bucket.
+    
+    Args:
+        file_key (str): The key of the file to download.
+        base_data_url (str): The base URL of the S3 bucket.
+        
+    Returns:
+        bytes: The downloaded file content.
+    """
+    print(f"Downloading {file_key}...")
+    response = requests.get(base_data_url + file_key, stream=True)
+    response.raise_for_status()
+    
+    # Get the total size of the file from the response headers
+    total_size = int(response.headers.get("content-length", 0))
+    downloaded_size = 0
+    
+    # Download the file in chunks and print progress
+    chunk_size = 1024 * 1024 * 10  # 10 MB
+    chunks = []
+    
+    # For each chunk in the response, append it to the list of chunks and update the downloaded size
+    for chunk in response.iter_content(chunk_size=chunk_size):
+        if not chunk:
+            continue
+        chunks.append(chunk)
+        downloaded_size += len(chunk)
+        
+        if total_size > 0:
+            # Update the progress percentage and print it to the console
+            progress_pct = (downloaded_size / total_size) * 100
+            downloaded_mb = downloaded_size / (1024 * 1024)
+            total_mb = total_size / (1024 * 1024)
+            # \r to overwrite the same line, end="" to avoid adding a new line, and flush=True to ensure it prints immediately
+            print(
+                f"\rDownload progress for {file_key}: {progress_pct:5.1f}% "
+                f"({downloaded_mb:.1f}/{total_mb:.1f} MB)",
+                end="",
+                flush=True,
+            )
+        else:
+            downloaded_mb = downloaded_size / (1024 * 1024)
+            print(
+                f"\rDownload progress for {file_key}: {downloaded_mb:.1f} MB",
+                end="",
+                flush=True,
+            )
+    
+    print()  # New line after progress is complete
+    print(f"Finished downloading {file_key}")
+    return b"".join(chunks)
+
+def _convert_zip_to_csv(zip_content: bytes) -> pl.DataFrame:
+    """
+    Convert the content of a ZIP file containing CSV files into a single Polars DataFrame.
+    Args:
+        zip_content (bytes): The content of the ZIP file as bytes.
+    Returns:
+        pl.DataFrame: A Polars DataFrame containing the combined data from all CSV files in the ZIP.
+    """
+    csv_frames = []
+    print("Extracting CSV files from ZIP content...")
+    # Open the ZIP file from the response content and read each CSV file into a Polars DataFrame
+    with zipfile.ZipFile(io.BytesIO(zip_content)) as zip_file:
+        # For each file in the ZIP
+        for name in zip_file.namelist():
+            if not name.endswith(".csv"):
+                continue
+                        
+            csv_name = os.path.basename(name)
+            print(f"Reading {csv_name}...")
+            # Read each CSV file into a Polars DataFrame and append it to the list
+            with zip_file.open(name) as source:
+                csv_frames.append(
+                    pl.read_csv(
+                        io.BytesIO(source.read()),
+                        # Override station ID columns to string to handle any potential non-numeric IDs
+                        schema_overrides={
+                            "start_station_id": pl.Utf8,
+                            "end_station_id": pl.Utf8,
+                        },
+                    )
+                )
+    # If no CSV files were found in the ZIP, return an empty DataFrame
+    if not csv_frames:
+        print("No CSV files found in ZIP.")
+        return pl.DataFrame()
+    
+    print(f"Extracted {len(csv_frames)} CSV files from ZIP, combining into a single DataFrame...")
+    # Concatenate all CSV DataFrames into a single DataFrame
+    return pl.concat(csv_frames, how="diagonal_relaxed")
+
+def download_ride_data(start_date: str, end_date: str, base_data_url: str, output_dir: str, download_jc: bool) -> None:
     """
     Download each filtered ZIP file from the S3 bucket and convert all CSV files
     inside it into a single parquet file.
@@ -76,54 +276,31 @@ def download_and_convert_files(filtered_files: list, base_data_url: str, output_
         base_data_url (str): The base URL of the S3 bucket.
         output_dir (str): The directory to save the parquet files.
     """
+    # Check which files are available in the S3 bucket and filter them by date range and dataset type
+    available_files = _find_available_files(base_data_url)
+    
+    # Check the current coverage of already downloaded files to avoid unnecessary downloads
+    current_coverage = _find_current_coverage(output_dir)
+
+    # Filter files by date range and dataset type
+    filtered_files = _filter_files(available_files, current_coverage, start_date, end_date, download_jc=download_jc)
+    
     for f in filtered_files:
-        # Extract year and month for partitioning from the file name
-        start_date, _ = _extract_coverage_from_filename(f)
-        year = start_date // 100
-        month = start_date % 100
+        downloaded_file_content = _download_file(f, base_data_url)
 
-        print(f"Downloading {f}...")
-        response = requests.get(base_data_url + f)
-        response.raise_for_status()
-        print(f"Finished downloading {f}, converting to parquet...")
-
-        csv_frames = []
-        with zipfile.ZipFile(io.BytesIO(response.content)) as zip_file:
-            # For each file in the ZIP
-            for name in zip_file.namelist():
-                if not name.endswith(".csv"):
-                    continue
-                
-                csv_name = os.path.basename(name)
-                print(f"Reading {csv_name}...")
-                # Read each CSV file into a Polars DataFrame and append it to the list
-                with zip_file.open(name) as source:
-                    csv_frames.append(
-                        pl.read_csv(
-                            io.BytesIO(source.read()),
-                            # Override station ID columns to string to handle any potential non-numeric IDs
-                            schema_overrides={
-                                "start_station_id": pl.Utf8,
-                                "end_station_id": pl.Utf8,
-                            },
-                        )
-                    )
-        # If no CSV files were found in the ZIP, skip it
-        if not csv_frames:
-            print(f"No CSV files found in {f}, skipping.")
-            continue
+        trip_data = _convert_zip_to_csv(downloaded_file_content)
         
-        # Concatenate all CSV DataFrames into a single DataFrame
-        trip_data = pl.concat(csv_frames, how="diagonal_relaxed")
-        
-        # Extract year and month from the started_at column for partitioning
-        trip_data = trip_data.with_columns([
-            pl.lit(year).alias("year"),
-            pl.lit(month).alias("month"),
-        ])
         print("Starting data cleaning...")
         trip_data = _clean_rides_data(trip_data)
         print("Data cleaning completed.")
+
+        # Extract year and month from cleaned datetime column for partitioning
+        trip_data = trip_data.with_columns(
+            pl.col("started_at").dt.strftime("%Y%m").cast(pl.Int32).alias("year_month"),
+            pl.col("started_at").dt.year().alias("year"),
+            pl.col("started_at").dt.month().alias("month")
+        )
+
         # Write the combined DataFrame to a parquet file, partitioned by year and month
         trip_data.write_parquet(
             output_dir,
@@ -133,65 +310,3 @@ def download_and_convert_files(filtered_files: list, base_data_url: str, output_
             compression=PARQUET_COMPRESSION)
         
         print(f"Wrote {trip_data.height} rows to {output_dir} for file {f}")
-
-def filter_files(files: list, start_date: str, end_date: str, download_jc: bool) -> list:
-    """
-    Filter the list of files by date range and dataset type (JC or non-JC).
-    Args:
-        files (list): The list of file keys to filter.
-        start_date (str): The start date in the format YYYYMM.
-        end_date (str): The end date in the format YYYYMM.
-        download_jc (bool): Whether to include JC dataset files.
-    Returns:
-        list: A filtered list of file keys that match the criteria.
-    """
-    # Extract the date part from the file name and filter by date range
-    start_value = int(start_date) if start_date else None
-    end_value = int(end_date) if end_date else None
-    filtered_files = []
-
-    for f in files:
-        # If the file is from the JC dataset and we don't want to download it, skip it
-        if f.startswith("JC") and not download_jc:
-            continue
-        try:
-            # Extract the coverage period from the file name
-            file_start, file_end = _extract_coverage_from_filename(f)
-        except ValueError:
-            continue
-
-        # If the start value is set and the file ends before the start value, skip it
-        if start_value and file_end < start_value:
-            continue
-        # If the end value is set and the file starts after the end value, skip it
-        if end_value and file_start > end_value:
-            continue
-        # If the file passes all filters, add it to the list of filtered files
-        filtered_files.append(f)
-    print(f"Selected {len(filtered_files)} files")
-    return filtered_files
-
-def find_files(base_data_url: str) -> list[str]:
-    """
-    Get the list of files available in the S3 bucket.
-    Args:
-        base_data_url (str): The base URL of the S3 bucket.
-    Returns:
-        list: A list of file keys available in the S3 bucket.
-    """
-    # Get S3 bucket index
-    response = requests.get(base_data_url)
-    response.raise_for_status()
-    
-    # Parse the XML response
-    root = ET.fromstring(response.text)
-
-    # Extract file keys
-    files = []
-    for content in root.findall("{http://s3.amazonaws.com/doc/2006-03-01/}Contents"):
-        key = content.find("{http://s3.amazonaws.com/doc/2006-03-01/}Key").text
-        if key.endswith(".zip"):
-            files.append(key)
-
-    print(f"Found {len(files)} files")
-    return files

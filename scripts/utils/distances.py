@@ -1,6 +1,7 @@
 import math
 import polars as pl
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -8,6 +9,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from src.backend.services.gbfs import fetch_station_data
 
 from src.backend.config import STREET_CIRCUITY_FACTOR, PARQUET_COMPRESSION, STATION_DISTANCES_PATH
+
+def _check_freshness(file_path: Path, max_age_days: int = 30) -> bool:
+    """
+    Check if the file at the given path is fresh (i.e., not older than max_age_days).
+    Args:
+        file_path (Path): The path to the file to check.
+        max_age_days (int): The maximum age of the file in days to be considered fresh.
+    Returns:
+        bool: True if the file is fresh, False otherwise.
+    """
+    if not file_path.exists():
+        return False
+    file_age_days = (date.today() - date.fromtimestamp(file_path.stat().st_mtime)).days
+    return file_age_days <= max_age_days
 
 def _distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
@@ -21,11 +36,16 @@ def _distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     c = 2 * math.asin(math.sqrt(a))
     return 6371 * c * STREET_CIRCUITY_FACTOR
 
-def compute_and_save_station_distances() -> None:
+def compute_and_save_station_distances(force_download: bool = False) -> None:
     """
     Compute unique undirected station-pair distances (haversine * 1.3) and save as parquet.
     Only keep GBFS stations that appear in ride data to avoid impossible pairs.
+    Args:
+        force_download (bool): Whether to force re-download of station data, even if it already exists.
     """
+    if not force_download and _check_freshness(Path(STATION_DISTANCES_PATH)):
+        print(f"Station distances file already exists at {STATION_DISTANCES_PATH}, skipping recomputation.")
+        return
     raw_stations = fetch_station_data()[0]
 
     stations = []
