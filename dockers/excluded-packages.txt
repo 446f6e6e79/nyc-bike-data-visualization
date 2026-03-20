@@ -24,3 +24,4 @@ widgetsnbextension
 matplotlib
 matplotlib-inline
 seaborn
+jinja2
