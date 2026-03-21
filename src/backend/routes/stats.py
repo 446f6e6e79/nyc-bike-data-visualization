@@ -80,7 +80,8 @@ def get_stats_by_day_of_week(
     start_station_id: str | None = Query(default=None),
     end_station_id: str | None = Query(default=None),
 ):
-    """Get historical ride stats grouped by day of week (0=Monday, 6=Sunday)."""
+    """Get historical ride stats grouped by day of week (0=Monday, 6=Sunday). 
+    The day_of_week query parameter can be a single integer or a comma-separated list of integers."""
     parsed_day_of_week = _parse_day_of_week(day_of_week)
     return get_day_of_week_stats(
         user_type=user_type,
