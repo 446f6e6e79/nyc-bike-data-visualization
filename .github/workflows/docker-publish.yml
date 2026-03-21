@@ -1,11 +1,13 @@
 name: Docker Release Pipeline
 
 on:
-  workflow_dispatch:
+  # ONLY triggers when a new release is published
   release:
     types: [published]
 
+# Environment variables for the workflow
 env:
+  # This forces the use of Node 24 for compatibility 
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/nyc-bike-data-visualisation
@@ -36,10 +38,11 @@ jobs:
 
       - name: Set up Docker Buildx            
         uses: docker/setup-buildx-action@v3
-
+      
+      # Extract the release tag from the GitHub event context
       - name: Extract release tag
         id: tag
-        run: echo "value=${GITHUB_REF_NAME:-latest}" >> $GITHUB_OUTPUT
+        run: echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push backend image
         uses: docker/build-push-action@v4
@@ -106,7 +109,7 @@ jobs:
           set -euo pipefail
           test -s docker-compose.release.yml || { echo "docker-compose.release.yml is missing or empty!"; exit 1; }
           echo "Release assets verified."
-
+      # Once the docker-compose file is generated and verified, we can attach it to the GitHub Release
       - name: Attach assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:

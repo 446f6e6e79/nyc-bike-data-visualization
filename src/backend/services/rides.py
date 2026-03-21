@@ -76,7 +76,7 @@ def get_filtered_rides(
     return rides.filter(filter_expr)
 
 def add_trip_duration(rides: pl.LazyFrame) -> pl.LazyFrame:
-    """Add a trip_duration_seconds column to the rides."""
+    """Add a trip_duration_seconds column to the rides"""
     return rides.with_columns(
         (pl.col("ended_at") - pl.col("started_at"))
         .dt.total_seconds() # convert to seconds
@@ -111,21 +111,19 @@ def enrich_rides_with_distances(rides: pl.LazyFrame, distances: pl.LazyFrame) ->
     rides: start_station_id, end_station_id
     distances: station_id_a, station_id_b (canonicalized with a < b)
     """
-    # Issue: Redundant normalization if distances is already canonicalized
-    # Consider documenting whether distances MUST be pre-canonicalized
-    
+    # Since distances are stored with station_id_a < station_id_b, we create a new column inside rides that has the min and
+    # max of start_station_id and end_station_id to join on.
     rides_norm = rides.with_columns(
         pl.min_horizontal("start_station_id", "end_station_id").alias("_station_min"),
         pl.max_horizontal("start_station_id", "end_station_id").alias("_station_max"),
     )
-    
-    # If distances is already canonicalized, simplify:
+    # Rename distance columns to match the normalized station columns for joining
     distances_select = distances.select([
         pl.col("station_id_a").alias("_station_min"),
         pl.col("station_id_b").alias("_station_max"),
         "distance_km"
     ])
-    
+    # Simple join on the normalized station ID pairs to get the distance, then drop the normalized columns
     return (
         rides_norm
         .join(distances_select, on=["_station_min", "_station_max"], how="left")

@@ -60,6 +60,7 @@ def get_station_ride_counts_stats(
     station_id: str | None = None,
     limit: int = 100,
 ) -> list[StationRideCount]:
+    # Get rides filtered by date range and optionally by station_id
     rides = get_filtered_rides(start_date=start_date, end_date=end_date)
 
     if station_id:

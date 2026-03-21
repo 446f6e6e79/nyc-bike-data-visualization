@@ -40,6 +40,7 @@ jobs:
         env:
           TEST_MODE: "true"
         run: |
+          # Start the backend server in the background
           python -m uvicorn src.backend.main:app --host 127.0.0.1 --port 8000 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID' EXIT
@@ -47,7 +48,7 @@ jobs:
           python - <<'PY'
           import time
           import urllib.request
-
+          # Check that the backend server is up and running by trying to access the docs endpoint
           for _ in range(30):
               try:
                   with urllib.request.urlopen("http://127.0.0.1:8000/docs", timeout=2):
@@ -57,5 +58,6 @@ jobs:
           else:
               raise SystemExit("Backend server did not become ready in time.")
           PY
+          # Run the tests
           cd src/backend
           pytest tests -q
