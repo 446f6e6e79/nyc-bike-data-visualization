@@ -5,20 +5,41 @@
 }
 
 .app-header {
-  background: linear-gradient(135deg, #1a73e8, #0d47a1);
-  color: white;
-  padding: 40px;
-  text-align: center;
+  background-color: #1a73e8;
+  border-bottom: none;
+  padding: 20px;
 }
 
 .app-title {
-  margin: 0;
-  font-size: 2.5rem;
+  display: block;
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
 }
 
-.app-subtitle {
-  margin: 10px 0 0;
-  opacity: 0.85;
+.app-nav {
+  display: flex;
+  gap: 0;
+}
+
+.nav-link {
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.75);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.nav-link:hover {
+  color: white;
+}
+
+.nav-link.active {
+  color: white;
+  border-bottom-color: white;
 }
 
 .app-content {
@@ -130,4 +151,51 @@
 .chart-y-label {
   fill: #666;
   font-size: 0.8rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  border: 0.5px solid rgba(0,0,0,0.08);
+  width: fit-content;
+  margin: 24px auto;
+}
+
+.status-wrap--error {
+  background: #fff5f5;
+  border-color: rgba(163,45,45,0.2);
+}
+
+.status-wrap--error .status-text {
+  color: #A32D2D;
+}
+
+.status-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e0e7ff;
+  border-top-color: #1a73e8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.status-icon {
+  width: 16px;
+  height: 16px;
+  color: #A32D2D;
+  flex-shrink: 0;
+}
+
+.status-text {
+  font-size: 13px;
+  color: #666;
 }

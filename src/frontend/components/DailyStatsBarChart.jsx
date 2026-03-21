@@ -1,4 +1,3 @@
-import React from 'react'
 import { scaleBand, scaleLinear, max } from 'd3'
 
 const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -8,11 +7,11 @@ function DailyStatsBarChart({ items }) {
   const height = 320
   const margin = { top: 16, right: 20, bottom: 56, left: 56 }
 
-  const normalized = DAY_ORDER.map(day => {
-    const entry = items.find(item => item.day_of_week === day)
+  const normalized = DAY_ORDER.map((day, index) => {
+    const entry = items.find(item => item.day_of_week === index)
     return {
       day,
-      totalRides: entry?.stats?.total_rides ?? 0,
+      totalRides: entry?.total_rides ?? 0,
     }
   })
 

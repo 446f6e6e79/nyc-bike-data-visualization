@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    historyApiFallback: true, 
   },
   preview: {
     port: 5173,

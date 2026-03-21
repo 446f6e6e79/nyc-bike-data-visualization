@@ -1,57 +1,31 @@
-import React from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import AppHeader from './components/AppHeader.jsx'
-import StatsSection from './components/StatsSection.jsx'
-import StatusMessage from './components/StatusMessage.jsx'
-import DailyStatsBarChart from './components/DailyStatsBarChart.jsx'
+import StatsPage from './pages/StatsPage.jsx'
+import MapPage from './pages/MapPage.jsx'
+
 import useStatsData from './hooks/useStatsData.js'
+import useDailyStats from './hooks/useDailyStats.js'
 
 function App() {
-  const { rideStats, userStats, loading, error } = useStatsData()
-
-  const rideMetrics = [
-    { label: 'Total Rides', key: 'total_rides', formatter: value => value.toLocaleString() },
-    { label: 'Avg Duration (min)', key: 'average_duration_minutes', formatter: value => value.toFixed(1) },
-    { label: 'Total Distance (km)', key: 'total_distance_km', formatter: value => value.toFixed(0) },
-  ]
-
-  const userMetrics = [
-    { label: 'Total Rides', key: 'total_rides', formatter: value => value.toLocaleString() },
-    { label: 'Avg Duration (min)', key: 'average_duration_minutes', formatter: value => value.toFixed(1) },
-    { label: 'Avg Distance (km)', key: 'average_distance_km', formatter: value => value.toFixed(2) },
-  ]
+  // Loading one time queries for stats data and daily stats, then passing down as props to StatsPage
+  const statsData = useStatsData()
+  const dailyData = useDailyStats()
 
   return (
-    <div className="app-shell">
-      <AppHeader />
-
-      <div className="app-content">
-        <StatusMessage loading={loading} error={error} />
-
-        {!loading && !error && (
-          <>
-            <StatsSection
-              className="ride-section"
-              title="By Rideable Type"
-              items={rideStats}
-              itemKey="rideable_type"
-              itemTitle={item => item.rideable_type.replace('_', ' ')}
-              metrics={rideMetrics}
-            />
-
-            <StatsSection
-              title="By User Type"
-              items={userStats}
-              itemKey="user_type"
-              itemTitle={item => item.user_type}
-              metrics={userMetrics}
-            />
-            {/* TODO: Think about doing a new endpoint for daily stats, by now this charts needs to do 7 calls */}
-            <DailyStatsBarChart items={[]} />
-          </>
-        )}
+    <BrowserRouter>
+      <div className="app-shell">
+        <AppHeader />
+        <div className="app-content">
+          <Routes>
+            <Route path="/" element={<Navigate to="/map" replace />} />
+            <Route path="/map"   element={<MapPage />} />
+            <Route path="/stats" element={<StatsPage statsData={statsData} dailyData={dailyData} />} />
+            {/* add future pages here */}
+          </Routes>
+        </div>
       </div>
-    </div>
+    </BrowserRouter>
   )
 }
 
