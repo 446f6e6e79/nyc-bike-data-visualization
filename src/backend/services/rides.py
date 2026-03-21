@@ -12,7 +12,7 @@ def get_filtered_rides(
     bike_type: RideableType | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
-    day_of_week: int | None = None,
+    day_of_week: int | list[int] | None = None,
     start_hour: int | None = None,
     start_station_id: str | None = None,
     end_station_id: str | None = None,
@@ -25,7 +25,7 @@ def get_filtered_rides(
     - ride_id: Filter by specific ride ID
     - user_type: Filter by user type (member or casual)
     - start_date, end_date: Filter by ride start date range
-    - day_of_week: Filter by day of the week (0=Monday, 6=Sunday)
+    - day_of_week: Filter by day of the week (0=Monday, 6=Sunday) or list of days
     - start_hour: Filter by start hour
     - start_station_id, end_station_id: Filter by station IDs
     - end_date: Filter by ride end date range
@@ -54,7 +54,11 @@ def get_filtered_rides(
             filter_expr &= date_col <= end_date
     
     if day_of_week is not None:
-        filter_expr &= pl.col("started_at").dt.weekday() == day_of_week
+        # If a single integer is provided, convert it to a list for uniform processing
+        if isinstance(day_of_week, int):
+            day_of_week = [day_of_week]
+        # NOTE: Polars datetime weekday returns 1=Monday, 7=Sunday, so we adjust by subtracting 1 to match the 0=Monday, 6=Sunday convention 
+        filter_expr &= (pl.col("started_at").dt.weekday() - 1).is_in(day_of_week)
     
     if start_hour is not None:
         filter_expr &= pl.col("started_at").dt.hour() == start_hour
