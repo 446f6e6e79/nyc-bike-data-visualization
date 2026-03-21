@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ENDPOINTS } from '../api-data/apiConstants.js'
-import { apiClient } from '../api-data/apiClient.js'
+import apiClient from '../api-data/apiClient.js'
 
 // useStationRideCounts.js — per-station data, its own filters
 function useStationRideCounts(filters = {}) {
@@ -12,7 +12,7 @@ function useStationRideCounts(filters = {}) {
     setLoading(true)
     setError(null)
     try {
-      const data = await apiClient.get(ENDPOINTS.stationRideCounts(), { params: filters })
+      const { data } = await apiClient.get(ENDPOINTS.stationRideCounts(), { params: filters })
       setStationRideCounts(data)
     } catch (err) {
       setError(err.message)

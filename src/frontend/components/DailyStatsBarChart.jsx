@@ -12,6 +12,7 @@ function DailyStatsBarChart({ items }) {
     return {
       day,
       totalRides: entry?.total_rides ?? 0,
+      number_of_days: entry?.number_of_days ?? 1,
     }
   })
 
@@ -20,7 +21,7 @@ function DailyStatsBarChart({ items }) {
     .range([margin.left, width - margin.right])
     .padding(0.2)
 
-  const yMax = max(normalized, d => d.totalRides) ?? 0
+  const yMax = max(normalized, d => d.totalRides / d.number_of_days) ?? 0
   const yScale = scaleLinear()
     .domain([0, yMax > 0 ? yMax : 1])
     .nice()
@@ -44,8 +45,8 @@ function DailyStatsBarChart({ items }) {
             if (x === undefined) {
               return null
             }
-
-            const y = yScale(d.totalRides)
+            // The bar height is based on the average rides per that day
+            const y = yScale(d.totalRides / d.number_of_days)
             const barHeight = height - margin.bottom - y
 
             return (
@@ -71,7 +72,8 @@ function DailyStatsBarChart({ items }) {
                   textAnchor="middle"
                   className="chart-value"
                 >
-                  {d.totalRides.toLocaleString()}
+                  {/* Show the average rides per day, truncated to whole numbers */}
+                  {(d.totalRides / d.number_of_days).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </text>
               </g>
             )

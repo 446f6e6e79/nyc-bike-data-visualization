@@ -1,5 +1,6 @@
 @import './base.css';
 @import './layout.css';
+@import './map.css';
 @import './components/cards.css';
 @import './components/charts.css';
 @import './components/status.css';
