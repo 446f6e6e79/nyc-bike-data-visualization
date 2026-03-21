@@ -7,7 +7,7 @@ import DailyStatsBarChart from './components/DailyStatsBarChart.jsx'
 import useStatsData from './hooks/useStatsData.js'
 
 function App() {
-  const { rideStats, userStats, dailyStats, loading, error } = useStatsData()
+  const { rideStats, userStats, loading, error } = useStatsData()
 
   const rideMetrics = [
     { label: 'Total Rides', key: 'total_rides', formatter: value => value.toLocaleString() },
@@ -46,8 +46,8 @@ function App() {
               itemTitle={item => item.user_type}
               metrics={userMetrics}
             />
-
-            <DailyStatsBarChart items={dailyStats} />
+            {/* TODO: Think about doing a new endpoint for daily stats, by now this charts needs to do 7 calls */}
+            <DailyStatsBarChart items={[]} />
           </>
         )}
       </div>

@@ -1,11 +1,19 @@
 export const API_BASE_URL = 'http://localhost:8000'
 
 export const ENDPOINTS = {
-  rideStatsByType: `${API_BASE_URL}/statistics/ride-types`,
-  classicRideStats: `${API_BASE_URL}/statistics/ride-types/classic_bike`,
-  electricRideStats: `${API_BASE_URL}/statistics/ride-types/electric_bike`,
-  userStatsByType: `${API_BASE_URL}/statistics/user-types`,
-  memberUserStats: `${API_BASE_URL}/statistics/user-types/member`,
-  casualUserStats: `${API_BASE_URL}/statistics/user-types/casual`,
-  dailyStats: `${API_BASE_URL}/statistics/day`
+  // Stations
+  stations:                () => `${API_BASE_URL}/stations/`,
+  stationsAvailability:    () => `${API_BASE_URL}/stations/availability`,
+  stationsEmpty:           () => `${API_BASE_URL}/stations/empty`,
+  stationById:             (id) => `${API_BASE_URL}/stations/${id}`,
+  stationAvailabilityById: (id) => `${API_BASE_URL}/stations/${id}/availability`,
+
+  // Rides
+  rides:                   () => `${API_BASE_URL}/rides/`,
+  rideById:                (id) => `${API_BASE_URL}/rides/by_ride_id/${id}`,
+
+  // Stats
+  stats:                   () => `${API_BASE_URL}/stats/`,
+  stationRideCounts:       () => `${API_BASE_URL}/stats/station_ride_counts`,
+  tripsBetweenStations:    () => `${API_BASE_URL}/stats/trips_between_stations`,
 }

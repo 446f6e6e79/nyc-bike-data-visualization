@@ -1,51 +1,49 @@
-import React from 'react'
+// hooks/useStatsData.js
+import { useState, useEffect, useCallback } from 'react'
 import { ENDPOINTS } from '../api-data/apiConstants.js'
+import apiClient from '../api-data/apiClient.js'
+
+const toDisplayStats = (item) => ({
+  ...item,
+  average_duration_minutes: item.average_duration_seconds / 60,
+  total_duration_minutes: item.total_duration_seconds / 60,
+})
 
 function useStatsData() {
-  {/* State variables, used to store the statistics data */}
-  const [rideStats, setRideStats] = React.useState([])
-  const [userStats, setUserStats] = React.useState([])
-  const [dailyStats, setDailyStats] = React.useState([])
+  const [rideStats, setRideStats] = useState([])
+  const [userStats, setUserStats] = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState(null)
 
-  {/* Set the loading state to true when loading the page */}
-  const [loading, setLoading] = React.useState(true)
-  const [error, setError] = React.useState(null)
+  const fetchAll = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [classic, electric, member, casual] = await Promise.all([
+        (await apiClient.get(ENDPOINTS.stats(), { params: { bike_type: 'classic_bike' } })).data,
+        (await apiClient.get(ENDPOINTS.stats(), { params: { bike_type: 'electric_bike' } })).data,
+        (await apiClient.get(ENDPOINTS.stats(), { params: { user_type: 'member' } })).data,
+        (await apiClient.get(ENDPOINTS.stats(), { params: { user_type: 'casual' } })).data,
+      ])
 
-  // useEffect to fetch all the stats data when the component mounts
-  React.useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        // Fetch all the stats data in parallel using Promise.all
-        const [classic, electric, member, casual, daily] = await Promise.all([
-          fetch(ENDPOINTS.classicRideStats).then(r => r.json()),
-          fetch(ENDPOINTS.electricRideStats).then(r => r.json()),
-          fetch(ENDPOINTS.memberUserStats).then(r => r.json()),
-          fetch(ENDPOINTS.casualUserStats).then(r => r.json()),
-          fetch(ENDPOINTS.dailyStats).then(r => r.json()),
-        ])
-        // Convert duration from seconds to minutes for display purposes
-        // and flatten the stats into the main object
-        const toDisplayStats = (item) => ({
-          ...item,
-          ...item.stats,
-          average_duration_minutes: item.stats.average_duration_seconds / 60,
-          total_duration_minutes: item.stats.total_duration_seconds / 60,
-        })
-        
-        setRideStats([classic, electric].map(toDisplayStats))
-        setUserStats([member, casual].map(toDisplayStats))
-        setDailyStats(daily.map(toDisplayStats))
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
+      setRideStats([
+        { ...toDisplayStats(classic), rideable_type: 'classic_bike' },
+        { ...toDisplayStats(electric), rideable_type: 'electric_bike' },
+      ])
+      setUserStats([
+        { ...toDisplayStats(member), user_type: 'member' },
+        { ...toDisplayStats(casual), user_type: 'casual' },
+      ])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-
-    fetchAll()
   }, [])
 
-  return { rideStats, userStats, dailyStats, loading, error }
+  useEffect(() => { fetchAll() }, [fetchAll])
+
+  return { rideStats, userStats, loading, error, refetch: fetchAll }
 }
 
 export default useStatsData
