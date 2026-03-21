@@ -1,5 +1,3 @@
-import '../App.css'
-
 function StatusMessage({ loading, error }) {
   if (loading) {
     return (

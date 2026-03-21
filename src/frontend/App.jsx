@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import './App.css'
 import AppHeader from './components/AppHeader.jsx'
 import StatsPage from './pages/StatsPage.jsx'
 import MapPage from './pages/MapPage.jsx'

@@ -1,0 +1,21 @@
+@layer components {
+  .status-message {
+    @apply text-center text-[#666];
+  }
+
+  .status-error {
+    @apply text-red-600;
+  }
+
+  .section-title {
+    @apply text-[#333] mb-4;
+  }
+
+  .ride-section {
+    @apply mb-10;
+  }
+
+  .section-grid {
+    @apply flex gap-4 flex-wrap;
+  }
+}

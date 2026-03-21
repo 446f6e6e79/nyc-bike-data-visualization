@@ -1,0 +1,36 @@
+@layer components {
+  .status-wrap {
+    @apply flex items-center gap-2.5 px-4 py-3
+           bg-gray-100 rounded-lg
+           border border-black/[0.08]
+           w-fit mx-auto my-6;
+  }
+
+  .status-wrap--error {
+    background: #fff5f5;
+    border-color: rgba(163, 45, 45, 0.2);
+  }
+
+  .status-wrap--error .status-text {
+    color: #a32d2d;
+  }
+
+  .status-spinner {
+    @apply w-[18px] h-[18px] rounded-full shrink-0
+           border-2 border-[#e0e7ff] border-t-[#1a73e8];
+    animation: spin 0.8s linear infinite;
+  }
+
+  .status-icon {
+    @apply w-4 h-4 shrink-0;
+    color: #a32d2d;
+  }
+
+  .status-text {
+    @apply text-[13px] text-[#666];
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

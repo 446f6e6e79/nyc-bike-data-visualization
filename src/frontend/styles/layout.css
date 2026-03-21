@@ -1,0 +1,35 @@
+@layer components {
+  .app-shell {
+    @apply font-sans min-h-screen bg-gray-100;
+  }
+
+  .app-header {
+    @apply bg-[#1a73e8] border-none p-5;
+  }
+
+  .app-title {
+    @apply block text-white text-[1.4rem] font-semibold mt-0 mb-3 mx-0;
+  }
+
+  .app-nav {
+    @apply flex;
+  }
+
+  .nav-link {
+    @apply px-5 py-2 text-[13px] font-medium no-underline
+           text-white/75 border-b-2 border-transparent
+           transition-[color,border-color] duration-150;
+  }
+
+  .nav-link:hover {
+    @apply text-white;
+  }
+
+  .nav-link.active {
+    @apply text-white border-b-white;
+  }
+
+  .app-content {
+    @apply max-w-[900px] mx-auto mt-10 mb-0 px-5 py-0;
+  }
+}
