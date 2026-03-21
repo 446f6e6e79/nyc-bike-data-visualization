@@ -67,7 +67,7 @@ def _extract_features(df: RideFrame) -> RideFrame:
         pl.col("started_at").dt.to_string("%A").alias("start_day_of_week"),
         pl.col("started_at").dt.hour().alias("start_hour"),
         pl.when(
-            pl.col("started_at").dt.weekday().is_in([0, 1, 2, 3, 4])
+            (pl.col("started_at").dt.weekday() - 1).is_in([0, 1, 2, 3, 4])
         )
         .then(pl.lit("Weekday"))
         .otherwise(pl.lit("Weekend"))

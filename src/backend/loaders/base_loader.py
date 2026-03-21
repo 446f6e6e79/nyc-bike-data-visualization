@@ -8,6 +8,10 @@ This enables to return a LazyFrame for production data (for deferred execution a
 """
 LoaderFrame = pl.DataFrame | pl.LazyFrame
 
+
+def _format_schema(schema: pl.Schema) -> str:
+    return "\n".join(f"  - {name}: {dtype}" for name, dtype in schema.items())
+
 def load_cached_frame(
     *,
     label: str,              # A label for logging purposes (e.g., "ride", "weather", "distances")
@@ -18,11 +22,11 @@ def load_cached_frame(
     normalize_test_data: Callable[[pl.DataFrame], LoaderFrame] | None = None,   # Optional function to normalize test data types to match production schema
 ) -> LoaderFrame:
     """Load a DataFrame/LazyFrame with shared test/prod and collection behavior."""
-    print(f"Loading {label} data...")
+    print(f"[{label}] Loading data...")
     start_time = datetime.now()
 
     if test:
-        print("Test mode enabled: loading data from committed test dataset.")
+        print(f"[{label}] Test mode: loading committed test dataset")
         frame: LoaderFrame = load_test_data()
         if normalize_test_data is None:
             raise ValueError("normalize_test_data function must be provided when loading test data to ensure consistent schemas and avoid mixed-type errors.")
@@ -33,14 +37,16 @@ def load_cached_frame(
         frame = load_production_data()
 
     end_time = datetime.now()
-    print(f"{label.capitalize()} data loaded successfully in {end_time - start_time}.")
+    elapsed_seconds = (end_time - start_time).total_seconds()
+    print(f"[{label}] Loaded successfully in {elapsed_seconds:.2f}s")
 
     if isinstance(frame, pl.LazyFrame) and in_memory:
+        print(f"[{label}] Collecting LazyFrame into memory")
         frame = frame.collect()
 
-    print(f"Final {label} data schema:")
+    print(f"[{label}] Final schema:")
     if isinstance(frame, pl.LazyFrame):
-        print(frame.collect_schema())
+        print(_format_schema(frame.collect_schema()))
     else:
-        print(frame.dtypes)
+        print(_format_schema(frame.schema))
     return frame

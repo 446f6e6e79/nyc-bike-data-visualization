@@ -2,10 +2,9 @@ import polars as pl
 from datetime import date
 
 from src.backend.models.ride import MemberCasual, RideableType
-from src.backend.models.stats import Stats, StationRideCount, TripsCountBetweenStations
+from src.backend.models.stats import DayOfWeekStats, Stats, StationRideCount, TripsCountBetweenStations
 from src.backend.services.rides import add_trip_duration, get_filtered_rides
 from src.backend.loaders.rides_loader import RideFrame
-
 
 def _collect_if_lazy(df: RideFrame) -> pl.DataFrame:
     """Helper to convert LazyFrame to DataFrame if needed."""
@@ -16,7 +15,7 @@ def get_overall_stats(
     bike_type: RideableType | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
-    day_of_week: int | None = None,
+    day_of_week: int | list[int] | None = None,
     start_hour: int | None = None,
     start_station_id: str | None = None,
     end_station_id: str | None = None,
@@ -34,12 +33,12 @@ def get_overall_stats(
     )
     # Add trip duration in seconds to the rides before calculating stats
     rides = add_trip_duration(rides)
-
     df = _collect_if_lazy(rides)
 
     if df.is_empty():
         return Stats(
             total_rides=0,
+            number_of_days=0,
             average_duration_seconds=0.0,
             average_distance_km=0.0,
             total_duration_seconds=0.0,
@@ -47,11 +46,96 @@ def get_overall_stats(
         )
     return Stats(
         total_rides=df.shape[0],
+        number_of_days=df["started_at"].dt.date().n_unique(),
         average_duration_seconds=df["trip_duration_seconds"].mean(),
         average_distance_km=df["distance_km"].mean(),
         total_duration_seconds=df["trip_duration_seconds"].sum(),
         total_distance_km=df["distance_km"].sum(),
     )
+
+
+def get_day_of_week_stats(
+    user_type: MemberCasual | None = None,
+    bike_type: RideableType | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    day_of_week: int | list[int] | None = None,
+    start_hour: int | None = None,
+    start_station_id: str | None = None,
+    end_station_id: str | None = None,
+) -> list[DayOfWeekStats]:
+    """Get historical ride stats grouped by day of week (0=Monday, 6=Sunday)."""
+    rides = get_filtered_rides(
+        user_type=user_type,
+        bike_type=bike_type,
+        start_date=start_date,
+        end_date=end_date,
+        day_of_week=day_of_week,
+        start_hour=start_hour,
+        start_station_id=start_station_id,
+        end_station_id=end_station_id,
+        join_distances=True,
+    )
+    rides = add_trip_duration(rides)
+    df = _collect_if_lazy(rides)
+
+    # If no rides match the filters, return a list with 7 entries (one for each day of week) with zeroed stats
+    if df.is_empty():
+        return [
+            DayOfWeekStats(
+                day_of_week=day,
+                total_rides=0,
+                number_of_days=0,
+                average_duration_seconds=0.0,
+                average_distance_km=0.0,
+                total_duration_seconds=0.0,
+                total_distance_km=0.0,
+            )
+            for day in range(7)
+        ]
+
+    # Group by day of week and calculate stats for each group
+    grouped = (
+        # NOTE: Polars datetime weekday returns 1=Monday, 7=Sunday, so we adjust by subtracting 1 to match the 0=Monday, 6=Sunday convention
+        df.group_by((pl.col("started_at").dt.weekday() - 1).alias("day_of_week"))
+        .agg([
+            pl.len().alias("total_rides"),
+            # Count the number of unique days in the group to calculate average rides per day, ensuring we count only days that have rides
+            pl.col("started_at").dt.date().n_unique().alias("number_of_days"),
+            pl.col("trip_duration_seconds").mean().alias("average_duration_seconds"),
+            pl.col("distance_km").mean().alias("average_distance_km"),
+            pl.col("trip_duration_seconds").sum().alias("total_duration_seconds"),
+            pl.col("distance_km").sum().alias("total_distance_km"),
+        ])
+    )
+
+    # Ensure all days of the week are represented in the output, even if there are no rides for that day
+    all_days = pl.DataFrame({"day_of_week": list(range(7))})
+    grouped = (
+        all_days.join(grouped, on="day_of_week", how="left")
+        .with_columns([
+            pl.col("total_rides").fill_null(0).cast(pl.Int64),
+            pl.col("number_of_days").fill_null(0).cast(pl.Int64),
+            pl.col("average_duration_seconds").fill_null(0.0),
+            pl.col("average_distance_km").fill_null(0.0),
+            pl.col("total_duration_seconds").fill_null(0.0),
+            pl.col("total_distance_km").fill_null(0.0),
+        ])
+        .sort("day_of_week")
+    )
+
+    return [
+        DayOfWeekStats(
+            day_of_week=row["day_of_week"],
+            total_rides=row["total_rides"],
+            number_of_days=row["number_of_days"],
+            average_duration_seconds=row["average_duration_seconds"],
+            average_distance_km=row["average_distance_km"],
+            total_duration_seconds=row["total_duration_seconds"],
+            total_distance_km=row["total_distance_km"],
+        )
+        for row in grouped.iter_rows(named=True)
+    ]
 
 
 def get_station_ride_counts_stats(
