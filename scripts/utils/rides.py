@@ -51,7 +51,7 @@ def _extract_coverage_from_filename(file_name: str) -> list[int]:
 
 def _filter_files(available_files: list, current_coverage: list, start_date: str, end_date: str, download_jc: bool) -> list:
     """
-    Filter the list of files by date range and dataset type (JC or non-JC).
+    Filter the list of available files based on the specified date range, dataset type, and current coverage.
     Args:
         available_files (list): The list of file keys to filter.
         current_coverage (list): A list of tuples containing the start and end coverage periods.
