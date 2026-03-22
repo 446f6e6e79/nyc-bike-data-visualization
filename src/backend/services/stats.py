@@ -229,7 +229,14 @@ def get_trips_between_stations_stats(
     # Calculate directional counts between station pairs
     directional_counts = (
         rides.group_by(["start_station_id", "end_station_id"])
-        .agg(pl.count().alias("ride_count"))
+        .agg([
+            pl.count().alias("ride_count"),
+            # We take the first lat/lng for each station pair, assuming they are consistent for a given station
+            pl.first("start_lat").alias("start_lat"),
+            pl.first("start_lng").alias("start_lon"),
+            pl.first("end_lat").alias("end_lat"),
+            pl.first("end_lng").alias("end_lon"),
+        ])
     )
 
     # Create a pair_id that is the same for (A->B) and (B->A) to group them together
@@ -255,14 +262,22 @@ def get_trips_between_stations_stats(
     forward_counts = directional_counts.filter(pl.col("is_forward")).select([
         "pair_id",
         pl.col("start_station_id").alias("station_a"),
+        pl.col("start_lat").alias("station_a_lat"),
+        pl.col("start_lon").alias("station_a_lon"),
         pl.col("end_station_id").alias("station_b"),
+        pl.col("end_lat").alias("station_b_lat"),
+        pl.col("end_lon").alias("station_b_lon"),
         pl.col("ride_count").alias("a_to_b_count"),
     ])
     # For reverse counts, we swap the station_a and station_b to align with the forward counts
     reverse_counts = directional_counts.filter(~pl.col("is_forward")).select([
         "pair_id",
         pl.col("end_station_id").alias("station_a"),
+        pl.col("end_lat").alias("station_a_lat"),
+        pl.col("end_lon").alias("station_a_lon"),
         pl.col("start_station_id").alias("station_b"),
+        pl.col("start_lat").alias("station_b_lat"),
+        pl.col("start_lon").alias("station_b_lon"),
         pl.col("ride_count").alias("b_to_a_count"),
     ])
     # Join forward and reverse counts on the unique pair_id to get both directions in the same row   
@@ -272,7 +287,11 @@ def get_trips_between_stations_stats(
         how="outer",
     ).select([
         pl.coalesce("station_a", "station_a_right").alias("station_a"),
+        pl.coalesce("station_a_lat", "station_a_lat_right").alias("station_a_lat"),
+        pl.coalesce("station_a_lon", "station_a_lon_right").alias("station_a_lon"),
         pl.coalesce("station_b", "station_b_right").alias("station_b"),
+        pl.coalesce("station_b_lat", "station_b_lat_right").alias("station_b_lat"),
+        pl.coalesce("station_b_lon", "station_b_lon_right").alias("station_b_lon"),
         # Fill nulls with 0 for counts where there is no data in one direction
         pl.col("a_to_b_count").fill_null(0),
         pl.col("b_to_a_count").fill_null(0),
@@ -291,7 +310,11 @@ def get_trips_between_stations_stats(
     return [
         TripsCountBetweenStations(
             station_a=row["station_a"],
+            station_a_lat=row["station_a_lat"],
+            station_a_lon=row["station_a_lon"],
             station_b=row["station_b"],
+            station_b_lat=row["station_b_lat"],
+            station_b_lon=row["station_b_lon"],
             a_to_b_count=row["a_to_b_count"],
             b_to_a_count=row["b_to_a_count"],
             total_rides=row["total_rides"],

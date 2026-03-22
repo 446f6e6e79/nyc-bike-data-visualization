@@ -26,7 +26,11 @@ class StationRideCount(BaseModel):
 
 class TripsCountBetweenStations(BaseModel):
     station_a: str
+    station_a_lat: float
+    station_a_lon: float
     station_b: str
+    station_b_lat: float
+    station_b_lon: float
     a_to_b_count: int
     b_to_a_count: int
     total_rides: int

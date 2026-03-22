@@ -183,10 +183,18 @@ def test_get_trips_between_stations():
     assert isinstance(payload, list)
     for pair in payload:
         assert "station_a" in pair
+        assert "station_a_lat" in pair
+        assert "station_a_lon" in pair
         assert "station_b" in pair
+        assert "station_b_lat" in pair
+        assert "station_b_lon" in pair
         assert "a_to_b_count" in pair
         assert "b_to_a_count" in pair
         assert "total_rides" in pair
+        assert pair["station_a_lat"] is None or isinstance(pair["station_a_lat"], (int, float))
+        assert pair["station_a_lon"] is None or isinstance(pair["station_a_lon"], (int, float))
+        assert pair["station_b_lat"] is None or isinstance(pair["station_b_lat"], (int, float))
+        assert pair["station_b_lon"] is None or isinstance(pair["station_b_lon"], (int, float))
         assert pair["a_to_b_count"] >= 0
         assert pair["b_to_a_count"] >= 0
         assert pair["total_rides"] == pair["a_to_b_count"] + pair["b_to_a_count"]

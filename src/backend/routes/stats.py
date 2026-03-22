@@ -109,7 +109,6 @@ def get_station_ride_counts(
         limit=limit,
     )
 
-# TODO: add station_a_lat, station_a_lon, station_b_lat, station_b_lon to the response model for better frontend mapping
 @router.get("/trips_between_stations", response_model=list[TripsCountBetweenStations])
 def get_trips_between_stations(
     start_date: date | None = Query(default=None), 
