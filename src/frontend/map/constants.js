@@ -9,7 +9,7 @@ export const INITIAL_VIEW_STATE = {
   longitude: -73.97,
   latitude: 40.75,
   zoom: 10.8,       // Initial zoom level to show the city
-  pitch: 20,        // Map inclination for a 3D effect
+  pitch: 45,        // Map inclination for a 3D effect
   bearing: 0,       // Rotation of the map
 }
 

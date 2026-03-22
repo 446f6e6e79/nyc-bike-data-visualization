@@ -15,7 +15,6 @@ export function createBaseTileLayer(tileUrl) {
       if (!bbox) {
         return null
       }
-
       return new BitmapLayer(props, {
         data: null,
         image: props.data,

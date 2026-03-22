@@ -1,59 +1,32 @@
-import { ScatterplotLayer } from '@deck.gl/layers'
-
-function getUsageRadius(usage, maxUsage) {
-  if (maxUsage <= 0) {
-    return 20
-  }
-
-  return 20 + (usage / maxUsage) * 420
-}
-
-function getUsageColor(usage, maxUsage) {
-  if (maxUsage <= 0) {
-    return [96, 165, 250, 190]
-  }
-
-  const ratio = usage / maxUsage
-  if (ratio >= 0.66) {
-    return [30, 64, 175, 230]
-  }
-  if (ratio >= 0.33) {
-    return [37, 99, 235, 210]
-  }
-  return [96, 165, 250, 190]
-}
-
-export function createStationGlowLayer(stations, maxUsage) {
-  return new ScatterplotLayer({
-    id: 'station-usage-glow-layer',
-    data: stations,
-    getPosition: (station) => [station.lon, station.lat],
-    getFillColor: [56, 189, 248, 45],
-    stroked: false,
-    filled: true,
-    radiusUnits: 'meters',
-    radiusMinPixels: 4,
-    radiusMaxPixels: 40,
-    getRadius: (station) => getUsageRadius(station.usage, maxUsage) * 1.8,
-    pickable: false,
-  })
-}
+import { HexagonLayer } from '@deck.gl/aggregation-layers'
 
 export function createStationUsageLayer(stations, maxUsage) {
-  return new ScatterplotLayer({
+  const colorScale = maxUsage > 0 ? maxUsage : 1
+
+  return new HexagonLayer({
     id: 'station-usage-layer',
     data: stations,
+    gpuAggregation: false,  // Must be false to carry station IDs in the tooltip
     getPosition: (station) => [station.lon, station.lat],
-    getFillColor: (station) => getUsageColor(station.usage, maxUsage),
-    getLineColor: [191, 219, 254, 230],
-    lineWidthUnits: 'pixels',
-    lineWidthMinPixels: 1,
-    stroked: true,
-    filled: true,
-    radiusUnits: 'meters',
-    radiusMinPixels: 2,
-    radiusMaxPixels: 24,
-    getRadius: (station) => getUsageRadius(station.usage, maxUsage),
-    pickable: true,
+    getColorWeight: (station) => station.usage,
+    colorAggregation: 'SUM',
+    getElevationWeight: (station) => station.usage,
+    elevationAggregation: 'SUM',
+    colorRange: [
+      [219, 234, 254],
+      [191, 219, 254],
+      [147, 197, 253],
+      [96, 165, 250],
+      [59, 130, 246],
+      [30, 64, 175],
+    ],
+    radius: 180,
+    coverage: 0.9,
+    opacity: 0.75,
+    upperPercentile: 100,
+    colorDomain: [0, colorScale],
+    extruded: true,
+    elevationScale: 10,   // Scale elevation for better visibility
+    pickable: true,       // Enable picking for tooltips
   })
 }
