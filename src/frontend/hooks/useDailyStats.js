@@ -11,7 +11,9 @@ function useDailyStats() {
     setLoading(true)
     setError(null)
     try {
-      const { data } = await apiClient.get(ENDPOINTS.statsByDayOfWeek())
+      const { data } = await apiClient.get(ENDPOINTS.stats(), {
+        params: { group_by: 'day_of_week' },
+      })
       setDailyStats(data)
     } catch (err) {
       setError(err.message)

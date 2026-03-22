@@ -1,9 +1,15 @@
 from datetime import date
 from fastapi import APIRouter, HTTPException, Query
 from src.backend.models.ride import MemberCasual, RideableType
-from src.backend.models.stats import DayOfWeekStats, Stats, StationRideCount, TripsCountBetweenStations
+from src.backend.models.stats import (
+    GroupedStats,
+    Stats,
+    StatsGroupBy,
+    StationRideCount,
+    TripsCountBetweenStations
+)
 from src.backend.services.stats import (
-    get_day_of_week_stats,
+    get_grouped_stats,
     get_overall_stats,
     get_station_ride_counts_stats,
     get_trips_between_stations_stats,
@@ -43,8 +49,9 @@ def _parse_day_of_week(day_of_week: str | None) -> int | list[int] | None:
         return parsed_values[0]
     return parsed_values
 
-@router.get("/", response_model=Stats)
+@router.get("/", response_model=Stats | list[GroupedStats])
 def get_stats(    
+    group_by: StatsGroupBy = Query(default=StatsGroupBy.NONE),
     user_type: MemberCasual | None = Query(default=None),
     bike_type: RideableType | None = Query(default=None),
     start_date: date | None = Query(default=None),
@@ -54,36 +61,24 @@ def get_stats(
     start_station_id: str | None = Query(default=None),
     end_station_id: str | None = Query(default=None)
 ):
-    """Get all historical rides."""
+    """Get historical rides stats, optionally grouped by day_of_week, hour, or both."""
     # Parse the day_of_week query parameter, which can be a single integer or a comma-separated list of integers
     parsed_day_of_week = _parse_day_of_week(day_of_week)
+
+    if group_by != StatsGroupBy.NONE:
+        return get_grouped_stats(
+            group_by=group_by,
+            user_type=user_type,
+            bike_type=bike_type,
+            start_date=start_date,
+            end_date=end_date,
+            day_of_week=parsed_day_of_week,
+            start_hour=start_hour,
+            start_station_id=start_station_id,
+            end_station_id=end_station_id,
+        )
+
     return get_overall_stats(
-        user_type=user_type,
-        bike_type=bike_type,
-        start_date=start_date,
-        end_date=end_date,
-        day_of_week=parsed_day_of_week,
-        start_hour=start_hour,
-        start_station_id=start_station_id,
-        end_station_id=end_station_id,
-    )
-
-
-@router.get("/by_day_of_week", response_model=list[DayOfWeekStats])
-def get_stats_by_day_of_week(
-    user_type: MemberCasual | None = Query(default=None),
-    bike_type: RideableType | None = Query(default=None),
-    start_date: date | None = Query(default=None),
-    end_date: date | None = Query(default=None),
-    day_of_week: str | None = Query(default=None),
-    start_hour: int | None = Query(default=None, ge=0, le=23),
-    start_station_id: str | None = Query(default=None),
-    end_station_id: str | None = Query(default=None),
-):
-    """Get historical ride stats grouped by day of week (0=Monday, 6=Sunday). 
-    The day_of_week query parameter can be a single integer or a comma-separated list of integers."""
-    parsed_day_of_week = _parse_day_of_week(day_of_week)
-    return get_day_of_week_stats(
         user_type=user_type,
         bike_type=bike_type,
         start_date=start_date,

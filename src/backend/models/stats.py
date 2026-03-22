@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from enum import Enum
 
 from src.backend.models.ride import MemberCasual, RideableType
 
@@ -11,10 +12,18 @@ class Stats(BaseModel):
     total_duration_seconds: float
     total_distance_km: float
 
-# Extends Stats with a day_of_week field for grouping by day of week (0=Monday, 6=Sunday)
-class DayOfWeekStats(Stats):
-    """Statistics model grouped by day of week (0=Monday, 6=Sunday)."""
-    day_of_week: int
+# Defines how we can group stats: by day_of_week, hour, both, or not at all (none)
+class StatsGroupBy(str, Enum):
+    NONE = "none"
+    DAY_OF_WEEK = "day_of_week"
+    HOUR = "hour"
+    DAY_OF_WEEK_AND_HOUR = "day_of_week,hour"
+
+# Extends Stats with optional day_of_week and hour fields for grouping by day of week, hour, or both
+class GroupedStats(Stats):
+    """Statistics model grouped by day of week, hour, or both."""
+    day_of_week: int | None = None
+    hour: int | None = None
 
 class StationRideCount(BaseModel):
     """Model representing the count of rides starting or ending at a station."""
