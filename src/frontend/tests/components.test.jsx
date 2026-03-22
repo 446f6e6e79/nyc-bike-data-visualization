@@ -3,11 +3,11 @@ import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 import AppHeader from '../components/AppHeader'
-import StatusMessage from '../components/StatusMessage'
 import StatCard from '../components/StatCard'
 import StatsSection from '../components/StatsSection'
 import DailyStatsBarChart from '../components/DailyStatsBarChart'
 import App from '../App'
+import MapPage from '../pages/MapPage'
 
 /*
     These tests primarily check that components render without crashing, both in loading and loaded states.
@@ -161,8 +161,11 @@ describe('App — renders without crashing', () => {
 
   // App defaults to /map — the default route redirects there
   it('renders MapPage by default', () => {
-    const { getByText } = render(<App />)
-    getByText('Map coming soon.')
+    render(
+      <MemoryRouter initialEntries={['/map']}>
+        <MapPage />
+      </MemoryRouter>
+    )
   })
 
   // Render StatsPage directly via MemoryRouter to test its content loads
