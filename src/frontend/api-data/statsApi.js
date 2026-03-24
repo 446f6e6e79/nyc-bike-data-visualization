@@ -49,3 +49,12 @@ export async function fetchDailyStats() {
   return data
 }
 
+/**
+ * Fetches data range coverage stats for the dataset
+ * @returns An object containing the minimum and maximum dates covered in the dataset
+ */
+export async function fetchDateRangeStats() {
+  const { data } = await apiClient.get(ENDPOINTS.dateRange())
+  return data
+}
+

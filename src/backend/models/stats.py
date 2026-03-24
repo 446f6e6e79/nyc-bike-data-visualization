@@ -1,7 +1,10 @@
 from pydantic import BaseModel
 from enum import Enum
+from datetime import date
 
-from src.backend.models.ride import MemberCasual, RideableType
+class DatasetDateRange(BaseModel):
+    min_date: date | None
+    max_date: date | None
 
 class Stats(BaseModel):
     """Base class for statistics models."""

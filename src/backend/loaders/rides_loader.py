@@ -3,9 +3,15 @@ from typing import Union
 from src.backend.config import RIDES_DATA_DIR, TEST_DATA_DIR
 from src.backend.loaders.base_loader import load_cached_frame
 from src.backend.models.ride import RideableType, MemberCasual
+from src.backend.models.stats import DatasetDateRange
+import calendar
+import os
+from pathlib import Path
+
 
 RideFrame = Union[pl.DataFrame, pl.LazyFrame]
 _rides_df: RideFrame | None = None
+_dataset_date_range: DatasetDateRange | None = None
 
 # ONLY CALLED IN TEST MODE TO NORMALIZE TEST DATA TYPES
 def _normalize_ride_types(df: RideFrame) -> RideFrame:
@@ -25,6 +31,58 @@ def _normalize_ride_types(df: RideFrame) -> RideFrame:
         pl.col("end_lng").cast(float, strict=False),
         pl.col("member_casual").cast(MemberCasual, strict=False),
     )
+
+def _set_current_coverage(dir_path: str | Path) -> tuple[int | None, int | None]:
+    """
+    Return the min and max covered periods from the downloaded parquet folders.
+
+    Example:
+        (202401, 202603)
+    """
+    coverage: list[int] = []
+
+    for year_dir in os.listdir(dir_path):
+        year_path = os.path.join(dir_path, year_dir)
+        if not os.path.isdir(year_path) or not year_dir.startswith("year="):
+            continue
+
+        for month_dir in os.listdir(year_path):
+            month_path = os.path.join(year_path, month_dir)
+            if not os.path.isdir(month_path) or not month_dir.startswith("month="):
+                continue
+
+            try:
+                year = year_dir.split("=")[1]
+                month = month_dir.split("=")[1].zfill(2)
+                coverage.append(int(f"{year}{month}"))
+            except (IndexError, ValueError):
+                continue
+
+    if not coverage:
+        return None, None
+
+    min_coverage = str(min(coverage))
+    max_coverage = str(max(coverage))
+
+    # Convert the min and max coverage strings into date objects
+    min_coverage_date = f"{min_coverage[:4]}-{min_coverage[4:]}-01"
+    # For the max coverage, we want to return the last 
+    year = int(max_coverage[:4])
+    month = int(max_coverage[4:])
+    last_day = calendar.monthrange(year, month)[1]
+    max_coverage_date = f"{year}-{str(month).zfill(2)}-{last_day}"
+
+    global _dataset_date_range
+    _dataset_date_range = DatasetDateRange(
+        min_date=min_coverage_date,
+        max_date=max_coverage_date,
+    )
+
+
+def get_data_range_coverage():
+    """Get the min and max ride dates in the dataset"""
+    global _dataset_date_range
+    return _dataset_date_range
 
 def load_ride_data(inMemory: bool=False, test=False) -> RideFrame:
     """
@@ -51,5 +109,9 @@ def load_ride_data(inMemory: bool=False, test=False) -> RideFrame:
         ),
         normalize_test_data=_normalize_ride_types
     )
+
+    # Fetch data range coverage stats
+    if not test:  
+        _set_current_coverage(RIDES_DATA_DIR)
 
     return _rides_df
