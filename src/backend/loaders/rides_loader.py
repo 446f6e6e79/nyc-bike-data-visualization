@@ -111,6 +111,7 @@ def load_ride_data(inMemory: bool=False, test=False) -> RideFrame:
     )
 
     # Fetch data range coverage stats
-    _set_current_coverage(RIDES_DATA_DIR)
+    if not test:  
+        _set_current_coverage(RIDES_DATA_DIR)
 
     return _rides_df
