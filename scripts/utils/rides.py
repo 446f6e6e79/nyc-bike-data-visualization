@@ -74,15 +74,17 @@ def _filter_files(available_files: list, current_coverage: list, start_date: str
             # Extract the coverage period from the file name
             file_coverage = _extract_coverage_from_filename(f)
             
-            # Check if all months covered by each file are already covered by existing files
+            # Check if ALL months covered by current file are already covered by existing files
             is_covered = True
             for month in file_coverage:
-                # If the month is already covered by existing files, skip it
+                # If the month is not covered by any existing file
                 if month not in current_coverage:
                     is_covered = False
                     break
         except ValueError:
             continue
+        
+        # If the file is fully covered by existing files, skip it
         if is_covered:
             print(f"File {f} is already covered by existing files, skipping.")
             continue
@@ -133,6 +135,8 @@ def _find_current_coverage(DIR_PATH: str) -> list[tuple[int, int]]:
         list: A list of tuples containing the start and end coverage periods in the format (YYYYMM, YYYYMM).
     """
     coverage = []
+    # Current files are stored in the format {DIR_PATH}/year=YYYY/month=MM/*.parquet
+    # We traverse the directory structure to find all parquet files and extract their coverage periods from their file paths
     for year_dir in os.listdir(DIR_PATH):
         for month_dir in os.listdir(os.path.join(DIR_PATH, year_dir)):
             for file in os.listdir(os.path.join(DIR_PATH, year_dir, month_dir)):
@@ -165,25 +169,31 @@ def _clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
     ]
 
     return (
+        # Remove all rows with missing required columns 
         df.drop_nulls(subset=required_cols)
         .with_columns(
+            # Convert started_at to datetime format
             pl.col("started_at")
             .str.to_datetime(format="%Y-%m-%d %H:%M:%S%.f", strict=True)
             .alias("started_at"),
+            # Convert ended_at to datetime format
             pl.col("ended_at")
             .str.to_datetime(format="%Y-%m-%d %H:%M:%S%.f", strict=True)
             .alias("ended_at"),
         )
+        # Drop rows with invalid datetime formats that couldn't be parsed
         .drop_nulls(subset=["started_at", "ended_at"])
+        # Filter out rows where ended_at is before started_at, which are likely data errors
         .filter(pl.col("ended_at") >= pl.col("started_at"))
     )
 
 def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFrame:
-    """Download and process a ZIP file in one streaming operation."""
+    """Download and process a single ZIP file in one streaming operation."""
     print(f"Downloading {file_key}...")
+    # Check if the file exists in the S3 bucket before attempting to download
     response = requests.get(base_data_url + file_key, stream=True)
     response.raise_for_status()
-    
+    # Get the total size of the file for progress tracking
     total_size = int(response.headers.get("content-length", 0))
     downloaded_size = 0
     chunk_size = 1024 * 1024 * 10  # 10 MB
@@ -192,10 +202,12 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
     buffer = io.BytesIO()
     
     for chunk in response.iter_content(chunk_size=chunk_size):
+        # For each chunk, write it to the buffer and update the downloaded size
         if chunk:
             buffer.write(chunk)
             downloaded_size += len(chunk)
-            
+
+            # If we have the total size information, show progress percentage
             if total_size > 0:
                 progress_pct = (downloaded_size / total_size) * 100
                 downloaded_mb = downloaded_size / (1024 * 1024)
@@ -206,6 +218,7 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
                     end="",
                     flush=True,
                 )
+            # Otherwise, just show the downloaded size in MB without percentage
             else:
                 downloaded_mb = downloaded_size / (1024 * 1024)
                 print(
@@ -231,6 +244,7 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
                     csv_frames.append(
                         pl.read_csv(
                             source,
+                            # Override the schema for station ID columns to ensure string type
                             schema_overrides={
                                 "start_station_id": pl.Utf8,
                                 "end_station_id": pl.Utf8,
@@ -271,7 +285,7 @@ def download_ride_data(start_date: str, end_date: str, base_data_url: str, outpu
         trip_data = _clean_rides_data(trip_data)
         print("Data cleaning completed.")
 
-        # Extract year and month from cleaned datetime column for partitioning
+        # Extract year and month from cleaned datetime column (REQUIRED for partitioning by year and month in parquet output)
         # Note: this information must be extracted from the ended_at column, not the started_at column, because some files are partitioned by end date rather than start date
         trip_data = trip_data.with_columns(
             pl.col("ended_at").dt.strftime("%Y%m").cast(pl.Int32).alias("year_month"),

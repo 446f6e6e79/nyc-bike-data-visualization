@@ -283,6 +283,7 @@ def get_station_ride_counts_stats(
         rides.group_by(outgoing_group_keys)
         .agg([
             pl.count().alias("outgoing"),                                   # Count of rides starting at the station
+            pl.first("start_station_name").alias("station_name"),         # Name of the station (from the ride start station metadata)
             pl.first("start_lat").alias("lat"),                             # Latitude of the station (taken from the starting point of the ride)
             pl.first("start_lng").alias("lon"),                             # Longitude of the station   
             pl.col("started_at").dt.date().n_unique().alias("days_count"),  # Number of unique days with rides starting at the station (used to understand how many days contributed to the ride count)
@@ -294,6 +295,7 @@ def get_station_ride_counts_stats(
         rides.group_by(incoming_group_keys)
         .agg([
             pl.count().alias("incoming"),                                   # Count of rides ending at the station        
+            pl.first("end_station_name").alias("station_name"),           # Name of the station (from the ride end station metadata)
             pl.first("end_lat").alias("lat"),                               # Latitude of the station (taken from the ending point of the ride)
             pl.first("end_lng").alias("lon"),                               # Longitude of the station
             pl.col("started_at").dt.date().n_unique().alias("days_count"),  # Number of unique days with rides ending at the station (used to understand how many days contributed to the ride count)
@@ -318,6 +320,7 @@ def get_station_ride_counts_stats(
         ],
         # Do the same coalescing for constant columns
         pl.coalesce("station_id", "station_id_right").alias("station_id"),
+        pl.coalesce("station_name", "station_name_right").alias("station_name"),
         pl.coalesce("lat", "lat_right").alias("lat"),
         pl.coalesce("lon", "lon_right").alias("lon"),
         pl.col("outgoing").fill_null(0),
@@ -348,6 +351,7 @@ def get_station_ride_counts_stats(
         if station_key not in grouped_by_station:
             grouped_by_station[station_key] = {
                 "station_id": row["station_id"],
+                "station_name": row["station_name"],
                 "lat": row["lat"],
                 "lon": row["lon"],
                 "station_total_rides": 0,
@@ -385,6 +389,7 @@ def get_station_ride_counts_stats(
     return [
         StationRideCounts(
             station_id=station["station_id"],
+            station_name=station["station_name"],
             lat=station["lat"],
             lon=station["lon"],
             groups=station["groups"],
@@ -429,6 +434,8 @@ def get_trips_between_stations_stats(
         rides.group_by([*group_exprs, "start_station_id", "end_station_id"])
         .agg([
             pl.count().alias("ride_count"),
+            pl.first("start_station_name").alias("start_station_name"),
+            pl.first("end_station_name").alias("end_station_name"),
             # We take the first lat/lng for each station pair, assuming they are consistent for a given station
             pl.first("start_lat").alias("start_lat"),
             pl.first("start_lng").alias("start_lon"),
@@ -483,9 +490,11 @@ def get_trips_between_stations_stats(
         *group_cols,
         "pair_id",
         pl.col("start_station_id").alias("station_a_id"),
+        pl.col("start_station_name").alias("station_a_name"),
         pl.col("start_lat").alias("station_a_lat"),
         pl.col("start_lon").alias("station_a_lon"),
         pl.col("end_station_id").alias("station_b_id"),
+        pl.col("end_station_name").alias("station_b_name"),
         pl.col("end_lat").alias("station_b_lat"),
         pl.col("end_lon").alias("station_b_lon"),
         pl.col("ride_count").alias("a_to_b_count"),
@@ -495,9 +504,11 @@ def get_trips_between_stations_stats(
         *group_cols,
         "pair_id",
         pl.col("end_station_id").alias("station_a_id"),
+        pl.col("end_station_name").alias("station_a_name"),
         pl.col("end_lat").alias("station_a_lat"),
         pl.col("end_lon").alias("station_a_lon"),
         pl.col("start_station_id").alias("station_b_id"),
+        pl.col("start_station_name").alias("station_b_name"),
         pl.col("start_lat").alias("station_b_lat"),
         pl.col("start_lon").alias("station_b_lon"),
         pl.col("ride_count").alias("b_to_a_count"),
@@ -518,9 +529,11 @@ def get_trips_between_stations_stats(
             for col in group_cols
         ],
         pl.coalesce("station_a_id", "station_a_id_right").alias("station_a_id"),
+        pl.coalesce("station_a_name", "station_a_name_right").alias("station_a_name"),
         pl.coalesce("station_a_lat", "station_a_lat_right").alias("station_a_lat"),
         pl.coalesce("station_a_lon", "station_a_lon_right").alias("station_a_lon"),
         pl.coalesce("station_b_id", "station_b_id_right").alias("station_b_id"),
+        pl.coalesce("station_b_name", "station_b_name_right").alias("station_b_name"),
         pl.coalesce("station_b_lat", "station_b_lat_right").alias("station_b_lat"),
         pl.coalesce("station_b_lon", "station_b_lon_right").alias("station_b_lon"),
         # Fill nulls with 0 for counts where there is no data in one direction
@@ -543,9 +556,11 @@ def get_trips_between_stations_stats(
         if pair_key not in grouped_by_pair:
             grouped_by_pair[pair_key] = {
                 "station_a_id": row["station_a_id"],
+                "station_a_name": row["station_a_name"],
                 "station_a_lat": row["station_a_lat"],
                 "station_a_lon": row["station_a_lon"],
                 "station_b_id": row["station_b_id"],
+                "station_b_name": row["station_b_name"],
                 "station_b_lat": row["station_b_lat"],
                 "station_b_lon": row["station_b_lon"],
                 "pair_total_rides": 0,
@@ -581,9 +596,11 @@ def get_trips_between_stations_stats(
     return [
         TripsCountBetweenStations(
             station_a_id=pair["station_a_id"],
+            station_a_name=pair["station_a_name"],
             station_a_lat=pair["station_a_lat"],
             station_a_lon=pair["station_a_lon"],
             station_b_id=pair["station_b_id"],
+            station_b_name=pair["station_b_name"],
             station_b_lat=pair["station_b_lat"],
             station_b_lon=pair["station_b_lon"],
             groups=pair["groups"],

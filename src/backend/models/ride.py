@@ -31,18 +31,18 @@ class Weather(BaseModel):
     weather_code: int  # WMO weather interpretation code
 
 class Ride(BaseModel):
-    ride_id: str
-    rideable_type: RideableType
-    started_at: datetime
-    ended_at: datetime
-    start_station_name: str
-    start_station_id: str
-    end_station_name: str
-    end_station_id: str
-    start_lat: float
-    start_lng: float
-    end_lat: float
-    end_lng: float
-    member_casual: MemberCasual
+    ride_id: str                        # The unique ride ID from the original data
+    rideable_type: RideableType         # The type of bike used for the ride (classic_bike or electric_bike)
+    started_at: datetime                # The start time of the ride, parsed as a datetime object  
+    ended_at: datetime                  # The end time of the ride, parsed as a datetime object
+    start_station_name: str             # The name of the station where the ride started
+    start_station_id: str               # The ID of the station where the ride started
+    end_station_name: str               # The name of the station where the ride ended
+    end_station_id: str                 # The ID of the station where the ride ended
+    start_lat: float                    # The latitude of the start station
+    start_lng: float                    # The longitude of the start station
+    end_lat: float                      # The latitude of the end station
+    end_lng: float                      # The longitude of the end station
+    member_casual: MemberCasual         # The type of user (member or casual)
     distance_km: Optional[float] = None # Precomputed distance between start and end stations, can be None if not yet computed
     weather: Optional[Weather] = None # Considered weather at start time

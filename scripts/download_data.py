@@ -39,6 +39,7 @@ def validate_yyyymm(date_value: str, arg_name: str) -> None:
         return
     if not re.fullmatch(r"\d{6}", date_value):
         raise ValueError(f"{arg_name} must be in YYYYMM format")
+    # Check the year is between 2013 (when Citi Bike launched) and 2060 (a reasonable upper bound for future data)
     if int(date_value[:4]) < 2013 or int(date_value[:4]) > 2060:
         raise ValueError(f"{arg_name} must be in YYYYMM format")
 

@@ -172,9 +172,11 @@ def test_get_trips_between_stations():
     assert isinstance(payload, list)
     for pair in payload:
         assert "station_a_id" in pair
+        assert "station_a_name" in pair
         assert "station_a_lat" in pair
         assert "station_a_lon" in pair
         assert "station_b_id" in pair
+        assert "station_b_name" in pair
         assert "station_b_lat" in pair
         assert "station_b_lon" in pair
         assert "groups" in pair
@@ -220,6 +222,7 @@ def test_get_station_counts():
             assert group["outgoing_rides"] == 1
             assert group["incoming_rides"] == 0
         assert "station_id" in station
+        assert "station_name" in station
         assert "outgoing_rides" in group
         assert "incoming_rides" in group
         assert group["day_of_week"] is None
@@ -242,6 +245,7 @@ def test_get_station_counts_grouped_by_day_of_week():
 
     for station in payload:
         assert "station_id" in station
+        assert "station_name" in station
         assert "lat" in station
         assert "lon" in station
         assert "groups" in station
@@ -274,7 +278,9 @@ def test_get_trips_between_stations_grouped_by_hour():
 
     for pair in payload:
         assert "station_a_id" in pair
+        assert "station_a_name" in pair
         assert "station_b_id" in pair
+        assert "station_b_name" in pair
         assert "groups" in pair
         assert isinstance(pair["groups"], list)
         assert pair["groups"]

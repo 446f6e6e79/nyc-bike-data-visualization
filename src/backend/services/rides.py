@@ -20,7 +20,8 @@ def get_filtered_rides(
     join_distances: bool = False
 ) -> pl.LazyFrame:
     """
-    Get rides filtered by various criteria.
+    Get rides filtered by various criteria (in AND fashion). 
+    All parameters are optional and can be combined to apply multiple filters at once.
     Parameters:
     - ride_id: Filter by specific ride ID
     - user_type: Filter by user type (member or casual)
@@ -36,7 +37,7 @@ def get_filtered_rides(
     """
     rides = load_ride_data()
     
-    # Build filter expression
+    # Build filter expression based on provided parameters
     filter_expr = pl.lit(True)  # Start with always-true condition
     
     if ride_id is not None:
@@ -71,13 +72,18 @@ def get_filtered_rides(
    
     if bike_type is not None:
         filter_expr &= pl.col("rideable_type") == bike_type.value
+    
+    # Filter the rides based on the combined filter expression before any joins to optimize performance
+    rides = rides.filter(filter_expr)
+    
     if join_weather:
         weather = load_weather_data()
-        rides = enrich_rides_with_weather(rides, weather)
+        rides = _enrich_rides_with_weather(rides, weather)
+    
     if join_distances:
         distances = load_distances_data()
-        rides = enrich_rides_with_distances(rides, distances)
-    return rides.filter(filter_expr)
+        rides = _enrich_rides_with_distances(rides, distances)
+    return rides
 
 def add_trip_duration(rides: pl.LazyFrame) -> pl.LazyFrame:
     """Add a trip_duration_seconds column to the rides"""
@@ -87,13 +93,12 @@ def add_trip_duration(rides: pl.LazyFrame) -> pl.LazyFrame:
         .alias("trip_duration_seconds")
     )
 
-def enrich_rides_with_weather(rides: pl.LazyFrame, weather: pl.LazyFrame) -> pl.LazyFrame:
+def _enrich_rides_with_weather(rides: pl.LazyFrame, weather: pl.LazyFrame) -> pl.LazyFrame:
     """
     Enrich rides with nearest hourly weather record based on started_at.
     Returns rides with a nested `weather` struct column.
     """
     weather_cols = [c for c in weather.columns if c != "time"]
-    
     return (
         rides
         .join_asof(
@@ -109,7 +114,7 @@ def enrich_rides_with_weather(rides: pl.LazyFrame, weather: pl.LazyFrame) -> pl.
         .drop("time", *weather_cols)
     )
 
-def enrich_rides_with_distances(rides: pl.LazyFrame, distances: pl.LazyFrame) -> pl.LazyFrame:
+def _enrich_rides_with_distances(rides: pl.LazyFrame, distances: pl.LazyFrame) -> pl.LazyFrame:
     """
     Enrich rides with distance_km using unordered station pairs.
     rides: start_station_id, end_station_id
