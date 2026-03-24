@@ -1,7 +1,10 @@
 import { BitmapLayer } from '@deck.gl/layers'
 import { TileLayer } from '@deck.gl/geo-layers'
 
-// Create the base map tile layer using OpenStreetMap tiles
+/** * Creates a base tile layer using the provided tile URL template.
+ * @param {string} tileUrl - The URL template for the tile server
+ * @returns {TileLayer} A Deck.GL TileLayer configured to render the base map.
+*/
 export function createBaseTileLayer(tileUrl) {
   return new TileLayer({
     id: 'osm-base-map', 

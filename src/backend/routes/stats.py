@@ -2,15 +2,14 @@ from datetime import date
 from fastapi import APIRouter, HTTPException, Query
 from src.backend.models.ride import MemberCasual, RideableType
 from src.backend.models.stats import (
-    GroupedStats,
     Stats,
+    GroupedStats,
+    StationRideCounts,
+    TripsCountBetweenStations,
     StatsGroupBy,
-    StationRideCount,
-    TripsCountBetweenStations
 )
 from src.backend.services.stats import (
-    get_grouped_stats,
-    get_overall_stats,
+    get_stats_data,
     get_station_ride_counts_stats,
     get_trips_between_stations_stats,
 )
@@ -65,20 +64,8 @@ def get_stats(
     # Parse the day_of_week query parameter, which can be a single integer or a comma-separated list of integers
     parsed_day_of_week = _parse_day_of_week(day_of_week)
 
-    if group_by != StatsGroupBy.NONE:
-        return get_grouped_stats(
-            group_by=group_by,
-            user_type=user_type,
-            bike_type=bike_type,
-            start_date=start_date,
-            end_date=end_date,
-            day_of_week=parsed_day_of_week,
-            start_hour=start_hour,
-            start_station_id=start_station_id,
-            end_station_id=end_station_id,
-        )
-
-    return get_overall_stats(
+    return get_stats_data(
+        group_by=group_by,
         user_type=user_type,
         bike_type=bike_type,
         start_date=start_date,
@@ -89,15 +76,17 @@ def get_stats(
         end_station_id=end_station_id,
     )
 
-@router.get("/station_ride_counts", response_model=list[StationRideCount])
+@router.get("/station_ride_counts", response_model=list[StationRideCounts])
 def get_station_ride_counts(
+    group_by: StatsGroupBy = Query(default=StatsGroupBy.NONE),
     start_date: date | None = Query(default=None), 
     end_date: date | None = Query(default=None),
     station_id: str | None = Query(default=None),
     limit: int | None = Query(default=100, ge=1, le=3000)
 ):
-    """Get the count of rides starting or ending at each station."""
+    """Get the count of rides starting or ending at each station, optionally grouped by day_of_week, hour, or both."""
     return get_station_ride_counts_stats(
+        group_by=group_by,
         start_date=start_date,
         end_date=end_date,
         station_id=station_id,
@@ -106,13 +95,15 @@ def get_station_ride_counts(
 
 @router.get("/trips_between_stations", response_model=list[TripsCountBetweenStations])
 def get_trips_between_stations(
+    group_by: StatsGroupBy = Query(default=StatsGroupBy.NONE),
     start_date: date | None = Query(default=None), 
     end_date: date | None = Query(default=None),
     station_id: str | None = Query(default=None),
     limit: int | None = Query(default=100, ge=1, le=1000)
 ):
-    """Get the count of rides between each station pairs"""
+    """Get the count of rides between each station pair, optionally grouped by day_of_week, hour, or both."""
     return get_trips_between_stations_stats(
+        group_by=group_by,
         start_date=start_date,
         end_date=end_date,
         station_id=station_id,

@@ -19,3 +19,15 @@ export const LIMIT_STATIONS = 3000
 // Allowed zoom range for map interactions
 export const MIN_ZOOM = 9
 export const MAX_ZOOM = 15
+/** Utility function to clamp a value between a minimum and maximum */
+export const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+
+export const HOURS_IN_DAY = 24
+export const BASE_FRAME_MS = 900      // Base duration of each hour frame in milliseconds (adjustable by speed controls)
+export const MIN_PITCH = 0            // Minimum pitch angle for the map view
+export const MAX_PITCH = 60           // Maximum pitch angle for the map view (to prevent excessive tilting)
+export const SPEED_OPTIONS = [        // Options for animation speed control
+  { label: '0.5×', value: 0.5 },
+  { label: '1×', value: 1 },
+  { label: '2×', value: 2 },
+]

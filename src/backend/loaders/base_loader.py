@@ -10,6 +10,7 @@ LoaderFrame = pl.DataFrame | pl.LazyFrame
 
 
 def _format_schema(schema: pl.Schema) -> str:
+    """Helper function to format a Polars schema dictionary into a readable string for logging purposes."""
     return "\n".join(f"  - {name}: {dtype}" for name, dtype in schema.items())
 
 def load_cached_frame(
@@ -25,9 +26,11 @@ def load_cached_frame(
     print(f"[{label}] Loading data...")
     start_time = datetime.now()
 
+    # If we are in test mode, load the committed test dataset as a DataFrame
     if test:
         print(f"[{label}] Test mode: loading committed test dataset")
         frame: LoaderFrame = load_test_data()
+        # The function to normalize test data must be provided in test mode
         if normalize_test_data is None:
             raise ValueError("normalize_test_data function must be provided when loading test data to ensure consistent schemas and avoid mixed-type errors.")
         frame = normalize_test_data(frame)

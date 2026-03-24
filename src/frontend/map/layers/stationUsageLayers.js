@@ -8,9 +8,9 @@ export function createStationUsageLayer(stations, maxUsage) {
     data: stations,
     gpuAggregation: false,  // Must be false to carry station IDs in the tooltip
     getPosition: (station) => [station.lon, station.lat],
-    getColorWeight: (station) => station.usage,
+    getColorWeight: (station) => station.hourly_usage,
     colorAggregation: 'SUM',
-    getElevationWeight: (station) => station.usage,
+    getElevationWeight: (station) => station.hourly_usage,
     elevationAggregation: 'SUM',
     colorRange: [
       [219, 234, 254],
@@ -20,13 +20,14 @@ export function createStationUsageLayer(stations, maxUsage) {
       [59, 130, 246],
       [30, 64, 175],
     ],
-    radius: 180,
-    coverage: 0.9,
+    radius: 150,                  // Radius in meters of each hexagon
+    coverage: 0.8,                // Ratio of hexagon area actually covered by hexagons ([0-1] 1 means no gap between hexagons) 
     opacity: 0.75,
-    upperPercentile: 100,
-    colorDomain: [0, colorScale],
-    extruded: true,
-    elevationScale: 10,   // Scale elevation for better visibility
-    pickable: true,       // Enable picking for tooltips
+    upperPercentile: 100,         // Use all data points for color and elevation scaling
+    colorDomain: [0, colorScale], // Scale colors based on max usage
+    elevationDomain: [0, colorScale], // Keep elevation scaling fixed across animation frames
+    extruded: true,               
+    elevationScale: 3,            // Scale elevation for better visibility
+    pickable: true,               // Enable picking for tooltips
   })
 }

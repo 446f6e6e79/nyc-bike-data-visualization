@@ -53,26 +53,3 @@ def load_ride_data(inMemory: bool=False, test=False) -> RideFrame:
     )
 
     return _rides_df
-
-#TODO: remove this. Think if we have to add it to the download_data script or if we can do it on the fly in the stats computation
-def _extract_features(df: RideFrame) -> RideFrame:
-    """
-    Extract ride-level features from cleaned historical data:
-    - Time-based features (year, month, day of week, hour, day type)
-    - Trip duration
-    """
-    return df.with_columns(
-        pl.col("started_at").dt.year().alias("start_year"),
-        pl.col("started_at").dt.month().alias("start_month"),
-        pl.col("started_at").dt.to_string("%A").alias("start_day_of_week"),
-        pl.col("started_at").dt.hour().alias("start_hour"),
-        pl.when(
-            (pl.col("started_at").dt.weekday() - 1).is_in([0, 1, 2, 3, 4])
-        )
-        .then(pl.lit("Weekday"))
-        .otherwise(pl.lit("Weekend"))
-        .alias("day_type"),
-        (
-            (pl.col("ended_at") - pl.col("started_at")).dt.total_milliseconds() / 1000
-        ).alias("trip_duration"),
-    )

@@ -6,7 +6,7 @@ from src.backend.models.ride import MemberCasual, RideableType
 class Stats(BaseModel):
     """Base class for statistics models."""
     total_rides: int
-    number_of_days: int
+    days_count: int        # Number of unique days in the dataset, used to calculate average daily counts
     average_duration_seconds: float
     average_distance_km: float
     total_duration_seconds: float
@@ -25,21 +25,37 @@ class GroupedStats(Stats):
     day_of_week: int | None = None
     hour: int | None = None
 
-class StationRideCount(BaseModel):
-    """Model representing the count of rides starting or ending at a station."""
+class GroupedStationRideCount(BaseModel):
+    """Grouped bucket of rides starting or ending at a station."""
+    day_of_week: int | None = None
+    hour: int | None = None
+    outgoing_rides: int
+    incoming_rides: int
+    total_rides: int
+    days_count: int        # Number of unique days in the dataset for this station, used to calculate average daily counts
+
+class StationRideCounts(BaseModel):
+    """Station-level metadata with grouped ride buckets."""
     station_id: str
     lat: float
     lon: float
-    outgoing_rides: int
-    incoming_rides: int
+    groups: list[GroupedStationRideCount]
 
-class TripsCountBetweenStations(BaseModel):
-    station_a: str
-    station_a_lat: float
-    station_a_lon: float
-    station_b: str
-    station_b_lat: float
-    station_b_lon: float
+class GroupedTripsCountBetweenStations(BaseModel):
+    """Count of trips between two stations, grouped by day of week, hour, or both."""
+    day_of_week: int | None = None
+    hour: int | None = None
     a_to_b_count: int
     b_to_a_count: int
     total_rides: int
+    days_count: int     # Number of unique days in the dataset for this station pair, used to calculate average daily counts
+
+class TripsCountBetweenStations(BaseModel):
+    """Station-level metadata with grouped trip count buckets between station pairs."""
+    station_a_id: str
+    station_a_lat: float | None
+    station_a_lon: float | None
+    station_b_id: str
+    station_b_lat: float | None
+    station_b_lon: float | None
+    groups: list[GroupedTripsCountBetweenStations]
