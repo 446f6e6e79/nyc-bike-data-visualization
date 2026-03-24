@@ -15,6 +15,7 @@ export const INITIAL_VIEW_STATE = {
 
 // Limit the number of stations to fetch for performance reasons
 export const LIMIT_STATIONS = 3000
+export const LIMIT_TRIPS = 1000
 
 // Allowed zoom range for map interactions
 export const MIN_ZOOM = 9

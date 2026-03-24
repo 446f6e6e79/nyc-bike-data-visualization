@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchStationRideCounts } from '../api-data/stationApi.js'
+import { fetchStationRideCounts } from '../api-data/statsApi.js'
 
 /**
  * Hook to fetch station ride counts with optional filters.
