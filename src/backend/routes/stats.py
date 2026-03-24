@@ -2,6 +2,7 @@ from datetime import date
 from fastapi import APIRouter, HTTPException, Query
 from src.backend.models.ride import MemberCasual, RideableType
 from src.backend.models.stats import (
+    DatasetDateRange,
     Stats,
     GroupedStats,
     StationRideCounts,
@@ -13,6 +14,7 @@ from src.backend.services.stats import (
     get_station_ride_counts_stats,
     get_trips_between_stations_stats,
 )
+from src.backend.loaders.rides_loader import get_data_range_coverage
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
@@ -109,3 +111,8 @@ def get_trips_between_stations(
         station_id=station_id,
         limit=limit,
     )
+
+@router.get("/date_range", response_model=DatasetDateRange)
+def get_date_range():
+    """Get the min and max ride dates in the dataset"""
+    return get_data_range_coverage()
