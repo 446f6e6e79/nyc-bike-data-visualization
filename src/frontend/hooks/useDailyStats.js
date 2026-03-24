@@ -7,11 +7,12 @@ import { fetchDailyStats } from '../api-data/statsApi.js'
  */
 function useDailyStats(dateRange) {
   const filters = dateRange ?? {}
+  const hasDateRange = Boolean(filters.start_date && filters.end_date)
 
   const query = useQuery({
     queryKey: ['daily-stats', filters],
     queryFn: () => fetchDailyStats(filters),
-    enabled: filters != {}, // Only run the query if filters are provided
+    enabled: hasDateRange,
     staleTime: 30 * 60 * 1000, // Data is considered fresh for 30 minutes
   })
 

@@ -7,10 +7,13 @@ import { fetchStationRideCounts } from '../api-data/stationApi.js'
  * @param {*} filters 
  * @returns An object containing station ride counts and loading/error states
  */
-function useStationRideCounts(filters = {}) {
+function useStationRideCounts(filters = {}, options = {}) {
+  const { enabled = true } = options
+
   const query = useQuery({
     queryKey: ['station-ride-counts', filters],
     queryFn: () => fetchStationRideCounts(filters),
+    enabled,
     staleTime: 15 * 60 * 1000,
   })
 

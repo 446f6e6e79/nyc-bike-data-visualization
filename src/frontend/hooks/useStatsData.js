@@ -8,11 +8,12 @@ import { fetchStatsData } from '../api-data/statsApi.js'
  */
 function useStatsData(dateRange) {
   const filters = dateRange ?? {}
+  const hasDateRange = Boolean(filters.start_date && filters.end_date)
 
   const query = useQuery({
     queryKey: ['stats-summary', filters],
     queryFn: () => fetchStatsData(filters),
-    enabled: filters != {}, // Only run the query if filters are provided
+    enabled: hasDateRange,
     staleTime: 10 * 60 * 1000,
   })
 

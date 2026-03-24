@@ -5,15 +5,21 @@ import { INITIAL_VIEW_STATE, LIMIT_STATIONS, MAP_STYLES, MAX_ZOOM, MIN_ZOOM, cla
 import { buildLayers } from '../map/buildLayers.js'
 import { getAverageUsage, getStationsForHour, selectStations } from '../map/selectors.js'
 
-function MapPage() {
+function MapPage({ dateRange }) {
   // State for map view (center, zoom, etc.)
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)
   const [currentHour, setCurrentHour] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [speed, setSpeed] = useState(1)
+  const hasDateRange = Boolean(dateRange?.start_date && dateRange?.end_date)
+
+  const stationFilters = useMemo(
+    () => ({ limit: LIMIT_STATIONS, group_by: 'hour', ...(dateRange ?? {}) }),
+    [dateRange]
+  )
   
   // States for map informations
-  const { stationRideCounts, loading, error } = useStationRideCounts({ limit: LIMIT_STATIONS, group_by: 'hour' }) // Currently fetching hourly data, but can be adjusted to other time frames as needed
+  const { stationRideCounts, loading, error } = useStationRideCounts(stationFilters, { enabled: hasDateRange }) // Currently fetching hourly data, but can be adjusted to other time frames as needed
   const stations = useMemo(() => selectStations(stationRideCounts), [stationRideCounts])
   const frameStations = useMemo(() => getStationsForHour(stations, currentHour), [stations, currentHour])
   const maxUsage = useMemo(() => {

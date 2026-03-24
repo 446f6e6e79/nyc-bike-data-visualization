@@ -293,22 +293,6 @@ export default function DateRangeFilter({ value, onCommit }) {
     })
   }, [minDate, selection, totalMonths])
 
-  useEffect(() => {
-    if (
-      !hasCommittedInitial &&
-      minDate &&
-      maxDate &&
-      selection &&
-      onCommit
-    ) {
-      onCommit({
-        start_date: formatDateParam(selection.startDate),
-        end_date: formatDateParam(selection.endDate),
-      });
-      setHasCommittedInitial(true);
-    }
-  }, [minDate, maxDate, selection, onCommit, hasCommittedInitial]);
-
   if (loading || error || !selection || !minDate || !maxDate) return null
 
   const selectionLeft = (selection.startIndex / totalMonths) * 100
