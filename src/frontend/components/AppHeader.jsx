@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import DateRangeFilter from './utils/DateRangeFilter.jsx'
 
 const PAGES = [
   { to: '/map', label: 'Map' },
@@ -20,6 +21,9 @@ function AppHeader() {
           </NavLink>
         ))}
       </nav>
+      <div className="date-filter">
+        <DateRangeFilter />
+      </div>
     </header>
   )
 }

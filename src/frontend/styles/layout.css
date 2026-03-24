@@ -7,6 +7,10 @@
     @apply bg-[#1a73e8] border-none p-5;
   }
 
+  .date-filter {
+  @apply flex justify-end;
+  }
+
   .app-title {
     @apply block text-white text-[1.4rem] font-semibold mt-0 mb-3 mx-0;
   }
