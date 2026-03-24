@@ -6,10 +6,13 @@ import { fetchStatsData } from '../api-data/statsApi.js'
  * @param {*} filters
  * @returns An object containing rideStats and userStats arrays with display-friendly data, along with loading and error states
  */
-function useStatsData() {
+function useStatsData(dateRange) {
+  const filters = dateRange ?? {}
+
   const query = useQuery({
-    queryKey: ['stats-summary'],
-    queryFn: fetchStatsData,
+    queryKey: ['stats-summary', filters],
+    queryFn: () => fetchStatsData(filters),
+    enabled: filters != {}, // Only run the query if filters are provided
     staleTime: 10 * 60 * 1000,
   })
 

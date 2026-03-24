@@ -17,9 +17,9 @@ const userMetrics = [
   { label: 'Avg Distance (km)',  key: 'average_distance_km',      formatter: v => v.toFixed(2) },
 ]
 
-const StatsPage = () => {
-  const { rideStats, userStats, loading, error } = useStatsData()
-  const { dailyStats, loading: dailyLoading, error: dailyError } = useDailyStats()
+const StatsPage = ( { dateRange } ) => {
+  const { rideStats, userStats, loading, error } = useStatsData(dateRange)
+  const { dailyStats, loading: dailyLoading, error: dailyError } = useDailyStats(dateRange)
 
   return (
     <>

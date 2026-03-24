@@ -6,7 +6,7 @@ const PAGES = [
   { to: '/stats', label: 'Stats' },
 ]
 
-function AppHeader() {
+function AppHeader( { dateRange, onDateRangeChange } ) {
   return (
     <header className="app-header">
       <h1 className="app-title">🚲 Citi Bike Analytics</h1>
@@ -22,7 +22,7 @@ function AppHeader() {
         ))}
       </nav>
       <div className="date-filter">
-        <DateRangeFilter />
+        <DateRangeFilter value={dateRange} onCommit={onDateRangeChange} />
       </div>
     </header>
   )

@@ -5,10 +5,13 @@ import { fetchDailyStats } from '../api-data/statsApi.js'
  * Hook to fetch daily stats grouped by day of the week
  * @returns An object containing daily stats and loading/error states
  */
-function useDailyStats() {
+function useDailyStats(dateRange) {
+  const filters = dateRange ?? {}
+
   const query = useQuery({
-    queryKey: ['daily-stats'],
-    queryFn: fetchDailyStats,
+    queryKey: ['daily-stats', filters],
+    queryFn: () => fetchDailyStats(filters),
+    enabled: filters != {}, // Only run the query if filters are provided
     staleTime: 30 * 60 * 1000, // Data is considered fresh for 30 minutes
   })
 

@@ -3,7 +3,6 @@ import useDatasetDateRange from '../../hooks/useDatasetDateRange.js'
 
 const MAX_COVERED_MONTHS = 6
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const TRACK_HORIZONTAL_PADDING_REM = 0.75
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value))
@@ -18,6 +17,16 @@ function parseApiDate(value) {
     return Number.isNaN(parsed.getTime()) ? null : parsed
   }
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+}
+
+function formatDateParam(date) {
+  if (!date) return undefined
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
 }
 
 function startOfMonth(date) {
@@ -47,21 +56,6 @@ function formatDateLabel(startDate, endDate, monthCount) {
   if (monthCount === 1) return start
   const end = `${MONTH_LABELS[endDate.getMonth()]} ${endDate.getFullYear()}`
   return `${start} → ${end}`
-}
-
-function normalizeRangeFromValue(value, minDate, totalMonths) {
-  const fallbackEndIndex = totalMonths - 1
-  const fallbackStartIndex = fallbackEndIndex
-  if (!value?.startDate || !value?.endDate) {
-    return { startIndex: fallbackStartIndex, endIndex: fallbackEndIndex }
-  }
-  const rawStartIndex = clamp(dateToIndex(startOfMonth(value.startDate), minDate), 0, totalMonths - 1)
-  const rawEndIndex = clamp(dateToIndex(startOfMonth(value.endDate), minDate), rawStartIndex, totalMonths - 1)
-  const rawMonthCount = rawEndIndex - rawStartIndex + 1
-  const monthCount = clamp(rawMonthCount, 1, Math.min(MAX_COVERED_MONTHS, totalMonths))
-  const endIndex = rawEndIndex
-  const startIndex = clamp(endIndex - monthCount + 1, 0, endIndex)
-  return { startIndex, endIndex }
 }
 
 function getIndexFromClientX(clientX, rect, totalMonths) {
@@ -126,7 +120,7 @@ function useDatasetState() {
   }
 }
 
-export default function DateRangeFilter({ value, onChange }) {
+export default function DateRangeFilter({ value, onCommit }) {
   const { dateRange, loading, error } = useDatasetState()
 
   const minDate = useMemo(() => {
@@ -149,16 +143,32 @@ export default function DateRangeFilter({ value, onChange }) {
     [totalMonths],
   )
 
-  const [range, setRange] = useState(null)
+  // Always select the last available month as the initial range
+  const [range, setRange] = useState(null);
+  const [hasCommittedInitial, setHasCommittedInitial] = useState(false);
 
   useEffect(() => {
-    if (!minDate || !maxDate || totalMonths === 0) return
-    const nextRange = normalizeRangeFromValue(value, minDate, totalMonths)
+    if (!minDate || !maxDate || totalMonths === 0) return;
+    // Select only the last month
+    const lastMonthIndex = totalMonths - 1;
+    const nextRange = { startIndex: lastMonthIndex, endIndex: lastMonthIndex };
     setRange((current) => {
-      if (current && current.startIndex === nextRange.startIndex && current.endIndex === nextRange.endIndex) return current
-      return nextRange
-    })
-  }, [maxDate, minDate, totalMonths, value])
+      if (current && current.startIndex === nextRange.startIndex && current.endIndex === nextRange.endIndex) return current;
+      return nextRange;
+    });
+  }, [maxDate, minDate, totalMonths]);
+
+  useEffect(() => {
+    if (!hasCommittedInitial && range && minDate && onCommit) {
+      const startDate = indexToDate(range.startIndex, minDate);
+      const endMonth = indexToDate(range.endIndex, minDate);
+      onCommit({
+        start_date: formatDateParam(startDate),
+        end_date: formatDateParam(endOfMonth(endMonth)),
+      });
+      setHasCommittedInitial(true);
+    }
+  }, [range, minDate, onCommit, hasCommittedInitial]);
 
   const selection = useMemo(() => {
     if (!range || !minDate) return null
@@ -172,15 +182,40 @@ export default function DateRangeFilter({ value, onChange }) {
     }
   }, [minDate, range])
 
-  useEffect(() => {
-    if (!selection || !onChange) return
-    const currentStartTime = value?.startDate ? startOfMonth(value.startDate).getTime() : null
-    const currentEndTime = value?.endDate ? endOfMonth(value.endDate).getTime() : null
-    const nextStartTime = selection.startDate.getTime()
-    const nextEndTime = selection.endDate.getTime()
-    if (currentStartTime === nextStartTime && currentEndTime === nextEndTime) return
-    onChange({ startDate: selection.startDate, endDate: selection.endDate })
-  }, [onChange, selection, value?.endDate, value?.startDate])
+  const [isCommitting, setIsCommitting] = useState(false)
+
+  const hasPendingChanges = useMemo(() => {
+    if (!selection) return false
+
+    const appliedStartDate = parseApiDate(value?.start_date ?? value?.startDate)
+    const appliedEndDate = parseApiDate(value?.end_date ?? value?.endDate)
+    const appliedStartTime = appliedStartDate
+      ? startOfMonth(appliedStartDate).getTime()
+      : null
+    const appliedEndTime = appliedEndDate
+      ? endOfMonth(appliedEndDate).getTime()
+      : null
+
+    return (
+      appliedStartTime !== selection.startDate.getTime() ||
+      appliedEndTime !== selection.endDate.getTime()
+    )
+  }, [selection, value?.endDate, value?.end_date, value?.startDate, value?.start_date])
+
+  const handleApply = useCallback(async () => {
+    if (!selection || !onCommit || !hasPendingChanges || isCommitting) return
+
+    setIsCommitting(true)
+    try {
+      await onCommit({
+        start_date: formatDateParam(selection.startDate),
+        end_date: formatDateParam(selection.endDate),
+      })
+    } finally {
+      setIsCommitting(false)
+    }
+  }, [hasPendingChanges, isCommitting, onCommit, selection])
+
 
   const updateRange = useCallback((nextRange) => {
     if (totalMonths === 0) return
@@ -257,6 +292,22 @@ export default function DateRangeFilter({ value, onChange }) {
       }
     })
   }, [minDate, selection, totalMonths])
+
+  useEffect(() => {
+    if (
+      !hasCommittedInitial &&
+      minDate &&
+      maxDate &&
+      selection &&
+      onCommit
+    ) {
+      onCommit({
+        start_date: formatDateParam(selection.startDate),
+        end_date: formatDateParam(selection.endDate),
+      });
+      setHasCommittedInitial(true);
+    }
+  }, [minDate, maxDate, selection, onCommit, hasCommittedInitial]);
 
   if (loading || error || !selection || !minDate || !maxDate) return null
 
@@ -479,6 +530,30 @@ export default function DateRangeFilter({ value, onChange }) {
           </div>
         </div>
       </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+        <button
+          type="button"
+          onClick={handleApply}
+          disabled={!hasPendingChanges || isCommitting || !onCommit}
+          style={{
+            border: '1px solid rgba(255,255,255,0.24)',
+            borderRadius: '10px',
+            padding: '8px 14px',
+            background: isCommitting
+              ? 'rgba(255,255,255,0.12)'
+              : 'rgba(255,255,255,0.18)',
+            color: 'white',
+            fontSize: '12px',
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            cursor: !hasPendingChanges || isCommitting || !onCommit ? 'not-allowed' : 'pointer',
+            opacity: !hasPendingChanges || !onCommit ? 0.55 : 1,
+          }}
+        >
+          {isCommitting ? 'Loading...' : 'Apply'}
+        </button>
+      </div>
+
     </div>
   )
 }

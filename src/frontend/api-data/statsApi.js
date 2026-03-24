@@ -17,12 +17,23 @@ const toDisplayStats = (item) => ({
  * @param {*} filters
  * @returns An object containing rideStats and userStats arrays with display-friendly data
  */
-export async function fetchStatsData() {
+export async function fetchStatsData(filters = {}) {
   const [classic, electric, member, casual] = await Promise.all([
-    apiClient.get(ENDPOINTS.stats(), { params: { bike_type: 'classic_bike' } }).then((res) => res.data),
-    apiClient.get(ENDPOINTS.stats(), { params: { bike_type: 'electric_bike' } }).then((res) => res.data),
-    apiClient.get(ENDPOINTS.stats(), { params: { user_type: 'member' } }).then((res) => res.data),
-    apiClient.get(ENDPOINTS.stats(), { params: { user_type: 'casual' } }).then((res) => res.data),
+    apiClient.get(ENDPOINTS.stats(), {
+      params: { ...filters, bike_type: 'classic_bike' },
+    }).then((res) => res.data),
+
+    apiClient.get(ENDPOINTS.stats(), {
+      params: { ...filters, bike_type: 'electric_bike' },
+    }).then((res) => res.data),
+
+    apiClient.get(ENDPOINTS.stats(), {
+      params: { ...filters, user_type: 'member' },
+    }).then((res) => res.data),
+
+    apiClient.get(ENDPOINTS.stats(), {
+      params: { ...filters, user_type: 'casual' },
+    }).then((res) => res.data),
   ])
 
   return {
@@ -41,9 +52,9 @@ export async function fetchStatsData() {
  * Fetches daily stats grouped by day of the week
  * @returns An array of stats data grouped by day of the week, with display-friendly duration values
  */
-export async function fetchDailyStats() {
+export async function fetchDailyStats(filters = {}) {
   const { data } = await apiClient.get(ENDPOINTS.stats(), {
-    params: { group_by: 'day_of_week' },
+    params: { ...filters, group_by: 'day_of_week' },
   })
 
   return data
