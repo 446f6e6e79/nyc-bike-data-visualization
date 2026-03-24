@@ -1,0 +1,46 @@
+# Define a custom issue template for tracking implementation tasks with specific labels and structured content.
+name: Todo
+description: Track a scoped implementation task
+title: "[TODO] "
+labels:
+  - type:todo
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use labels with the prefix system:
+        - type:todo 
+        - area:backend, area:frontend or area:documentation
+        - priority:low or priority:high
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Choose the main area for this todo.
+      options:
+        - backend
+        - frontend
+        - documentation
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Choose the priority.
+      options:
+        - low
+        - high
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What should be done?
+      placeholder: Implement...
+    validations:
+      required: true

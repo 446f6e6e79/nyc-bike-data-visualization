@@ -1,0 +1,58 @@
+name: Bug Report
+description: Report a bug in the project
+title: "[BUG] "
+labels:
+  - type:bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use labels with the prefix system:
+        - type:bug (automatically applied)
+        - area:backend or area:frontend (add manually)
+        - priority:low or priority:high (add manually)
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - backend
+        - frontend
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - low
+        - high
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click on ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
