@@ -1,30 +1,24 @@
-import { useState, useEffect, useCallback } from 'react'
-import { ENDPOINTS } from '../api-data/apiConstants.js'
-import apiClient from '../api-data/apiClient.js'
+import { useQuery } from '@tanstack/react-query'
+import { fetchDailyStats } from '../api-data/statsApi.js'
 
+/**
+ * Hook to fetch daily stats grouped by day of the week
+ * @returns An object containing daily stats and loading/error states
+ */
 function useDailyStats() {
-  const [dailyStats, setDailyStats] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const query = useQuery({
+    queryKey: ['daily-stats'],
+    queryFn: fetchDailyStats,
+    staleTime: 30 * 60 * 1000, // Data is considered fresh for 30 minutes
+  })
 
-  const fetchDailyStats = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const { data } = await apiClient.get(ENDPOINTS.stats(), {
-        params: { group_by: 'day_of_week' },
-      })
-      setDailyStats(data)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetchDailyStats() }, [fetchDailyStats])
-
-  return { dailyStats, loading, error, refetch: fetchDailyStats }
+  return {
+    dailyStats: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error?.message ?? null,
+    refetch: query.refetch,
+    isFetching: query.isFetching,
+  }
 }
 
 export default useDailyStats

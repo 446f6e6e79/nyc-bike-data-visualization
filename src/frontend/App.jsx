@@ -3,13 +3,12 @@ import AppHeader from './components/AppHeader.jsx'
 import StatsPage from './pages/StatsPage.jsx'
 import MapPage from './pages/MapPage.jsx'
 
-import useStatsData from './hooks/useStatsData.js'
-import useDailyStats from './hooks/useDailyStats.js'
-
+/**
+ * App component that sets up the main structure of the application, including routing and layout. 
+ * Defines routes for the map and stats pages, and includes a header that is displayed on all pages.
+ * @returns 
+ */
 function App() {
-  // Loading one time queries for stats data and daily stats, then passing down as props to StatsPage
-  const statsData = useStatsData()
-  const dailyData = useDailyStats()
 
   return (
     <BrowserRouter>
@@ -19,7 +18,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/map" replace />} />
             <Route path="/map"   element={<MapPage />} />
-            <Route path="/stats" element={<StatsPage statsData={statsData} dailyData={dailyData} />} />
+            <Route path="/stats" element={<StatsPage />} />
             {/* add future pages here */}
           </Routes>
         </div>

@@ -1,6 +1,7 @@
 import { describe, it, vi, beforeEach, afterEach } from 'vitest'
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { createQueryWrapper } from './testQueryClient.jsx'
 
 import AppHeader from '../components/AppHeader'
 import StatCard from '../components/StatCard'
@@ -156,15 +157,18 @@ describe('App — renders without crashing', () => {
   })
 
   it('mounts in loading state', () => {
-    render(<App />)
+    const wrapper = createQueryWrapper()
+    render(<App />, { wrapper })
   })
 
   // App defaults to /map — the default route redirects there
   it('renders MapPage by default', () => {
+    const wrapper = createQueryWrapper()
     render(
       <MemoryRouter initialEntries={['/map']}>
         <MapPage />
-      </MemoryRouter>
+      </MemoryRouter>,
+      { wrapper }
     )
   })
 

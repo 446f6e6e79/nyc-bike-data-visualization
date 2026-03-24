@@ -1,7 +1,10 @@
 import StatsSection from '../components/StatsSection.jsx'
 import DailyStatsBarChart from '../components/DailyStatsBarChart.jsx'
-import StatusMessage from '../components/StatusMessage.jsx'
+import StatusMessage from '../components/utils/StatusMessage.jsx'
+import useStatsData from '../hooks/useStatsData.js'
+import useDailyStats from '../hooks/useDailyStats.js'
 
+// Formats and labels for the stats metrics to be displayed in the StatsSection components. 
 const rideMetrics = [
   { label: 'Total Rides',         key: 'total_rides',              formatter: v => v.toLocaleString() },
   { label: 'Avg Duration (min)',  key: 'average_duration_minutes', formatter: v => v.toFixed(1) },
@@ -14,9 +17,9 @@ const userMetrics = [
   { label: 'Avg Distance (km)',  key: 'average_distance_km',      formatter: v => v.toFixed(2) },
 ]
 
-const StatsPage = ({ statsData, dailyData }) => {
-  const { rideStats, userStats, loading, error } = statsData
-  const { dailyStats, loading: dailyLoading, error: dailyError } = dailyData
+const StatsPage = () => {
+  const { rideStats, userStats, loading, error } = useStatsData()
+  const { dailyStats, loading: dailyLoading, error: dailyError } = useDailyStats()
 
   return (
     <>

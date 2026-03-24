@@ -4,6 +4,8 @@ import { renderHook, waitFor } from '@testing-library/react'
 import useStatsData from '../hooks/useStatsData'
 import useDailyStats from '../hooks/useDailyStats'
 
+import { createQueryWrapper } from './testQueryClient.jsx'
+
 /*
     These tests primarily check that hooks resolve without throwing, both in loading and loaded states.
 */
@@ -62,13 +64,15 @@ describe('useStatsData — resolves without throwing', () => {
   })
 
   it('starts in loading state', () => {
-    const { result } = renderHook(() => useStatsData())
+    const wrapper = createQueryWrapper()
+    const { result } = renderHook(() => useStatsData(), { wrapper })
     expect(result.current.loading).toBe(true)
     expect(result.current.error).toBeNull()
   })
 
   it('finishes loading and returns rideStats and userStats', async () => {
-    const { result } = renderHook(() => useStatsData())
+    const wrapper = createQueryWrapper()
+    const { result } = renderHook(() => useStatsData(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     expect(result.current.error).toBeNull()
@@ -79,7 +83,8 @@ describe('useStatsData — resolves without throwing', () => {
   })
 
   it('rideStats entries have rideable_type and derived duration fields', async () => {
-    const { result } = renderHook(() => useStatsData())
+    const wrapper = createQueryWrapper()
+    const { result } = renderHook(() => useStatsData(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     for (const entry of result.current.rideStats) {
@@ -90,7 +95,8 @@ describe('useStatsData — resolves without throwing', () => {
   })
 
   it('userStats entries have user_type and derived duration fields', async () => {
-    const { result } = renderHook(() => useStatsData())
+    const wrapper = createQueryWrapper()
+    const { result } = renderHook(() => useStatsData(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     for (const entry of result.current.userStats) {
@@ -101,7 +107,8 @@ describe('useStatsData — resolves without throwing', () => {
   })
 
   it('exposes a refetch function', async () => {
-    const { result } = renderHook(() => useStatsData())
+    const wrapper = createQueryWrapper()
+    const { result } = renderHook(() => useStatsData(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(typeof result.current.refetch).toBe('function')
   })
@@ -117,13 +124,15 @@ describe('useDailyStats — resolves without throwing', () => {
   })
 
   it('starts in loading state', () => {
-    const { result } = renderHook(() => useDailyStats())
+    const wrapper = createQueryWrapper()
+    const { result } = renderHook(() => useDailyStats(), { wrapper })
     expect(result.current.loading).toBe(true)
     expect(result.current.error).toBeNull()
   })
 
   it('finishes loading and returns dailyStats with 7 entries', async () => {
-    const { result } = renderHook(() => useDailyStats())
+    const wrapper = createQueryWrapper()
+    const { result } = renderHook(() => useDailyStats(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     expect(result.current.error).toBeNull()
@@ -132,7 +141,8 @@ describe('useDailyStats — resolves without throwing', () => {
   })
 
   it('each dailyStats entry has day_of_week as an integer 0–6', async () => {
-    const { result } = renderHook(() => useDailyStats())
+    const wrapper = createQueryWrapper()
+    const { result } = renderHook(() => useDailyStats(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     result.current.dailyStats.forEach((entry, i) => {
@@ -141,7 +151,8 @@ describe('useDailyStats — resolves without throwing', () => {
   })
 
   it('exposes a refetch function', async () => {
-    const { result } = renderHook(() => useDailyStats())
+    const wrapper = createQueryWrapper()
+    const { result } = renderHook(() => useDailyStats(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(typeof result.current.refetch).toBe('function')
   })

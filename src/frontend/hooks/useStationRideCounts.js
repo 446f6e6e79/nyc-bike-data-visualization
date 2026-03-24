@@ -1,32 +1,26 @@
-import { useState, useEffect, useCallback } from 'react'
-import { ENDPOINTS } from '../api-data/apiConstants.js'
-import apiClient from '../api-data/apiClient.js'
-/** * Custom hook to fetch station ride counts with optional filters.
- * @param {Object} filters - Optional filters for the API request (e.g., { limit: 100, group_by: 'hour' }).
- * @returns {Object} An object containing stationRideCounts, loading state, error message, and a refetch function.
+import { useQuery } from '@tanstack/react-query'
+import { fetchStationRideCounts } from '../api-data/stationApi.js'
+
+/**
+ * Hook to fetch station ride counts with optional filters.
+ * The filters can include parameters like date range, bike type, user type, etc.
+ * @param {*} filters 
+ * @returns An object containing station ride counts and loading/error states
  */
 function useStationRideCounts(filters = {}) {
-  const [stationRideCounts, setStationRideCounts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const query = useQuery({
+    queryKey: ['station-ride-counts', filters],
+    queryFn: () => fetchStationRideCounts(filters),
+    staleTime: 15 * 60 * 1000,
+  })
 
-  const fetchCounts = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      // Fetch station ride counts with the provided filters (e.g., limit, group_by)
-      const { data } = await apiClient.get(ENDPOINTS.stationRideCounts(), { params: filters })
-      setStationRideCounts(data)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [JSON.stringify(filters)])
-
-  useEffect(() => { fetchCounts() }, [fetchCounts])
-
-  return { stationRideCounts, loading, error, refetch: fetchCounts }
+  return {
+    stationRideCounts: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error?.message ?? null,
+    refetch: query.refetch,
+    isFetching: query.isFetching,
+  }
 }
 
 export default useStationRideCounts
