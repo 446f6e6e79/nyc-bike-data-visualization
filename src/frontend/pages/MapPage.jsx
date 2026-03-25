@@ -14,10 +14,6 @@ function MapPage({ dateRange }) {
   const [speed, setSpeed] = useState(1)                                 // Animation speed multiplier (1x, 2x, etc.). Default to 1x
   const [activeLayer, setActiveLayer] = useState('station_usage')       // Active layer to display
   
-  // Determine if date range filters are provided to enable data fetching.
-  // PREVENTS INITIAL LOAD WITHOUT FILTERS, which crash the backend
-  const hasDateRange = Boolean(dateRange?.start_date && dateRange?.end_date) 
-
   // Build filters for station usage data
   const stationFilters = useMemo(
     () => ({ limit: LIMIT_STATIONS, 
@@ -34,12 +30,12 @@ function MapPage({ dateRange }) {
   const { stationRideCounts,
           loading: stationLoading,
           error: stationError
-  } = useStationRideCounts(stationFilters, { enabled: hasDateRange })  // Block fetching until we have a valid date range
+  } = useStationRideCounts(stationFilters)
   const {
     tripsBetweenStations,
     loading: tripsLoading,
     error: tripsError,
-  } = useTripsBetweenStations(tripsFilters, { enabled: hasDateRange }) // Block fetching until we have a valid date range
+  } = useTripsBetweenStations(tripsFilters)
 
 
   const stations = useMemo(() => selectStations(stationRideCounts), [stationRideCounts])

@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { fetchStationRideCounts } from '../api-data/statsApi.js'
+import useApiQueryWithFilters from './baseApiQuery.js'
 
 /**
  * Hook to fetch station ride counts with optional filters.
@@ -7,23 +7,20 @@ import { fetchStationRideCounts } from '../api-data/statsApi.js'
  * @param {*} filters 
  * @returns An object containing station ride counts and loading/error states
  */
-function useStationRideCounts(filters = {}, options = {}) {
-  const { enabled = true } = options
+function useStationRideCounts(filters = {}) {
+    const query = useApiQueryWithFilters({
+        queryKey: 'station-ride-counts',
+        fetcher: fetchStationRideCounts,
+        filters,
+    })
 
-  const query = useQuery({
-    queryKey: ['station-ride-counts', filters],
-    queryFn: () => fetchStationRideCounts(filters),
-    enabled,
-    staleTime: 15 * 60 * 1000,
-  })
-
-  return {
-    stationRideCounts: query.data ?? [],
-    loading: query.isLoading,
-    error: query.error?.message ?? null,
-    refetch: query.refetch,
-    isFetching: query.isFetching,
-  }
+    return {
+        stationRideCounts: query.data,
+        loading: query.loading,
+        error: query.error,
+        refetch: query.refetch,
+        isFetching: query.isFetching,
+    }
 }
 
 export default useStationRideCounts

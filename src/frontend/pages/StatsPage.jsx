@@ -18,8 +18,9 @@ const userMetrics = [
 ]
 
 const StatsPage = ( { dateRange } ) => {
-  const { rideStats, userStats, loading, error } = useStatsData(dateRange)
-  const { dailyStats, loading: dailyLoading, error: dailyError } = useDailyStats(dateRange)
+  const filters = dateRange ?? {}
+  const { rideStats, userStats, loading, error } = useStatsData(filters)
+  const { dailyStats, loading: dailyLoading, error: dailyError } = useDailyStats(filters)
 
   return (
     <>

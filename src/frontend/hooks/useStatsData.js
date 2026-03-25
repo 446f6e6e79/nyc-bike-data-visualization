@@ -1,30 +1,27 @@
-import { useQuery } from '@tanstack/react-query'
 import { fetchStatsData } from '../api-data/statsApi.js'
+import useApiQueryWithFilters from './baseApiQuery.js'
 
 /**
  * Hook to fetch stats data for different bike types and user types in parallel
- * @param {*} filters
+ * @param {Object} filters
  * @returns An object containing rideStats and userStats arrays with display-friendly data, along with loading and error states
  */
-function useStatsData(dateRange) {
-  const filters = dateRange ?? {}
-  const hasDateRange = Boolean(filters.start_date && filters.end_date)
+function useStatsData(filters = {}) {
+    const query = useApiQueryWithFilters({
+        queryKey: 'stats-summary',
+        fetcher: fetchStatsData,
+        filters,
+        fallbackData: { rideStats: [], userStats: [] },
+    })
 
-  const query = useQuery({
-    queryKey: ['stats-summary', filters],
-    queryFn: () => fetchStatsData(filters),
-    enabled: hasDateRange,
-    staleTime: 10 * 60 * 1000,
-  })
-
-  return {
-    rideStats: query.data?.rideStats ?? [],
-    userStats: query.data?.userStats ?? [],
-    loading: query.isLoading,
-    error: query.error?.message ?? null,
-    refetch: query.refetch,
-    isFetching: query.isFetching,
-  }
+    return {
+        rideStats: query.data.rideStats,
+        userStats: query.data.userStats,
+        loading: query.loading,
+        error: query.error,
+        refetch: query.refetch,
+        isFetching: query.isFetching,
+    }
 }
 
 export default useStatsData
