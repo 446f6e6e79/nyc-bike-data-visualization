@@ -13,9 +13,9 @@ export function createStationUsageLayer(stations, maxUsage) {
     data: stations,
     gpuAggregation: false,  // Must be false to carry station IDs in the tooltip
     getPosition: (station) => [station.lon, station.lat],
-    getColorWeight: (station) => station.hourly_usage,
+    getColorWeight: (station) => station.usage,
     colorAggregation: 'SUM',
-    getElevationWeight: (station) => station.hourly_usage,
+    getElevationWeight: (station) => station.usage,
     elevationAggregation: 'SUM',
     colorRange: [
       [219, 234, 254],

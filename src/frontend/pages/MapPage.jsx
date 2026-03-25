@@ -3,7 +3,7 @@ import DeckGL from '@deck.gl/react'
 import useStationRideCounts from '../hooks/useStationRideCounts.js'
 import { INITIAL_VIEW_STATE, LIMIT_STATIONS, MAP_STYLES, MAX_ZOOM, MIN_ZOOM, clamp, MIN_PITCH, MAX_PITCH, LAYER_OPTIONS } from '../map/constants.js'
 import { buildLayers } from '../map/buildLayers.js'
-import { getAverageUsage, getStationsForHour, getMaxUsage, selectStations } from '../map/selectors/stationUsage.js'
+import { getAverageUsage, getStationForCurrentTime, getMaxUsage, selectStations } from '../map/selectors/stationUsage.js'
 
 import MapController from '../map/components/MapController.jsx'
 import MapLegend from '../map/components/MapLegend.jsx'
@@ -12,7 +12,7 @@ import StatusMessage from '../components/StatusMessage.jsx'
 function MapPage({ dateRange }) {
     // State for map view (center, zoom, etc.)
     const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)          // Default view state for NYC, can be adjusted as needed
-    const [currentHour, setCurrentHour] = useState(7)                       // Current hour frame (0-23) for animation. Default to 7 AM     
+    const [currentTime, setCurrentTime] = useState(7)                       // Current hour frame (0-23) for animation. Default to 7 AM     
     const [hasAnimation, setHasAnimation] = useState(true)                  // Whether the current layer supports animation
     const [activeLayer, setActiveLayer] = useState('station_usage')         // Currently selected map layer
 
@@ -31,13 +31,12 @@ function MapPage({ dateRange }) {
 
     // Station Selectors
     const stations = useMemo(() => selectStations(stationRideCounts), [stationRideCounts])
-    const frameStations = useMemo(() => getStationsForHour(stations, currentHour), [stations, currentHour])
+    const frameStations = useMemo(() => getStationForCurrentTime(stations, currentTime), [stations, currentTime])
     const maxUsage = useMemo(() => getMaxUsage(stations), [stations])
     const avgUsage = useMemo(() => getAverageUsage(frameStations), [frameStations])
 
-    // Count of stations in the current hour frame
-    const activeFrameCount = frameStations.length
-    const hourLabel = `${String(currentHour).padStart(2, '0')}:00`
+    const timeLabel = `${String(Math.floor(currentTime)).padStart(2, '0')}:
+                        ${String(Math.floor((currentTime % 1) * 60)).padStart(2, '0')}`
 
     // Handler for view map changes
     const handleViewStateChange = useCallback(({ viewState: nextViewState }) => {
@@ -105,39 +104,38 @@ function MapPage({ dateRange }) {
                         const fromName = object.stationAName ?? 'Station A'
                         const toName = object.stationBName ?? 'Station B'
 
-                        return `Hour: ${hourLabel}\nTrip: ${fromName} → ${toName}\nRides: ${rides}`
+                        return `Time: ${timeLabel}\nTrip: ${fromName} → ${toName}\nRides: ${rides}`
                     }
 
                     const points = Array.isArray(object.points) ? object.points : []
 
                     if (points.length > 0) {
                         const totalUsage = Math.round(
-                            points.reduce((sum, point) => sum + (Number(point.hourly_usage) || 0), 0)
+                            points.reduce((sum, point) => sum + (Number(point.usage) || 0), 0)
                         )
                         const uniqueStationIds = [...new Set(points.map((point) => point.stationId).filter(Boolean))]
                         const stationPreview = uniqueStationIds.slice(0, 4).join(', ')
                         const stationSuffix = uniqueStationIds.length > 4 ? ', …' : ''
 
-                        return `Hour: ${hourLabel}\nStations: ${points.length}\nUsage: ${totalUsage} rides\nIDs: ${stationPreview}${stationSuffix}`
+                        return `Time: ${timeLabel}\nStations: ${points.length}\nUsage: ${totalUsage} rides\nIDs: ${stationPreview}${stationSuffix}`
                     }
 
                     const totalUsage = Math.round(Number(object.elevationValue ?? object.colorValue ?? 0) || 0)
                     const count = Math.round(Number(object.count ?? 0) || 0)
 
-                    return `Hour: ${hourLabel}\nStations: ${count}\nUsage: ${totalUsage} rides`
+                    return `Time: ${timeLabel}\nStations: ${count}\nUsage: ${totalUsage} rides`
                 }}
             />
-            {!stationLoading && activeFrameCount > 0 && (
+            {!stationLoading && (
                 <MapController
                     activeLayer={activeLayer}
                     setActiveLayer={setActiveLayer}
-                    currentHour={currentHour}
-                    setCurrentHour={setCurrentHour}
-                    activeFrameCount={activeFrameCount}
+                    currentTime={currentTime}
+                    setCurrentTime={setCurrentTime}
                     hasAnimation={hasAnimation}
                 />
             )}
-            {!stationLoading && activeFrameCount > 0 && (
+            {!stationLoading && (
                 <MapLegend
                     activeLayer={activeLayer}
                     frameStations={frameStations}

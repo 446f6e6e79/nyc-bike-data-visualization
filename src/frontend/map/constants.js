@@ -30,7 +30,7 @@ export const MAX_ZOOM = 15
 export const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
 export const HOURS_IN_DAY = 24
-export const BASE_FRAME_MS = 900      // Base duration of each hour frame in milliseconds (adjustable by speed controls)
+export const BASE_FRAME_MS = 1000      // Duration of an hour in milliseconds at normal speed (1x)
 export const MIN_PITCH = 0            // Minimum pitch angle for the map view
 export const MAX_PITCH = 60           // Maximum pitch angle for the map view (to prevent excessive tilting)
 export const SPEED_OPTIONS = [        // Options for animation speed control

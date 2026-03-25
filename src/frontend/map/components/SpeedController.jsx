@@ -2,21 +2,40 @@ import { SPEED_OPTIONS } from "../constants"
 import { useState, useEffect } from "react"
 import { HOURS_IN_DAY, BASE_FRAME_MS } from "../constants"
 
-export default function SpeedController({ setCurrentHour, activeFrameCount }) {
-    const [isPlaying, setIsPlaying] = useState(false)  // Whether the animation is currently playing
-    const [speed, setSpeed] = useState(1)              // Animation speed multiplier (1x by default)
+export default function SpeedController(
+    { setCurrentTime } // function to update the current time in the parent component
+){
+    const [isPlaying, setIsPlaying] = useState(false)
+    const [speed, setSpeed] = useState(1)
 
+    // Updates the current time based on the selected speed
     useEffect(() => {
-        if (!isPlaying || activeFrameCount === 0) {
+        if (!isPlaying) {
             return undefined
         }
+        let animationFrameId = null
+        let previousTimestamp = null
 
-        const intervalId = window.setInterval(() => {
-            setCurrentHour((hour) => (hour + 1) % HOURS_IN_DAY)
-        }, BASE_FRAME_MS / speed)
+        const advanceFrame = (timestamp) => {
+            if (previousTimestamp == null) {
+                previousTimestamp = timestamp
+            }
+            const elapsedMs = timestamp - previousTimestamp
+            previousTimestamp = timestamp
+            // The progress is calculated as the elapsed time divided by the base frame time, multiplied by the speed factor
+            const hoursProgressed = elapsedMs * speed / (BASE_FRAME_MS)
+            // Update the current time by adding the progressed hours, and wrap around using modulo to stay within a 24-hour cycle
+            setCurrentTime((time) => (time + hoursProgressed) % HOURS_IN_DAY)
+            animationFrameId = window.requestAnimationFrame(advanceFrame)
+        }
 
-        return () => window.clearInterval(intervalId)
-    }, [isPlaying, activeFrameCount, speed])
+        animationFrameId = window.requestAnimationFrame(advanceFrame)
+        return () => {
+            if (animationFrameId != null) {
+                window.cancelAnimationFrame(animationFrameId)
+            }
+        }
+    }, [isPlaying, speed])
 
     return (
         <div>

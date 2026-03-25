@@ -12,7 +12,7 @@ export function selectStations(stationRideCounts) {
     return stationRows
         .map((station) => {
             // Initialize an array to hold average rides for each hour of the day.
-            const hourlyUsageByHour = Array.from({ length: HOURS_IN_DAY }, () => 0)
+            const hourlyUsage = Array.from({ length: HOURS_IN_DAY }, () => 0)
             if (Array.isArray(station.groups)) {
                 station.groups.forEach((group) => {
                     // Extract hour and rides count
@@ -20,7 +20,7 @@ export function selectStations(stationRideCounts) {
                     const daysCount = Number(group.days_count)
                     const totalRides = Number(group.total_rides)
                     // Add the average rides for this hour to the corresponding index in the hourly usage array
-                    hourlyUsageByHour[hour] += totalRides / daysCount
+                    hourlyUsage[hour] += totalRides / daysCount
                 }
                 )
             }
@@ -28,7 +28,7 @@ export function selectStations(stationRideCounts) {
                 stationId: station.station_id,
                 lat: station.lat,
                 lon: station.lon,
-                hourlyUsageByHour,
+                hourlyUsage,
             }
         })
         // Filter out stations that don't have valid latitude, longitude, or hourly usage data.
@@ -36,7 +36,7 @@ export function selectStations(stationRideCounts) {
             (station) =>
                 Number.isFinite(station.lat) &&
                 Number.isFinite(station.lon) &&
-                Array.isArray(station.hourlyUsageByHour)
+                Array.isArray(station.hourlyUsage)
         )
 }
 
@@ -44,31 +44,45 @@ export function selectStations(stationRideCounts) {
  * Returns station features for a specific hour frame.
  * @param {Array} stations - Station list from selectStations.
  * @param {number} hour - Hour frame index (0-23).
- * @returns {Array} Station list with hourly_usage for the selected hour.
+ * @returns {Array} Station list with usage for the selected hour.
  */
-export function getStationsForHour(stations, hour) {
-    // Check paramerters values
-    const stationRows = Array.isArray(stations) ? stations : []
-    const selectedHour = Number.isInteger(hour) ? hour : 0
-
+export function getStationForCurrentTime(stations, hour) {
     // For each station, extract the usage for the selected hour
-    return stationRows.map((station) => ({
+    return stations.map((station) => ({
         stationId: station.stationId,
         lat: station.lat,
         lon: station.lon,
-        hourly_usage: Number(station.hourlyUsageByHour?.[selectedHour] ?? 0),
+        usage: interpolateStation(station, hour), // Use interpolation for smoother animation
     }))
+}
+
+/**
+ * Helper function to interpolate station usage between two hours for smoother animation.
+ * This allows the animation to show gradual changes in usage rather than abrupt jumps at each hour.
+ * @param {*} station Station object with hourlyUsageByHour array. 
+ * @param {*} time Current time frame (can be a fractional hour for interpolation, e.g., 14.5 for halfway between 14:00 and 15:00).
+ * @returns the interpolated usage value for the station at the given time frame.
+ */
+function interpolateStation(station, time) {
+    // Normalize hour to [0,23]
+    const normalizedHour = ((time % HOURS_IN_DAY) + HOURS_IN_DAY) % HOURS_IN_DAY
+    // Get the lower and upper hour indices for interpolation
+    const lowerHour = Math.floor(normalizedHour)
+    const higherHour = (lowerHour + 1) % HOURS_IN_DAY
+    const t = normalizedHour - lowerHour // Fractional part for interpolation
+    const lowerUsageValue = station.hourlyUsage[lowerHour]
+    const higherUsageValue = station.hourlyUsage[higherHour]
+
+    // Linear interpolation between the two hours
+    return lowerUsageValue + (higherUsageValue - lowerUsageValue) * t
 }
 
 /** Get the maximum usage value across all stations for scaling the map visualization */
 export function getMaxUsage(stations) {
-    if (!Array.isArray(stations) || stations.length === 0) {
-        return 0
-    }
     return stations.reduce((globalMax, station) => {
         // Get the maximum usage for this station across all hours
-        const stationMax = Array.isArray(station.hourlyUsageByHour)
-            ? Math.max(...station.hourlyUsageByHour.map((usage) => Number(usage) || 0))
+        const stationMax = Array.isArray(station.hourlyUsage)
+            ? Math.max(...station.hourlyUsage.map((usage) => Number(usage) || 0))
             : 0
         return Math.max(globalMax, stationMax)
     }, 0)
@@ -76,12 +90,7 @@ export function getMaxUsage(stations) {
 
 /** Get the average usage across all stations for display in the legend */
 export function getAverageUsage(stations) {
-    if (!Array.isArray(stations) || stations.length === 0) {
-        return 0
-    }
     const totalUsage = stations.reduce(
-        (acc, station) => acc + (Number(station.hourly_usage ?? station.daily_usage ?? station.usage ?? 0) || 0),
-        0
-    )
+        (acc, station) => acc + (Number(station.usage || 0)),0)
     return Math.round(totalUsage / stations.length)
 }
