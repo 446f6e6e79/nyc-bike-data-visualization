@@ -1,5 +1,10 @@
 import { HexagonLayer } from '@deck.gl/aggregation-layers'
-
+/**
+ * Creates a hexagon layer for visualizing hourly bike usage at stations.
+ * @param {Array} stations - Array of station objects with usage data.
+ * @param {number} maxUsage - Maximum usage value for color scaling.
+ * @returns {HexagonLayer} The created hexagon layer.
+ */
 export function createStationUsageLayer(stations, maxUsage) {
   const colorScale = maxUsage > 0 ? maxUsage : 1
 

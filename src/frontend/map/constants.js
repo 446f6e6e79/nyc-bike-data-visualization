@@ -17,6 +17,12 @@ export const INITIAL_VIEW_STATE = {
 export const LIMIT_STATIONS = 3000
 export const LIMIT_TRIPS = 1000
 
+// List of available map layers
+export const LAYER_OPTIONS = [
+    { label: 'Station Usage', value: 'station_usage' },
+    // Future layers can be added here
+]
+
 // Allowed zoom range for map interactions
 export const MIN_ZOOM = 9
 export const MAX_ZOOM = 15

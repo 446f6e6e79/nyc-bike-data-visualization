@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import DeckGL from '@deck.gl/react'
 import useStationRideCounts from '../hooks/useStationRideCounts.js'
-import useTripsBetweenStations from '../hooks/useTripsBetweenStations.js'
-import { INITIAL_VIEW_STATE, LIMIT_STATIONS, LIMIT_TRIPS, MAP_STYLES, MAX_ZOOM, MIN_ZOOM, clamp, HOURS_IN_DAY, BASE_FRAME_MS, MIN_PITCH, MAX_PITCH, SPEED_OPTIONS } from '../map/constants.js'
+import { INITIAL_VIEW_STATE, LIMIT_STATIONS, MAP_STYLES, MAX_ZOOM, MIN_ZOOM, clamp, HOURS_IN_DAY, BASE_FRAME_MS, MIN_PITCH, MAX_PITCH, SPEED_OPTIONS } from '../map/constants.js'
 import { buildLayers } from '../map/buildLayers.js'
-import { getAverageUsage, getStationsForHour, getTripsForHour, selectFrequentTrips, selectStations } from '../map/selectors.js'
+import { getAverageUsage, getStationsForHour, getMaxUsage, selectStations } from '../map/selectors/stationUsage.js'
+
+import MapController from '../map/components/MapController.jsx'
+import MapLegend from '../map/components/MapLegend.jsx'
+import StatusMessage from '../components/StatusMessage.jsx'
 
 function MapPage({ dateRange }) {
     // State for map view (center, zoom, etc.)
@@ -15,69 +18,32 @@ function MapPage({ dateRange }) {
     const [activeLayer, setActiveLayer] = useState('station_usage')       // Active layer to display
 
     // Build filters for station usage data
-    const stationFilters = useMemo(
-        () => ({
-            limit: LIMIT_STATIONS,
-            group_by: 'hour',
-            ...(dateRange ?? {})
-        }),
-        [dateRange] // Force refresh on new date range
-    )
-    const tripsFilters = useMemo(
-        () => ({
-            limit: LIMIT_TRIPS,
-            ...(dateRange ?? {})
-        }),
-        [dateRange] // Force refresh on new date range
-    )
+    const stationFilters = {
+        limit: LIMIT_STATIONS,
+        group_by: 'hour',
+        ...(dateRange ?? {})
+    }
 
+    // Fetch station ride counts with the specified filters using the custom hook
     const { stationRideCounts,
         loading: stationLoading,
         error: stationError
     } = useStationRideCounts(stationFilters)
-    const {
-        tripsBetweenStations,
-        loading: tripsLoading,
-        error: tripsError,
-    } = useTripsBetweenStations(tripsFilters)
 
-
+    // Station Selectors
     const stations = useMemo(() => selectStations(stationRideCounts), [stationRideCounts])
-    const trips = useMemo(() => selectFrequentTrips(tripsBetweenStations), [tripsBetweenStations])
     const frameStations = useMemo(() => getStationsForHour(stations, currentHour), [stations, currentHour])
-    const frameTrips = useMemo(() => getTripsForHour(trips, currentHour), [trips, currentHour])
-    const maxUsage = useMemo(() => {
-        if (!Array.isArray(stations) || stations.length === 0) {
-            return 0
-        }
-
-        return stations.reduce((globalMax, station) => {
-            const stationMax = Array.isArray(station.hourlyUsageByHour)
-                ? Math.max(...station.hourlyUsageByHour.map((usage) => Number(usage) || 0))
-                : 0
-
-            return Math.max(globalMax, stationMax)
-        }, 0)
-    }, [stations])
-    const maxTripUsage = useMemo(() => {
-        if (!Array.isArray(trips) || trips.length === 0) {
-            return 0
-        }
-
-        return trips.reduce((globalMax, trip) => {
-            const tripMax = Array.isArray(trip.hourlyRidesByHour)
-                ? Math.max(...trip.hourlyRidesByHour.map((usage) => Number(usage) || 0))
-                : 0
-
-            return Math.max(globalMax, tripMax)
-        }, 0)
-    }, [trips])
+    const maxUsage = useMemo(() => getMaxUsage(stations), [stations])
     const avgUsage = useMemo(() => getAverageUsage(frameStations), [frameStations])
-    const activeFrameCount = activeLayer === 'frequent_trips' ? frameTrips.length : frameStations.length
+
+    // Count of stations in the current hour frame
+    const activeFrameCount = frameStations.length
     const hourLabel = `${String(currentHour).padStart(2, '0')}:00`
 
+    // Animation effect
+    //TODO: export this logic to a custom 
     useEffect(() => {
-        if (!isPlaying || stationLoading || tripsLoading || activeFrameCount === 0) {
+        if (!isPlaying || stationLoading || activeFrameCount === 0) {
             return undefined
         }
 
@@ -86,8 +52,9 @@ function MapPage({ dateRange }) {
         }, BASE_FRAME_MS / speed)
 
         return () => window.clearInterval(intervalId)
-    }, [isPlaying, stationLoading, tripsLoading, activeFrameCount, speed])
+    }, [isPlaying, stationLoading, activeFrameCount, speed])
 
+    // Handler for view map changes
     const handleViewStateChange = useCallback(({ viewState: nextViewState }) => {
         setViewState({
             ...nextViewState,
@@ -96,21 +63,31 @@ function MapPage({ dateRange }) {
         })
     }, [])
 
+    // Build the map layers
     const layers = useMemo(
         () =>
             buildLayers({
                 stations: frameStations,
                 maxUsage,
-                trips: frameTrips,
-                maxTripUsage,
                 activeLayer,
                 tileUrl: MAP_STYLES.light,
             }),
-        [frameStations, maxUsage, frameTrips, maxTripUsage, activeLayer]
+        [frameStations, maxUsage, activeLayer]
     )
+    // Logs for debugging layers 
+    useEffect(() => {
+        console.log('Built layers:', layers)
+    }, [layers])
+    // Aggregate error state
+    const overallError = useMemo(() => stationError, [stationError])
 
-    if (stationError || tripsError) {
-        return <div className="map-error">Failed to load map data: {stationError ?? tripsError}</div>
+    // Aggregate loading state
+    const overallLoading = useMemo(() => 
+        stationLoading, 
+    [stationLoading])
+
+    if (overallError) {
+        return <StatusMessage loading={overallLoading} error={overallError} />
     }
 
     return (
@@ -127,6 +104,7 @@ function MapPage({ dateRange }) {
                     touchRotate: true,
                 }}
                 layers={layers}
+                // TODO: export tooltip function to a separate file
                 getTooltip={({ object }) => {
                     if (!object) {
                         return null
@@ -159,70 +137,26 @@ function MapPage({ dateRange }) {
                     return `Hour: ${hourLabel}\nStations: ${count}\nUsage: ${totalUsage} rides`
                 }}
             />
-            {!stationLoading && !tripsLoading && activeFrameCount > 0 && (
-                <div className="map-controls">
-                    <button
-                        type="button"
-                        className="map-controls-button"
-                        onClick={() => setIsPlaying((playing) => !playing)}
-                    >
-                        {isPlaying ? 'Pause' : 'Play'}
-                    </button>
-                    <label className="map-controls-label" htmlFor="map-speed-select">
-                        Speed
-                    </label>
-                    <select
-                        id="map-speed-select"
-                        className="map-controls-select"
-                        value={speed}
-                        onChange={(event) => setSpeed(Number(event.target.value) || 1)}
-                    >
-                        {SPEED_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                    <label className="map-controls-label" htmlFor="map-layer-select">
-                        Layer
-                    </label>
-                    <select
-                        id="map-layer-select"
-                        className="map-controls-select"
-                        value={activeLayer}
-                        onChange={(event) => setActiveLayer(event.target.value)}
-                    >
-                        <option value="station_usage">Station usage</option>
-                        <option value="frequent_trips">Frequent trips</option>
-                    </select>
-                    <p className="map-controls-hour">Hour: {hourLabel}</p>
-                    <p className="map-controls-hint">Shift + drag to rotate</p>
-                </div>
+            {!stationLoading && activeFrameCount > 0 && (
+                <MapController
+                    layers={layers}
+                    setIsPlaying={setIsPlaying}
+                    isPlaying={isPlaying}
+                    speed={speed}
+                    setSpeed={setSpeed}
+                    activeLayer={activeLayer}
+                    setActiveLayer={setActiveLayer}
+                    hourLabel={hourLabel}
+                />
             )}
-            {!stationLoading && !tripsLoading && activeFrameCount > 0 && (
-                <div className="map-legend">
-                    <p className="map-legend-title">
-                        {activeLayer === 'frequent_trips' ? 'Frequent trips (hourly)' : 'Station usage (hourly)'}
-                    </p>
-                    {activeLayer === 'frequent_trips' ? (
-                        <>
-                            <p className="map-legend-text">Trip arcs: {frameTrips.length}</p>
-                            <p className="map-legend-text">Top routes for {hourLabel}</p>
-                        </>
-                    ) : (
-                        <>
-                            <p className="map-legend-text">Stations: {frameStations.length}</p>
-                            <p className="map-legend-text">Average: {avgUsage} rides</p>
-                            <div className="map-legend-scale" aria-hidden>
-                                <span className="map-dot map-dot-low" />
-                                <span className="map-dot map-dot-mid" />
-                                <span className="map-dot map-dot-high" />
-                            </div>
-                        </>
-                    )}
-                </div>
+            {!stationLoading && activeFrameCount > 0 && (
+                <MapLegend
+                    activeLayer={activeLayer}
+                    frameStations={frameStations}
+                    avgUsage={avgUsage}
+                />
             )}
-            {(stationLoading || tripsLoading) && <div className="map-overlay">Loading map data…</div>}
+            {(stationLoading) && <div className="map-overlay">Loading map data…</div>}
         </div>
     )
 }
