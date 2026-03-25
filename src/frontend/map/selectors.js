@@ -58,6 +58,73 @@ export function getStationsForHour(stations, hour) {
   }))
 }
 
+/**
+ * Transforms station-pair trip stats into a map-friendly format with hourly values.
+ * @param {Array} tripsBetweenStations - Array of trips-between-stations objects.
+ * @returns {Array} Trip pair objects with source/target positions and hourly usage arrays.
+ */
+export function selectFrequentTrips(tripsBetweenStations) {
+  const tripRows = Array.isArray(tripsBetweenStations) ? tripsBetweenStations : []
+
+  return tripRows
+    .map((tripPair) => {
+      const hourlyRidesByHour = Array.from({ length: HOURS_IN_DAY }, () => 0)
+
+      if (Array.isArray(tripPair.groups)) {
+        tripPair.groups.forEach((group) => {
+          const hour = Number(group.hour)
+          const daysCount = Number(group.days_count)
+          const totalRides = Number(group.total_rides)
+
+          if (Number.isInteger(hour) && hour >= 0 && hour < HOURS_IN_DAY && daysCount > 0) {
+            hourlyRidesByHour[hour] += totalRides / daysCount
+          }
+        })
+      }
+
+      return {
+        tripId: `${tripPair.station_a_id}-${tripPair.station_b_id}`,
+        stationAName: tripPair.station_a_name,
+        stationBName: tripPair.station_b_name,
+        sourcePosition: [tripPair.station_a_lon, tripPair.station_a_lat],
+        targetPosition: [tripPair.station_b_lon, tripPair.station_b_lat],
+        hourlyRidesByHour,
+      }
+    })
+    .filter((trip) => {
+      const [sourceLon, sourceLat] = trip.sourcePosition
+      const [targetLon, targetLat] = trip.targetPosition
+
+      return (
+        Number.isFinite(sourceLon) &&
+        Number.isFinite(sourceLat) &&
+        Number.isFinite(targetLon) &&
+        Number.isFinite(targetLat) &&
+        Array.isArray(trip.hourlyRidesByHour)
+      )
+    })
+}
+
+/**
+ * Returns trip pair features for a specific hour frame.
+ * @param {Array} trips - Trip pair list from selectFrequentTrips.
+ * @param {number} hour - Hour frame index (0-23).
+ * @returns {Array} Trip pair list with hourly_rides for the selected hour.
+ */
+export function getTripsForHour(trips, hour) {
+  const tripRows = Array.isArray(trips) ? trips : []
+  const selectedHour = Number.isInteger(hour) ? hour : 0
+
+  return tripRows.map((trip) => ({
+    tripId: trip.tripId,
+    stationAName: trip.stationAName,
+    stationBName: trip.stationBName,
+    sourcePosition: trip.sourcePosition,
+    targetPosition: trip.targetPosition,
+    hourly_rides: Number(trip.hourlyRidesByHour?.[selectedHour] ?? 0),
+  }))
+}
+
 /** Get the maximum usage value across all stations for scaling the map visualization */
 export function getMaxUsage(stations) {
   if (!Array.isArray(stations) || stations.length === 0) {
