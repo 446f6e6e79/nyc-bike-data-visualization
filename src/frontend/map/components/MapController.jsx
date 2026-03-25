@@ -1,34 +1,21 @@
-import { SPEED_OPTIONS, LAYER_OPTIONS } from "../constants"
+import { LAYER_OPTIONS } from "../constants"
+import SpeedController from "./SpeedController"
 
-export default function MapController({ layers, setIsPlaying, isPlaying, speed, setSpeed, activeLayer, setActiveLayer, hourLabel}) {
+export default function MapController({ activeLayer, setActiveLayer, currentHour={}, setCurrentHour={}, activeFrameCount={}, hasAnimation }) {
+    // If animation is enabled but currentHour is not set, show an error message
+    const hourLabel = `${String(currentHour).padStart(2, '0')}:00`
+
     return (
         <div className="map-controls">
-            <button
-                type="button"
-                className="map-controls-button"
-                onClick={() => setIsPlaying((playing) => !playing)}
-            >
-                {isPlaying ? 'Pause' : 'Play'}
-            </button>
-            <label className="map-controls-label" htmlFor="map-speed-select">
-                Speed
-            </label>
-            <select
-                id="map-speed-select"
-                className="map-controls-select"
-                value={speed}
-                onChange={(event) => setSpeed(Number(event.target.value) || 1)}
-            >
-                {SPEED_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </select>
-            <label className="map-controls-label" htmlFor="map-layer-select">
-                Layer
-            </label>
-            {/* TODO: move to a separate component since not all maps will have the animation controller*/}
+            {hasAnimation && (
+                <div>
+                    <SpeedController
+                        setCurrentHour={setCurrentHour}
+                        activeFrameCount={activeFrameCount}
+                    />
+                    <p className="map-controls-hour">Hour: {hourLabel}</p>
+                </div>
+            )}
             <select
                 id="map-layer-select"
                 className="map-controls-select"
@@ -41,7 +28,7 @@ export default function MapController({ layers, setIsPlaying, isPlaying, speed, 
                     </option>
                 ))}
             </select>
-            <p className="map-controls-hour">Hour: {hourLabel}</p>
+
             <p className="map-controls-hint">Shift + drag to rotate</p>
         </div>
     )

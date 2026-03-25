@@ -19,7 +19,7 @@ export const LIMIT_TRIPS = 1000
 
 // List of available map layers
 export const LAYER_OPTIONS = [
-    { label: 'Station Usage', value: 'station_usage' },
+    { value: 'station_usage', hasAnimation: true, label: 'Station usage' },
     // Future layers can be added here
 ]
 

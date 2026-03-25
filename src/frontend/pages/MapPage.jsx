@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import DeckGL from '@deck.gl/react'
 import useStationRideCounts from '../hooks/useStationRideCounts.js'
-import { INITIAL_VIEW_STATE, LIMIT_STATIONS, MAP_STYLES, MAX_ZOOM, MIN_ZOOM, clamp, HOURS_IN_DAY, BASE_FRAME_MS, MIN_PITCH, MAX_PITCH, SPEED_OPTIONS } from '../map/constants.js'
+import { INITIAL_VIEW_STATE, LIMIT_STATIONS, MAP_STYLES, MAX_ZOOM, MIN_ZOOM, clamp, MIN_PITCH, MAX_PITCH, LAYER_OPTIONS } from '../map/constants.js'
 import { buildLayers } from '../map/buildLayers.js'
 import { getAverageUsage, getStationsForHour, getMaxUsage, selectStations } from '../map/selectors/stationUsage.js'
 
@@ -11,11 +11,10 @@ import StatusMessage from '../components/StatusMessage.jsx'
 
 function MapPage({ dateRange }) {
     // State for map view (center, zoom, etc.)
-    const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)        // Default view state for NYC, can be adjusted as needed
-    const [currentHour, setCurrentHour] = useState(7)                     // Current hour frame (0-23) for animation. Default to 7 AM     
-    const [isPlaying, setIsPlaying] = useState(false)                     // Whether the hourly animation is playing or paused
-    const [speed, setSpeed] = useState(1)                                 // Animation speed multiplier (1x, 2x, etc.). Default to 1x
-    const [activeLayer, setActiveLayer] = useState('station_usage')       // Active layer to display
+    const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)          // Default view state for NYC, can be adjusted as needed
+    const [currentHour, setCurrentHour] = useState(7)                       // Current hour frame (0-23) for animation. Default to 7 AM     
+    const [hasAnimation, setHasAnimation] = useState(true)                  // Whether the current layer supports animation
+    const [activeLayer, setActiveLayer] = useState('station_usage')         // Currently selected map layer
 
     // Build filters for station usage data
     const stationFilters = {
@@ -40,20 +39,6 @@ function MapPage({ dateRange }) {
     const activeFrameCount = frameStations.length
     const hourLabel = `${String(currentHour).padStart(2, '0')}:00`
 
-    // Animation effect
-    //TODO: export this logic to a custom 
-    useEffect(() => {
-        if (!isPlaying || stationLoading || activeFrameCount === 0) {
-            return undefined
-        }
-
-        const intervalId = window.setInterval(() => {
-            setCurrentHour((hour) => (hour + 1) % HOURS_IN_DAY)
-        }, BASE_FRAME_MS / speed)
-
-        return () => window.clearInterval(intervalId)
-    }, [isPlaying, stationLoading, activeFrameCount, speed])
-
     // Handler for view map changes
     const handleViewStateChange = useCallback(({ viewState: nextViewState }) => {
         setViewState({
@@ -74,12 +59,16 @@ function MapPage({ dateRange }) {
             }),
         [frameStations, maxUsage, activeLayer]
     )
-    // Logs for debugging layers 
+
+    // Check current active layer for animation capability
     useEffect(() => {
-        console.log('Built layers:', layers)
-    }, [layers])
+        setHasAnimation(LAYER_OPTIONS.find((layer) => layer.value === activeLayer)?.hasAnimation)
+    }, [activeLayer])
+
     // Aggregate error state
-    const overallError = useMemo(() => stationError, [stationError])
+    const overallError = useMemo(() => 
+        stationError, 
+    [stationError])
 
     // Aggregate loading state
     const overallLoading = useMemo(() => 
@@ -89,6 +78,7 @@ function MapPage({ dateRange }) {
     if (overallError) {
         return <StatusMessage loading={overallLoading} error={overallError} />
     }
+
 
     return (
         <div className="map-shell">
@@ -139,14 +129,12 @@ function MapPage({ dateRange }) {
             />
             {!stationLoading && activeFrameCount > 0 && (
                 <MapController
-                    layers={layers}
-                    setIsPlaying={setIsPlaying}
-                    isPlaying={isPlaying}
-                    speed={speed}
-                    setSpeed={setSpeed}
                     activeLayer={activeLayer}
                     setActiveLayer={setActiveLayer}
-                    hourLabel={hourLabel}
+                    currentHour={currentHour}
+                    setCurrentHour={setCurrentHour}
+                    activeFrameCount={activeFrameCount}
+                    hasAnimation={hasAnimation}
                 />
             )}
             {!stationLoading && activeFrameCount > 0 && (
