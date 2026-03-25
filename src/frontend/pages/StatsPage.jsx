@@ -1,6 +1,6 @@
 import StatsSection from '../components/StatsSection.jsx'
 import DailyStatsBarChart from '../components/DailyStatsBarChart.jsx'
-import StatusMessage from '../components/utils/StatusMessage.jsx'
+import StatusMessage from '../components/StatusMessage.jsx'
 import useStatsData from '../hooks/useStatsData.js'
 import useDailyStats from '../hooks/useDailyStats.js'
 

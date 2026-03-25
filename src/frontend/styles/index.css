@@ -3,6 +3,7 @@
 @import './map.css';
 @import './components/cards.css';
 @import './components/charts.css';
+@import './components/date-range-filter.css';
 @import './components/status.css';
 @import './stats.css';
 

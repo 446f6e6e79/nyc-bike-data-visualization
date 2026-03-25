@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import DateRangeFilter from './utils/DateRangeFilter.jsx'
+import DateRangeFilter from './date_filter/DateRangeFilter.jsx'
 
 const PAGES = [
   { to: '/map', label: 'Map' },
