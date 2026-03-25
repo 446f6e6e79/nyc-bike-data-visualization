@@ -10,23 +10,23 @@ import MapPage from './pages/MapPage.jsx'
  * @returns 
  */
 function App() {
-  const [dateRange, setDateRange] = useState(null)
+    const [dateRange, setDateRange] = useState(null)
 
-  return (
-    <BrowserRouter>
-      <div className="app-shell">
-        <AppHeader dateRange={dateRange} onDateRangeChange={setDateRange} />
-        <div className="app-content">
-          <Routes>
-            <Route path="/" element={<Navigate to="/map" replace />} />
-            <Route path="/map" element={<MapPage dateRange={dateRange} />} />
-            <Route path="/stats" element={<StatsPage dateRange={dateRange} />} />
-            {/* add future pages here */}
-          </Routes>
-        </div>
-      </div>
-    </BrowserRouter>
-  )
+    return (
+        <BrowserRouter>
+            <div className="app-shell">
+                <AppHeader dateRange={dateRange} onDateRangeChange={setDateRange} />
+                <div className="app-content">
+                    <Routes>
+                        <Route path="/" element={<Navigate to="/map" replace />} />
+                        <Route path="/map" element={<MapPage dateRange={dateRange} />} />
+                        <Route path="/stats" element={<StatsPage dateRange={dateRange} />} />
+                        {/* add future pages here */}
+                    </Routes>
+                </div>
+            </div>
+        </BrowserRouter>
+    )
 }
 
 export default App

@@ -6,10 +6,9 @@ import './styles/index.css'
 import { queryClient } from './api-data/queryClient'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    { /** Wrapper for the entire app, in order to provide query client context */}
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </React.StrictMode>
+    <React.StrictMode>
+        <QueryClientProvider client={queryClient}>
+            <App />
+        </QueryClientProvider>
+    </React.StrictMode>
 )
