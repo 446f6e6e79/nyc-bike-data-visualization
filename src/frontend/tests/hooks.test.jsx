@@ -20,7 +20,7 @@ vi.mock('../api-data/apiClient', () => ({
 
 import apiClient from '../api-data/apiClient'
 
-const TEST_DATE_RANGE = {
+const TEST_FILTERS = {
   start_date: '2026-01-01',
   end_date: '2026-01-31',
 }
@@ -70,14 +70,14 @@ describe('useStatsData — resolves without throwing', () => {
 
   it('starts in loading state', () => {
     const wrapper = createQueryWrapper()
-    const { result } = renderHook(() => useStatsData(TEST_DATE_RANGE), { wrapper })
+    const { result } = renderHook(() => useStatsData(TEST_FILTERS), { wrapper })
     expect(result.current.loading).toBe(true)
     expect(result.current.error).toBeNull()
   })
 
   it('finishes loading and returns rideStats and userStats', async () => {
     const wrapper = createQueryWrapper()
-    const { result } = renderHook(() => useStatsData(TEST_DATE_RANGE), { wrapper })
+    const { result } = renderHook(() => useStatsData(TEST_FILTERS), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     expect(result.current.error).toBeNull()
@@ -89,7 +89,7 @@ describe('useStatsData — resolves without throwing', () => {
 
   it('rideStats entries have rideable_type and derived duration fields', async () => {
     const wrapper = createQueryWrapper()
-    const { result } = renderHook(() => useStatsData(TEST_DATE_RANGE), { wrapper })
+    const { result } = renderHook(() => useStatsData(TEST_FILTERS), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     for (const entry of result.current.rideStats) {
@@ -101,7 +101,7 @@ describe('useStatsData — resolves without throwing', () => {
 
   it('userStats entries have user_type and derived duration fields', async () => {
     const wrapper = createQueryWrapper()
-    const { result } = renderHook(() => useStatsData(TEST_DATE_RANGE), { wrapper })
+    const { result } = renderHook(() => useStatsData(TEST_FILTERS), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     for (const entry of result.current.userStats) {
@@ -113,7 +113,7 @@ describe('useStatsData — resolves without throwing', () => {
 
   it('exposes a refetch function', async () => {
     const wrapper = createQueryWrapper()
-    const { result } = renderHook(() => useStatsData(TEST_DATE_RANGE), { wrapper })
+    const { result } = renderHook(() => useStatsData(TEST_FILTERS), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(typeof result.current.refetch).toBe('function')
   })
@@ -130,14 +130,14 @@ describe('useDailyStats — resolves without throwing', () => {
 
   it('starts in loading state', () => {
     const wrapper = createQueryWrapper()
-    const { result } = renderHook(() => useDailyStats(TEST_DATE_RANGE), { wrapper })
+    const { result } = renderHook(() => useDailyStats(TEST_FILTERS), { wrapper })
     expect(result.current.loading).toBe(true)
     expect(result.current.error).toBeNull()
   })
 
   it('finishes loading and returns dailyStats with 7 entries', async () => {
     const wrapper = createQueryWrapper()
-    const { result } = renderHook(() => useDailyStats(TEST_DATE_RANGE), { wrapper })
+    const { result } = renderHook(() => useDailyStats(TEST_FILTERS), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     expect(result.current.error).toBeNull()
@@ -147,7 +147,7 @@ describe('useDailyStats — resolves without throwing', () => {
 
   it('each dailyStats entry has day_of_week as an integer 0–6', async () => {
     const wrapper = createQueryWrapper()
-    const { result } = renderHook(() => useDailyStats(TEST_DATE_RANGE), { wrapper })
+    const { result } = renderHook(() => useDailyStats(TEST_FILTERS), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     result.current.dailyStats.forEach((entry, i) => {
@@ -157,7 +157,7 @@ describe('useDailyStats — resolves without throwing', () => {
 
   it('exposes a refetch function', async () => {
     const wrapper = createQueryWrapper()
-    const { result } = renderHook(() => useDailyStats(TEST_DATE_RANGE), { wrapper })
+    const { result } = renderHook(() => useDailyStats(TEST_FILTERS), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(typeof result.current.refetch).toBe('function')
   })
