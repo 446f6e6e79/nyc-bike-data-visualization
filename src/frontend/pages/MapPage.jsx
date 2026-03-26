@@ -8,6 +8,7 @@ import { getAverageUsage, getStationForCurrentTime, getMaxUsage, selectStations 
 import MapController from '../map/components/MapController.jsx'
 import MapLegend from '../map/components/MapLegend.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
+import Tooltip from '../map/components/Tooltip.jsx'
 
 function MapPage({ dateRange }) {
     // State for map view (center, zoom, etc.)
@@ -35,9 +36,6 @@ function MapPage({ dateRange }) {
     const maxUsage = useMemo(() => getMaxUsage(stations), [stations])
     const avgUsage = useMemo(() => getAverageUsage(frameStations), [frameStations])
 
-    const timeLabel = `${String(Math.floor(currentTime)).padStart(2, '0')}:
-                        ${String(Math.floor((currentTime % 1) * 60)).padStart(2, '0')}`
-
     // Handler for view map changes
     const handleViewStateChange = useCallback(({ viewState: nextViewState }) => {
         setViewState({
@@ -55,7 +53,8 @@ function MapPage({ dateRange }) {
                 maxUsage,
                 activeLayer,
                 tileUrl: MAP_STYLES.light,
-            }),
+            }),        [frameStations, maxUsage, activeLayer]
+
         [frameStations, maxUsage, activeLayer]
     )
 
@@ -78,7 +77,6 @@ function MapPage({ dateRange }) {
         return <StatusMessage loading={overallLoading} error={overallError} />
     }
 
-
     return (
         <div className="map-shell">
             <DeckGL
@@ -93,38 +91,7 @@ function MapPage({ dateRange }) {
                     touchRotate: true,
                 }}
                 layers={layers}
-                // TODO: export tooltip function to a separate file
-                getTooltip={({ object }) => {
-                    if (!object) {
-                        return null
-                    }
-
-                    if (Array.isArray(object.sourcePosition) && Array.isArray(object.targetPosition)) {
-                        const rides = Math.round(Number(object.hourly_rides) || 0)
-                        const fromName = object.stationAName ?? 'Station A'
-                        const toName = object.stationBName ?? 'Station B'
-
-                        return `Time: ${timeLabel}\nTrip: ${fromName} → ${toName}\nRides: ${rides}`
-                    }
-
-                    const points = Array.isArray(object.points) ? object.points : []
-
-                    if (points.length > 0) {
-                        const totalUsage = Math.round(
-                            points.reduce((sum, point) => sum + (Number(point.usage) || 0), 0)
-                        )
-                        const uniqueStationIds = [...new Set(points.map((point) => point.stationId).filter(Boolean))]
-                        const stationPreview = uniqueStationIds.slice(0, 4).join(', ')
-                        const stationSuffix = uniqueStationIds.length > 4 ? ', …' : ''
-
-                        return `Time: ${timeLabel}\nStations: ${points.length}\nUsage: ${totalUsage} rides\nIDs: ${stationPreview}${stationSuffix}`
-                    }
-
-                    const totalUsage = Math.round(Number(object.elevationValue ?? object.colorValue ?? 0) || 0)
-                    const count = Math.round(Number(object.count ?? 0) || 0)
-
-                    return `Time: ${timeLabel}\nStations: ${count}\nUsage: ${totalUsage} rides`
-                }}
+                getTooltip={({ object }) => Tooltip({ object })}
             />
             {!stationLoading && (
                 <MapController
