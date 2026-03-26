@@ -1,20 +1,41 @@
-import React from 'react'
-
-export default function Tooltip({ object }) {
-    if (!object) {
-        return null
+/**
+ * Renders a tooltip based on the active layer and the provided object.
+ * @param {Object} object - The data object associated with the hovered element on the map.
+ * @param {string} activeLayer - The currently active map layer to determine tooltip content. 
+ * @returns 
+ */
+export default function Tooltip({ object, activeLayer }) {
+    if (!object) return null
+    switch (activeLayer) {
+        case 'station_usage':
+            return stationUsageTooltip(object)
+        case 'trip_flow':
+            return tripFlowTooltip(object)
+        default:
+            return null
     }
+}
 
-    if (Array.isArray(object.sourcePosition) && Array.isArray(object.targetPosition)) {
-        const rides = Math.round(Number(object.hourly_rides) || 0)
-        const fromName = object.stationAName ?? 'Station A'
-        const toName = object.stationBName ?? 'Station B'
+/**
+ * Generates a tooltip for trip flow data, showing the number of rides between two stations.
+ * @param {Object} object - The trip flow data object.
+ * @returns {string} The tooltip content.
+ */
+function tripFlowTooltip(object) {
+    console.log('Generating tooltip for trip flow:', object)
+    const rides = Math.round(Number(object.total_daily_flow) || 0)
+    const from = object.start_station_name 
+    const to = object.end_station_name 
+    return `Trip: ${from} → ${to}\nRides: ${rides}`
+}
 
-        return `Trip: ${fromName} → ${toName}\nRides: ${rides}`
-    }
-
+/**
+ * Generates a tooltip for station usage data.
+ * @param {Object} object - The station usage data object.
+ * @returns {string} The tooltip content.
+ */
+function stationUsageTooltip(object) {
     const points = Array.isArray(object.points) ? object.points : []
-
     if (points.length > 0) {
         const totalUsage = Math.round(
             points.reduce((sum, point) => sum + (Number(point.usage) || 0), 0)
@@ -25,9 +46,8 @@ export default function Tooltip({ object }) {
 
         return `Stations: ${points.length}\nUsage: ${totalUsage} rides\nIDs: ${stationPreview}${stationSuffix}`
     }
-
     const totalUsage = Math.round(Number(object.elevationValue ?? object.colorValue ?? 0) || 0)
     const count = Math.round(Number(object.count ?? 0) || 0)
-
     return `Stations: ${count}\nUsage: ${totalUsage} rides`
 }
+

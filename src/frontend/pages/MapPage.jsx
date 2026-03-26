@@ -108,7 +108,7 @@ function MapPage({ dateRange }) {
                     touchRotate: true,
                 }}
                 layers={layers}
-                getTooltip={({ object }) => Tooltip({ object })}
+                getTooltip={({ object }) => Tooltip({ object, activeLayer })}
             />
             {!stationLoading && !tripLoading && (
                 <MapController
