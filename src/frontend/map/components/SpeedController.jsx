@@ -1,6 +1,13 @@
-import { SPEED_OPTIONS } from "../constants"
 import { useState, useEffect } from "react"
-import { HOURS_IN_DAY, BASE_FRAME_MS } from "../constants"
+
+const HOURS_IN_DAY = 24
+const BASE_FRAME_MS = 1000     // Duration of an hour in milliseconds at normal speed (1x)
+const SPEED_OPTIONS = [        // Options for animation speed control
+  { label: '0.5×', value: 0.5 },
+  { label: '1×', value: 1 },
+  { label: '2×', value: 2 },
+]
+
 
 /**
  * Component for controlling the animation speed and play/pause state of the map visualization.

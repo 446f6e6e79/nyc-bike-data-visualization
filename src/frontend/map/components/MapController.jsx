@@ -1,4 +1,4 @@
-import { LAYER_OPTIONS } from "../constants"
+import { LAYER_OPTIONS } from "../../pages/MapPage.jsx"
 import SpeedController from "./SpeedController"
 
 /**

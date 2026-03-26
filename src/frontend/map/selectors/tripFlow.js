@@ -4,6 +4,8 @@
  * @returns 
  */
 export function selectTrips(tripCounts) {
+    // Handle case where tripCounts is undefined or null
+    if (!tripCounts) return []
     return tripCounts
         .map((trip) => {
             const {

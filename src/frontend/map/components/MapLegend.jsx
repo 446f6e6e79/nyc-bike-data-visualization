@@ -1,4 +1,6 @@
-import { LAYER_OPTIONS } from "../constants"
+import { LAYER_OPTIONS } from "../../pages/MapPage.jsx"
+import { stationUsageLegend } from "../layers/stationUsageLayer.jsx"
+import { tripFlowLegend } from "../layers/tripFlowLayer.jsx"
 
 /**
  * Renders the map legend based on the currently active layer. 
@@ -9,7 +11,7 @@ export default function MapLegend({ activeLayer }) {
     // Get label of the active layer from the options
     const activeLayerLabel = LAYER_OPTIONS.find((layer) => layer.value === activeLayer)?.label || 'Unknown layer'
     // Define the available legends for each layer type, which can be easily extended in the future by adding new entries to this object.
-    const availableLegends ={
+    const availableLegends = {
         'station_usage': stationUsageLegend(),
         'trip_flow': tripFlowLegend(),
     }
@@ -26,26 +28,4 @@ export default function MapLegend({ activeLayer }) {
             </>
         </div>
     )
-}    
-
-//#TODO: enhance style of legends
-function stationUsageLegend() {
-    return (
-        <div className="map-legend">
-            <div className="map-legend-scale" aria-hidden>
-                <span className="map-dot map-dot-low" />
-                <span className="map-dot map-dot-mid" />
-                <span className="map-dot map-dot-high" />
-            </div>
-        </div>
-    )
 }
-
-function tripFlowLegend() {
-    return (
-        <div className="map-legend">
-            <p className="map-legend-text">Frequent trips</p>
-        </div>
-    )
-}
-                

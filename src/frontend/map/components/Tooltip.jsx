@@ -1,5 +1,5 @@
-import { stationUsageTooltip } from '../layers/stationUsageLayer.js'
-import { tripFlowTooltip } from '../layers/tripFlowLayer.js'
+import { stationUsageTooltip } from '../layers/stationUsageLayer.jsx'
+import { tripFlowTooltip } from '../layers/tripFlowLayer.jsx'
 
 /**
  * Renders a tooltip based on the active layer and the provided object.
@@ -19,5 +19,3 @@ export default function Tooltip({ object, activeLayer }) {
             return null
     }
 }
-
-
