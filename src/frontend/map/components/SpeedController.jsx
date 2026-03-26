@@ -2,11 +2,15 @@ import { SPEED_OPTIONS } from "../constants"
 import { useState, useEffect } from "react"
 import { HOURS_IN_DAY, BASE_FRAME_MS } from "../constants"
 
-export default function SpeedController(
-    { setCurrentTime } // function to update the current time in the parent component
-){
+export default function SpeedController({ 
+    setCurrentTime,
+    currentTime
+}) {
     const [isPlaying, setIsPlaying] = useState(false)
     const [speed, setSpeed] = useState(1)
+    const currentTimeLabel = 
+    `${String(Math.floor(currentTime)).padStart(2, '0')}:
+    ${String(Math.floor((currentTime % 1) * 60)).padStart(2, '0')}`
 
     // Updates the current time based on the selected speed
     useEffect(() => {
@@ -36,9 +40,9 @@ export default function SpeedController(
             }
         }
     }, [isPlaying, speed])
-
     return (
         <div>
+            {/* Button to toggle play/pause state of the animation */}
             <button
                 type="button"
                 className="map-controls-button"
@@ -46,6 +50,7 @@ export default function SpeedController(
             >
                 {isPlaying ? 'Pause' : 'Play'}
             </button>
+            {/* Dropdown to select the speed of the animation */}
             <label className="map-controls-label" htmlFor="map-speed-select">
                 Speed
             </label>
@@ -61,6 +66,8 @@ export default function SpeedController(
                     </option>
                 ))}
             </select>
+            {/* Display the current time in HH:MM format */}
+            <p className="map-controls-hour">Time: {currentTimeLabel}</p>
         </div>
     )
 }

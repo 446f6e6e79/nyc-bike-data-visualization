@@ -2,20 +2,9 @@ import { LAYER_OPTIONS } from "../constants"
 import SpeedController from "./SpeedController"
 
 export default function MapController({ activeLayer, setActiveLayer, currentTime = 0, setCurrentTime, hasAnimation }) {
-    const hours = Math.floor(currentTime)
-    const minutes = Math.floor((currentTime % 1) * 60)
-    const timeLabel = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-
     return (
         <div className="map-controls">
-            {hasAnimation && (
-                <div>
-                    <SpeedController
-                        setCurrentTime={setCurrentTime}
-                    />
-                    <p className="map-controls-hour">Time: {timeLabel}</p>
-                </div>
-            )}
+            {/* Dropdown to select the active map layer */}
             <select
                 id="map-layer-select"
                 className="map-controls-select"
@@ -29,6 +18,16 @@ export default function MapController({ activeLayer, setActiveLayer, currentTime
                 ))}
             </select>
             <p className="map-controls-hint">Shift + drag to rotate</p>
+
+            {/* Add speed controller iff current layer has animation enabled */}
+            {hasAnimation && (
+                <div>
+                    <SpeedController
+                    setCurrentTime={setCurrentTime}
+                    currentTime={currentTime}
+                    /> 
+                </div>
+            )}
         </div>
     )
 }
