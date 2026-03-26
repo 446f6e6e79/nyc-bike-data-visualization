@@ -44,17 +44,17 @@ function MapPage({ dateRange }) {
             pitch: clamp(nextViewState.pitch, MIN_PITCH, MAX_PITCH),
         })
     }, [])
-
-    // Build the map layers
+    // TODO: export this handler to a separate file. Add trips and max trip count
     const layers = useMemo(
         () =>
             buildLayers({
                 stations: frameStations,
-                maxUsage,
+                trips: [], // Placeholder for trip data, to be implemented in the future
+                maxStationUsage: maxUsage,
+                maxTripCount: 1, // Placeholder for max trip count, to be implemented in the future
                 activeLayer,
                 tileUrl: MAP_STYLES.light,
-            }),        [frameStations, maxUsage, activeLayer]
-
+            }),
         [frameStations, maxUsage, activeLayer]
     )
 
