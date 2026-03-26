@@ -4,10 +4,10 @@ We deliver an interactive web-based dashboard as the primary output.
 This allows all users to explore mobility patterns through a unified, user-friendly interface.
 Our design approach is to present clear, immediate insights at first impactful while also allowing deeper exploration for users who want to examine the details.
 
-Regarding the update frequency, we expect the dashboard to be refreshed automatically on a regular basis, since the data are continuously collected.
+Regarding the update frequency, we expect the dashboard to be refreshed automatically on a monthly basis, coinciding with the release of new data from the provider.
 This ensures that the insights remain useful and relevant over time, while also enabling historical analysis and comparisons across different periods.
 
-Regarding framing, we expose all available features, giving users the freedom to explore in depth and draw their own conclusions.
+Regarding framing, we aim to expose all available features, giving users the freedom to explore in depth and draw their own conclusions.
 However, we also provide some guidance through the design of the interface and the choice of default views.
 
 \subsection{Design Philosophy}
@@ -27,7 +27,6 @@ While specific chart types and encodings will be refined during development, a f
 \end{itemize}
 Regarding focus, the map-centric spatial view serves as the primary entry point, offering the most intuitive and immediate reading of the data.
 Temporal and user/rideable breakdowns take a supporting role, enriching the analysis without cluttering the interface.
-Cross-filtering spans all views, letting users shift perspective across dimensions seamlessly without leaving the dashboard.
 
 \subsection{Constraints}
 In general, obtaining the most value from the data while respecting project constraints is a key challenge.
@@ -36,7 +35,8 @@ Since the final deliverable is scheduled for June, it is necessary to keep the f
 
 In order to manage both data processing and dashboard development within the project timeline, we want to leverage our programming skills to build a tech stack defined as follows:
 \begin{itemize}[beginpenalty=10000]
-  \item \textbf{Backend (Python + Polars)} -- efficient data processing, cleaning, and REST API development via FastAPI;
-  \item \textbf{Frontend (React/D3.js)} -- custom, interactive visualizations tailored to mobility pattern analysis.
+  \item \textbf{Backend (Python + Polars)}: efficient data processing, cleaning, and REST API development via FastAPI;
+  \item \textbf{Frontend (React + D3.js/Deck.gl)}: custom, interactive visualizations tailored to mobility pattern analysis.
+  Deck.gl will be used for the map-centric spatial view, while D3.js will handle temporal and categorical charts. 
 \end{itemize}
 This modular architecture enables rapid iteration during development while remaining scalable as data volumes grow.
