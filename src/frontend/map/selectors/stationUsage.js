@@ -52,18 +52,18 @@ export function getStationForCurrentTime(stations, hour) {
         stationId: station.stationId,
         lat: station.lat,
         lon: station.lon,
-        usage: interpolateStation(station, hour), // Use interpolation for smoother animation
+        usage: interpolateStationUsage(station, hour), // Use interpolation for smoother animation
     }))
 }
 
 /**
  * Helper function to interpolate station usage between two hours for smoother animation.
  * This allows the animation to show gradual changes in usage rather than abrupt jumps at each hour.
- * @param {*} station Station object with hourlyUsageByHour array. 
- * @param {*} time Current time frame (can be a fractional hour for interpolation, e.g., 14.5 for halfway between 14:00 and 15:00).
- * @returns the interpolated usage value for the station at the given time frame.
+ * @param {Object} station Station object with hourlyUsage array. 
+ * @param {number} time Current time frame (can be a fractional hour for interpolation, e.g., 14.5 for halfway between 14:00 and 15:00).
+ * @returns {number} the interpolated usage value for the station at the given time frame.
  */
-function interpolateStation(station, time) {
+function interpolateStationUsage(station, time) {
     // Normalize hour to [0,23]
     const normalizedHour = ((time % HOURS_IN_DAY) + HOURS_IN_DAY) % HOURS_IN_DAY
     // Get the lower and upper hour indices for interpolation
@@ -77,7 +77,11 @@ function interpolateStation(station, time) {
     return lowerUsageValue + (higherUsageValue - lowerUsageValue) * t
 }
 
-/** Get the maximum usage value across all stations for scaling the map visualization */
+/**
+ * Get the maximum usage across all stations and hours for scaling the map visualization.
+ * @param {Object} stations - Station list from selectStations. 
+ * @returns {number} The maximum usage value.
+ */
 export function getMaxUsage(stations) {
     return stations.reduce((globalMax, station) => {
         // Get the maximum usage for this station across all hours

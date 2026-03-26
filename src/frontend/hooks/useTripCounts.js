@@ -6,7 +6,7 @@ import useApiQueryWithFilters from './baseApiQuery.js'
  * @param {*} filters 
  * @returns An object containing trips-between-stations data and loading/error states
  */
-function useTripsBetweenStations(filters = {}) {
+function useTripCounts(filters = {}) {
     const query = useApiQueryWithFilters({
         queryKey: 'trips-between-stations',
         fetcher: fetchTripsBetweenStations,
@@ -14,7 +14,7 @@ function useTripsBetweenStations(filters = {}) {
     })
 
     return {
-        tripsBetweenStations: query.data,
+        tripCount: query.data,
         loading: query.loading,
         error: query.error,
         refetch: query.refetch,
@@ -22,4 +22,4 @@ function useTripsBetweenStations(filters = {}) {
     }
 }
 
-export default useTripsBetweenStations
+export default useTripCounts
