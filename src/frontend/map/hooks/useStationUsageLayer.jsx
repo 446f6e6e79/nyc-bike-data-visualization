@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import useStationRideCounts from '../../hooks/useStationRideCounts.js'
-import { selectStations, getStationForCurrentTime, getMaxUsage } from '../selectors/stationUsage.js'
+import { selectStations, getStationForCurrentTime, getMaxUsage, getMaxDelta} from '../selectors/stationUsage.js'
 import { LIMIT_STATIONS } from '../../config.jsx'
 
 /**
@@ -28,6 +28,7 @@ export function useStationUsageLayer({ dateRange, currentTime }) {
     const stations = useMemo(() => selectStations(stationRideCounts), [stationRideCounts])
     const frameStations = useMemo(() => getStationForCurrentTime(stations, currentTime), [stations, currentTime])
     const maxUsage = useMemo(() => getMaxUsage(stations), [stations])
+    const maxDelta = useMemo(() => getMaxDelta(stations), [stations])
 
-    return { frameStations, maxUsage, loading, error }
+    return { frameStations, maxUsage, maxDelta, loading, error }
 }

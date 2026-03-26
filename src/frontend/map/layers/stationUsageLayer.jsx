@@ -1,15 +1,15 @@
 import { HexagonLayer } from '@deck.gl/aggregation-layers'
 
-// Color range for station usage, from light to dark blue
+// Diverging color range: blue (below mean) → neutral grey → orange (above mean)
 const COLOR_RANGE = [
-    [219, 234, 254],
-    [191, 219, 254],
-    [147, 197, 253],
-    [96, 165, 250],
-    [59, 130, 246],
-    [30, 64, 175],
+    [10, 60, 180],    // deep blue
+    [50, 120, 220],   // medium blue
+    [140, 190, 245],  // light blue
+    [160, 230, 175],  // light green
+    [40, 170, 80],    // green
+    [10, 110, 40],    // deep green
 ]
-// Base configuration for the hexagon layer, can be adjusted as needed
+
 const LAYER_CONFIG = {
     radius: 150,
     coverage: 0.8,
@@ -23,13 +23,19 @@ const LAYER_CONFIG = {
 
 /**
  * Creates a layer for displaying station usage data.
- * @param {Array} frameStations - The array of station data for the current frame.
- * @param {number} maxUsage - The maximum usage value for scaling colors.
+ * Color encodes per-station delta (usage - meanUsage): blue = below, orange = above.
+ * Elevation still encodes absolute usage.
+ * @param {Array} frameStations - Station data; each station must have usage and meanUsage.
+ * @param {number} maxUsage - The maximum usage value for scaling elevation.
+ * @param {number} maxDelta - The maximum absolute delta across all stations, for color scaling.
  * @returns {HexagonLayer} The created hexagon layer.
  */
-export function createStationUsageLayer({ frameStations, maxUsage }) {
-    const colorScale = maxUsage > 0 ? maxUsage : 1
-    const domain = [0, colorScale]
+export function createStationUsageLayer({ frameStations, maxUsage, maxDelta }) {
+    const elevationScale = maxUsage > 0 ? maxUsage : 1
+
+    // Symmetric domain around 0 so grey always means "exactly at mean"
+    const spread = maxDelta > 0 ? maxDelta : 1
+    const colorDomain = [-spread, spread]
 
     return new HexagonLayer({
         id: 'station-usage-layer',
@@ -37,15 +43,15 @@ export function createStationUsageLayer({ frameStations, maxUsage }) {
         ...LAYER_CONFIG,
         colorRange: COLOR_RANGE,
         getPosition: (station) => [station.lon, station.lat],
-        getColorWeight: (station) => station.usage,
+        // Color weight is the delta from this station's own mean
+        getColorWeight: (station) => station.usage - station.meanUsage,
         colorAggregation: 'SUM',
         getElevationWeight: (station) => station.usage,
         elevationAggregation: 'SUM',
-        colorDomain: domain,
-        elevationDomain: domain,
+        colorDomain,
+        elevationDomain: [0, elevationScale],
     })
 }
-
 /**
 * Creates a tooltip for station usage data.
 * @param {Object} object - The data object associated with the hovered element on the map.

@@ -15,7 +15,7 @@ import { MAP_STYLES } from '../pages/MapPage.jsx'
  */
 export function buildLayers({ dateRange, currentTime, activeLayer }) {
     // Fetch and process data
-    const { frameStations, maxUsage, loading: stationLoading, error: stationError } = useStationUsageLayer({ dateRange, currentTime })
+    const { frameStations, maxUsage, maxDelta,loading: stationLoading, error: stationError } = useStationUsageLayer({ dateRange, currentTime })
     const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripFlowLayer({ dateRange })
 
     // Combine loading and error states for easier handling in the component
@@ -31,7 +31,7 @@ export function buildLayers({ dateRange, currentTime, activeLayer }) {
         // Push the appropriate layer based on the active layer and data loading/error states
         if (activeLayer === 'station_usage') {
             if (!stationLoading && !stationError)
-                base.push(createStationUsageLayer({ frameStations, maxUsage }))
+                base.push(createStationUsageLayer({ frameStations, maxUsage, maxDelta }))
         } 
         if (activeLayer === 'trip_flow') {
             if (!tripLoading && !tripError)
