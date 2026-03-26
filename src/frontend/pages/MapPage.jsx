@@ -122,8 +122,7 @@ function MapPage({ dateRange }) {
             {!stationLoading && !tripLoading && (
                 <MapLegend
                     activeLayer={activeLayer}
-                    frameStations={frameStations}
-                    avgUsage={avgUsage}
+
                 />
             )}
             {(stationLoading || tripLoading) && <div className="map-overlay">Loading map data…</div>}

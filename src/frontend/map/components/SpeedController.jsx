@@ -2,10 +2,13 @@ import { SPEED_OPTIONS } from "../constants"
 import { useState, useEffect } from "react"
 import { HOURS_IN_DAY, BASE_FRAME_MS } from "../constants"
 
-export default function SpeedController({ 
-    setCurrentTime,
-    currentTime
-}) {
+/**
+ * Component for controlling the animation speed and play/pause state of the map visualization.
+ * @param {Function} setCurrentTime - Function to update the current time in the parent component. 
+ * @param {number} currentTime - The current time in hours (can be a fractional value representing minutes).
+ * @returns 
+ */
+export default function SpeedController({ setCurrentTime, currentTime}) {
     const [isPlaying, setIsPlaying] = useState(false)
     const [speed, setSpeed] = useState(1)
     const currentTimeLabel = 
@@ -40,6 +43,8 @@ export default function SpeedController({
             }
         }
     }, [isPlaying, speed])
+
+    // Render the play/pause button, speed selector, and current time display
     return (
         <div>
             {/* Button to toggle play/pause state of the animation */}

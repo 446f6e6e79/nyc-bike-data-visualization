@@ -5,6 +5,7 @@
  * @returns 
  */
 export default function Tooltip({ object, activeLayer }) {
+    // To avoid errors when hovering over empty areas of the map
     if (!object) return null
     switch (activeLayer) {
         case 'station_usage':
