@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import DeckGL from '@deck.gl/react'
 import useStationRideCounts from '../hooks/useStationRideCounts.js'
-import { INITIAL_VIEW_STATE, LIMIT_STATIONS, MAP_STYLES, MAX_ZOOM, MIN_ZOOM, clamp, MIN_PITCH, MAX_PITCH, LAYER_OPTIONS } from '../map/constants.js'
+import useTripCounts from '../hooks/useTripCounts.js'
+import { INITIAL_VIEW_STATE, LIMIT_STATIONS, LIMIT_TRIPS, MAP_STYLES, MAX_ZOOM, MIN_ZOOM, clamp, MIN_PITCH, MAX_PITCH, LAYER_OPTIONS } from '../map/constants.js'
 import { buildLayers } from '../map/buildLayers.js'
 import { getAverageUsage, getStationForCurrentTime, getMaxUsage, selectStations } from '../map/selectors/stationUsage.js'
+import { selectTrips, selectMaxFlow } from '../map/selectors/tripFlow.js'
 
 import MapController from '../map/components/MapController.jsx'
 import MapLegend from '../map/components/MapLegend.jsx'
@@ -23,6 +25,11 @@ function MapPage({ dateRange }) {
         group_by: 'hour',
         ...(dateRange ?? {})
     }
+    // Build filters for trip count data
+    const tripCountFilters = {
+        limit: LIMIT_TRIPS,
+        ...(dateRange ?? {})
+    }
 
     // Fetch station ride counts with the specified filters using the custom hook
     const { stationRideCounts,
@@ -30,11 +37,21 @@ function MapPage({ dateRange }) {
         error: stationError
     } = useStationRideCounts(stationFilters)
 
+    // Fetch trip count data for the current date range.
+    const { tripCount,
+        loading: tripLoading,
+        error: tripError
+    } = useTripCounts(tripCountFilters)
+
     // Station Selectors
     const stations = useMemo(() => selectStations(stationRideCounts), [stationRideCounts])
     const frameStations = useMemo(() => getStationForCurrentTime(stations, currentTime), [stations, currentTime])
     const maxUsage = useMemo(() => getMaxUsage(stations), [stations])
     const avgUsage = useMemo(() => getAverageUsage(frameStations), [frameStations])
+
+    // Trip Selectors
+    const trips = useMemo(() => selectTrips(tripCount), [tripCount])
+    const maxTripFlow = useMemo(() => selectMaxFlow(trips), [trips])
 
     // Handler for view map changes
     const handleViewStateChange = useCallback(({ viewState: nextViewState }) => {
@@ -44,18 +61,18 @@ function MapPage({ dateRange }) {
             pitch: clamp(nextViewState.pitch, MIN_PITCH, MAX_PITCH),
         })
     }, [])
-    // TODO: export this handler to a separate file. Add trips and max trip count
+    // TODO: export this handler to a separate file.
     const layers = useMemo(
         () =>
             buildLayers({
                 stations: frameStations,
-                trips: [], // Placeholder for trip data, to be implemented in the future
+                trips: trips, // Placeholder for trip data, to be implemented in the future
                 maxStationUsage: maxUsage,
-                maxTripCount: 1, // Placeholder for max trip count, to be implemented in the future
+                maxTripCount: maxTripFlow, // Use the calculated maximum trip flow
                 activeLayer,
                 tileUrl: MAP_STYLES.light,
             }),
-        [frameStations, maxUsage, activeLayer]
+        [frameStations, trips, maxUsage, maxTripFlow, activeLayer]
     )
 
     // Check current active layer for animation capability
@@ -65,13 +82,13 @@ function MapPage({ dateRange }) {
 
     // Aggregate error state
     const overallError = useMemo(() => 
-        stationError, 
-    [stationError])
+        stationError || tripError,
+    [stationError, tripError])
 
     // Aggregate loading state
     const overallLoading = useMemo(() => 
-        stationLoading, 
-    [stationLoading])
+        stationLoading || tripLoading,
+    [stationLoading, tripLoading])
 
     if (overallError) {
         return <StatusMessage loading={overallLoading} error={overallError} />
@@ -93,7 +110,7 @@ function MapPage({ dateRange }) {
                 layers={layers}
                 getTooltip={({ object }) => Tooltip({ object })}
             />
-            {!stationLoading && (
+            {!stationLoading && !tripLoading && (
                 <MapController
                     activeLayer={activeLayer}
                     setActiveLayer={setActiveLayer}
@@ -102,14 +119,14 @@ function MapPage({ dateRange }) {
                     hasAnimation={hasAnimation}
                 />
             )}
-            {!stationLoading && (
+            {!stationLoading && !tripLoading && (
                 <MapLegend
                     activeLayer={activeLayer}
                     frameStations={frameStations}
                     avgUsage={avgUsage}
                 />
             )}
-            {(stationLoading) && <div className="map-overlay">Loading map data…</div>}
+            {(stationLoading || tripLoading) && <div className="map-overlay">Loading map data…</div>}
         </div>
     )
 }
