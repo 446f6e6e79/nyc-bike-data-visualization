@@ -1,16 +1,38 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import DeckGL from '@deck.gl/react'
-import useStationRideCounts from '../hooks/useStationRideCounts.js'
-import useTripCounts from '../hooks/useTripCounts.js'
-import { INITIAL_VIEW_STATE, LIMIT_STATIONS, LIMIT_TRIPS, MAP_STYLES, MAX_ZOOM, MIN_ZOOM, clamp, MIN_PITCH, MAX_PITCH, LAYER_OPTIONS } from '../map/constants.js'
-import { buildLayers } from '../map/buildLayers.js'
-import { getAverageUsage, getStationForCurrentTime, getMaxUsage, selectStations } from '../map/selectors/stationUsage.js'
-import { selectTrips, selectMaxFlow } from '../map/selectors/tripFlow.js'
-
+import { buildLayers } from '../map/buildLayers.jsx'
 import MapController from '../map/components/MapController.jsx'
 import MapLegend from '../map/components/MapLegend.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
 import Tooltip from '../map/components/Tooltip.jsx'
+
+// List of available map layers
+export const LAYER_OPTIONS = [
+    { value: 'station_usage', hasAnimation: true, label: 'Station usage' },
+    { value: 'trip_flow', hasAnimation: false, label: 'Trip flow' }
+    // Future layers can be added here
+]
+// Map styles for the base tile layer
+export const MAP_STYLES = {
+  light: 'https://a.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png',
+  dark: 'https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+}
+// Initial view state centered on NYC
+const INITIAL_VIEW_STATE = {
+  longitude: -73.97,
+  latitude: 40.75,
+  zoom: 10.8,       // Initial zoom level to show the city
+  pitch: 45,        // Map inclination for a 3D effect
+  bearing: 0,       // Rotation of the map
+}
+// Allowed zoom range for map interactions
+const MIN_ZOOM = 9
+const MAX_ZOOM = 15
+// Utility function to clamp a value between a minimum and maximum 
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+// List of available map layers
+const MIN_PITCH = 0            // Minimum pitch angle for the map view
+const MAX_PITCH = 60           // Maximum pitch angle for the map view (to prevent excessive tilting)
 
 function MapPage({ dateRange }) {
     // State for map view (center, zoom, etc.)
@@ -18,40 +40,6 @@ function MapPage({ dateRange }) {
     const [currentTime, setCurrentTime] = useState(7)                       // Current hour frame (0-23) for animation. Default to 7 AM     
     const [hasAnimation, setHasAnimation] = useState(true)                  // Whether the current layer supports animation
     const [activeLayer, setActiveLayer] = useState('station_usage')         // Currently selected map layer
-
-    // Build filters for station usage data
-    const stationFilters = {
-        limit: LIMIT_STATIONS,
-        group_by: 'hour',
-        ...(dateRange ?? {})
-    }
-    // Build filters for trip count data
-    const tripCountFilters = {
-        limit: LIMIT_TRIPS,
-        ...(dateRange ?? {})
-    }
-
-    // Fetch station ride counts with the specified filters using the custom hook
-    const { stationRideCounts,
-        loading: stationLoading,
-        error: stationError
-    } = useStationRideCounts(stationFilters)
-
-    // Fetch trip count data for the current date range.
-    const { tripCount,
-        loading: tripLoading,
-        error: tripError
-    } = useTripCounts(tripCountFilters)
-
-    // Station Selectors
-    const stations = useMemo(() => selectStations(stationRideCounts), [stationRideCounts])
-    const frameStations = useMemo(() => getStationForCurrentTime(stations, currentTime), [stations, currentTime])
-    const maxUsage = useMemo(() => getMaxUsage(stations), [stations])
-    const avgUsage = useMemo(() => getAverageUsage(frameStations), [frameStations])
-
-    // Trip Selectors
-    const trips = useMemo(() => selectTrips(tripCount), [tripCount])
-    const maxTripFlow = useMemo(() => selectMaxFlow(trips), [trips])
 
     // Handler for view map changes
     const handleViewStateChange = useCallback(({ viewState: nextViewState }) => {
@@ -61,39 +49,23 @@ function MapPage({ dateRange }) {
             pitch: clamp(nextViewState.pitch, MIN_PITCH, MAX_PITCH),
         })
     }, [])
-    // TODO: export this handler to a separate file.
-    const layers = useMemo(
-        () =>
-            buildLayers({
-                stations: frameStations,
-                trips: trips, // Placeholder for trip data, to be implemented in the future
-                maxStationUsage: maxUsage,
-                maxTripCount: maxTripFlow, // Use the calculated maximum trip flow
-                activeLayer,
-                tileUrl: MAP_STYLES.light,
-            }),
-        [frameStations, trips, maxUsage, maxTripFlow, activeLayer]
-    )
+
+    // Build layers based on active layer and data
+    const { layers, loading, error } = buildLayers({
+        dateRange,
+        currentTime,
+        activeLayer,
+        tileUrl: MAP_STYLES.light,
+    })
 
     // Check current active layer for animation capability
     useEffect(() => {
         setHasAnimation(LAYER_OPTIONS.find((layer) => layer.value === activeLayer)?.hasAnimation)
     }, [activeLayer])
-
-    // Aggregate error state
-    const overallError = useMemo(() => 
-        stationError || tripError,
-    [stationError, tripError])
-
-    // Aggregate loading state
-    const overallLoading = useMemo(() => 
-        stationLoading || tripLoading,
-    [stationLoading, tripLoading])
-
-    if (overallError) {
-        return <StatusMessage loading={overallLoading} error={overallError} />
+    // If there's an error or data is still loading in the active layer, show the status message instead of the map
+    if (error || loading) {
+        return <StatusMessage loading={loading} error={error} />
     }
-
     return (
         <div className="map-shell">
             <DeckGL
@@ -108,9 +80,9 @@ function MapPage({ dateRange }) {
                     touchRotate: true,
                 }}
                 layers={layers}
-                getTooltip={({ object }) => Tooltip({ object })}
+                getTooltip={({ object }) => Tooltip({ object, activeLayer })}
             />
-            {!stationLoading && !tripLoading && (
+            <>
                 <MapController
                     activeLayer={activeLayer}
                     setActiveLayer={setActiveLayer}
@@ -118,15 +90,11 @@ function MapPage({ dateRange }) {
                     setCurrentTime={setCurrentTime}
                     hasAnimation={hasAnimation}
                 />
-            )}
-            {!stationLoading && !tripLoading && (
                 <MapLegend
                     activeLayer={activeLayer}
-                    frameStations={frameStations}
-                    avgUsage={avgUsage}
+
                 />
-            )}
-            {(stationLoading || tripLoading) && <div className="map-overlay">Loading map data…</div>}
+            </>
         </div>
     )
 }

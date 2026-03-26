@@ -1,4 +1,5 @@
-import { HOURS_IN_DAY } from '../constants'
+
+const HOURS_IN_DAY = 24
 
 /**
  * Transforms raw station ride count data into a format suitable for map visualization.
@@ -90,11 +91,4 @@ export function getMaxUsage(stations) {
             : 0
         return Math.max(globalMax, stationMax)
     }, 0)
-}
-
-/** Get the average usage across all stations for display in the legend */
-export function getAverageUsage(stations) {
-    const totalUsage = stations.reduce(
-        (acc, station) => acc + (Number(station.usage || 0)),0)
-    return Math.round(totalUsage / stations.length)
 }
