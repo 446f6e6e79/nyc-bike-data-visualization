@@ -53,3 +53,26 @@ export function createStationUsageLayer({ stations, maxStationUsage }) {
     elevationDomain: domain,  // Keep elevation scaling fixed across animation frames
   })
 }
+
+/**
+ * Generates a tooltip for station usage data.
+ * @param {Object} object - The station usage data object.
+ * @returns {string} The tooltip content.
+ */
+export function stationUsageTooltip(object) {
+    const points = Array.isArray(object.points) ? object.points : []
+    if (points.length > 0) {
+        const totalUsage = Math.round(
+            points.reduce((sum, point) => sum + (Number(point.usage) || 0), 0)
+        )
+        const uniqueStationIds = [...new Set(points.map((point) => point.stationId).filter(Boolean))]
+        const stationPreview = uniqueStationIds.slice(0, 4).join(', ')
+        const stationSuffix = uniqueStationIds.length > 4 ? ', …' : ''
+
+        return `Stations: ${points.length}\nUsage: ${totalUsage} rides\nIDs: ${stationPreview}${stationSuffix}`
+    }
+    const totalUsage = Math.round(Number(object.elevationValue ?? object.colorValue ?? 0) || 0)
+    const count = Math.round(Number(object.count ?? 0) || 0)
+    return `Stations: ${count}\nUsage: ${totalUsage} rides`
+}
+

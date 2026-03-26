@@ -47,7 +47,8 @@ function MapPage({ dateRange }) {
     const stations = useMemo(() => selectStations(stationRideCounts), [stationRideCounts])
     const frameStations = useMemo(() => getStationForCurrentTime(stations, currentTime), [stations, currentTime])
     const maxUsage = useMemo(() => getMaxUsage(stations), [stations])
-    const avgUsage = useMemo(() => getAverageUsage(frameStations), [frameStations])
+    //#TODO: Used only for legend, remove?
+    //const avgUsage = useMemo(() => getAverageUsage(frameStations), [frameStations])
 
     // Trip Selectors
     const trips = useMemo(() => selectTrips(tripCount), [tripCount])
@@ -81,19 +82,18 @@ function MapPage({ dateRange }) {
     }, [activeLayer])
 
     // Aggregate error state
-    const overallError = useMemo(() => 
+    const overallError = useMemo(() =>
         stationError || tripError,
-    [stationError, tripError])
+        [stationError, tripError])
 
     // Aggregate loading state
-    const overallLoading = useMemo(() => 
+    const overallLoading = useMemo(() =>
         stationLoading || tripLoading,
-    [stationLoading, tripLoading])
+        [stationLoading, tripLoading])
 
-    if (overallError) {
+    if (overallError || overallLoading) {
         return <StatusMessage loading={overallLoading} error={overallError} />
     }
-
     return (
         <div className="map-shell">
             <DeckGL
@@ -110,7 +110,7 @@ function MapPage({ dateRange }) {
                 layers={layers}
                 getTooltip={({ object }) => Tooltip({ object, activeLayer })}
             />
-            {!stationLoading && !tripLoading && (
+            <>
                 <MapController
                     activeLayer={activeLayer}
                     setActiveLayer={setActiveLayer}
@@ -118,14 +118,11 @@ function MapPage({ dateRange }) {
                     setCurrentTime={setCurrentTime}
                     hasAnimation={hasAnimation}
                 />
-            )}
-            {!stationLoading && !tripLoading && (
                 <MapLegend
                     activeLayer={activeLayer}
 
                 />
-            )}
-            {(stationLoading || tripLoading) && <div className="map-overlay">Loading map data…</div>}
+            </>
         </div>
     )
 }

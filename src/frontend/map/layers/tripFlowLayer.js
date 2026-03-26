@@ -68,3 +68,17 @@ export function createTripFlowLayer({ trips, maxTripCount }) {
         },
     })
 }
+
+
+/**
+ * Generates a tooltip for trip flow data, showing the number of rides between two stations.
+ * @param {Object} object - The trip flow data object.
+ * @returns {string} The tooltip content.
+ */
+export function tripFlowTooltip(object) {
+    console.log('Generating tooltip for trip flow:', object)
+    const rides = Math.round(Number(object.total_daily_flow) || 0)
+    const from = object.start_station_name 
+    const to = object.end_station_name 
+    return `Trip: ${from} → ${to}\nRides: ${rides}`
+}
