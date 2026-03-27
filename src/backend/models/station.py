@@ -11,10 +11,11 @@ class StationInfo(BaseModel):
 
 class StationStatus(BaseModel):
     """Model representing the current status of a bike station."""
-    num_bikes_available: int      # Number of bikes currently available at the station
-    num_ebikes_available: int     # Number of e-bikes currently available at the station
-    num_docks_available: int      # Number of docks currently available at the station
-    num_bikes_disabled: int       # Number of bikes currently disabled at the station
+    num_bikes_available: int         # total number of bikes currently available at the station
+    num_classic_bikes_available: int # Number of classic bikes currently available at the station
+    num_ebikes_available: int        # Number of e-bikes currently available at the station
+    num_docks_available: int         # Number of docks currently available at the station
+    num_bikes_disabled: int          # Number of bikes currently disabled at the station
 
 class Station(StationInfo, StationStatus):
     """Model representing a bike station with both static information and current status."""

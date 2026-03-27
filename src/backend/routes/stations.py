@@ -30,16 +30,19 @@ def get_stations_availability():
 def get_empty_stations():
     """Get all stations that currently have no bikes available."""
     station_data, station_status_data = fetch_station_data()
-    return [
+    # First build the full station objects with merged info + status
+    stations = [
         _merge_station(s, station_status_data)
         for s in station_data
+    ]
+    # Filter the stations to only include those with no bikes available
+    return [
+        st for st in stations
         if (
-            (status := station_status_data.get(s["station_id"]))
-            and status.get("num_bikes_available", 0) == 0
-            and status.get("num_ebikes_available", 0) == 0
-            and status.get("is_installed") == 1
-            and status.get("is_renting") == 1
-            and status.get("is_returning") == 1
+            st.num_bikes_available == 0
+            and st.num_classic_bikes_available == 0
+            and st.num_ebikes_available == 0
+            and st.num_docks_available is not None  # optional sanity check
         )
     ]
 
