@@ -1,5 +1,14 @@
 import { ScatterplotLayer } from '@deck.gl/layers'
 
+/**
+ * Creates a scatterplot layer for displaying station availability information.
+ * @param {Array} stations - An array of station objects, each containing:
+ *   - latitude: number
+ *   - longitude: number
+ *   - capacity: number (total docks)
+ *   - station_health: number (0 to 1, where 1 is fully healthy)
+ * @returns 
+ */
 export function createStationAvailabilityLayer({ stations }) {
     return new ScatterplotLayer({
         id: 'station-availability-layer',
@@ -29,3 +38,38 @@ function getStationColor(health) {
     if (health >= 0.4) return [234, 179, 8]   // amber
     return [239, 68, 68]                      // red
 }
+
+
+/** * Generates tooltip content for a station availability point.
+ * @param {Object} object - The station data object 
+ * @returns {string} A formatted string with station information for the tooltip.
+ */
+export function stationAvailabilityTooltip( object ) {
+    console.log(object)
+    return `
+            ${object.name}\n
+            Available Classical Bikes: ${object.classicalBikes}
+            Available Electric Bikes: ${object.electricBikes}
+            Available Docks: ${object.available_docks}
+            Total Capacity: ${object.capacity}
+        `
+}
+
+/**
+ * Renders the legend for the station availability layer, explaining the color coding of station health.
+ * @returns The JSX for the station availability legend, which includes a description of the color coding used to represent station health (green, amber, red).
+ */
+export function stationAvailabilityLegend() {
+    return (
+        <div className="map-legend">
+            <div className="map-legend-desc">
+                <small>
+                    <b>Green</b>: Healthy balance<br />
+                    <b>Amber</b>: Skewed (almost full/empty)<br />
+                    <b>Red</b>: Unhealthy (broken/disabled)
+                </small>
+            </div>
+        </div>
+    )
+}
+        

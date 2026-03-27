@@ -1,4 +1,5 @@
 import { LAYER_OPTIONS } from "../../pages/MapPage.jsx"
+import { stationAvailabilityLegend } from "../layers/stationAvailabilityLayer.jsx"
 import { stationUsageLegend } from "../layers/stationUsageLayer.jsx"
 import { tripFlowLegend } from "../layers/tripFlowLayer.jsx"
 
@@ -14,6 +15,7 @@ export default function MapLegend({ activeLayer }) {
     const availableLegends = {
         'station_usage': stationUsageLegend(),
         'trip_flow': tripFlowLegend(),
+        'station_availability': stationAvailabilityLegend(),
     }
 
     return (
