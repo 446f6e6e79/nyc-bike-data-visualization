@@ -84,7 +84,7 @@ def main():
     os.makedirs(WEATHER_DATA_DIR, exist_ok=True)
 
     # Download and convert the filtered files
-    download_ride_data(args.start_date, args.end_date, BASE_URL_RIDE_DATA, RIDES_DATA_DIR, download_jc=args.download_jc)
+    download_ride_data(args.start_date, args.end_date, BASE_URL_RIDE_DATA, RIDES_DATA_DIR, download_jc=args.download_jc, force_download=args.force_download)
 
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances(force_download=args.force_download)

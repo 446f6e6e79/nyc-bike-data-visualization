@@ -259,7 +259,7 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
     print(f"Extracted {len(csv_frames)} CSV files from ZIP, combining into a single DataFrame...")
     return pl.concat(csv_frames, how="diagonal_relaxed")
 
-def download_ride_data(start_date: str, end_date: str, base_data_url: str, output_dir: str, download_jc: bool) -> None:
+def download_ride_data(start_date: str, end_date: str, base_data_url: str, output_dir: str, download_jc: bool, force_download: bool) -> None:
     """
     Download each filtered ZIP file from the S3 bucket and convert all CSV files
     inside it into a single parquet file.
@@ -273,7 +273,9 @@ def download_ride_data(start_date: str, end_date: str, base_data_url: str, outpu
     available_files = _find_available_files(base_data_url)
     
     # Check the current coverage of already downloaded files to avoid unnecessary downloads
-    current_coverage = _find_current_coverage(output_dir)
+    current_coverage = []
+    if not force_download:
+        current_coverage = _find_current_coverage(output_dir)
 
     # Filter files by date range and dataset type
     filtered_files = _filter_files(available_files, current_coverage, start_date, end_date, download_jc=download_jc)
