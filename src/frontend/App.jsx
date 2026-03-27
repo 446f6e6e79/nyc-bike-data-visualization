@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppHeader from './components/AppHeader.jsx'
 import StatsPage from './pages/StatsPage.jsx'
 import MapPage from './pages/MapPage.jsx'
+import SurfacePage from './pages/SurfacePage.jsx'
 
 /**
  * App component that sets up the main structure of the application, including routing and layout. 
@@ -20,6 +21,7 @@ function App() {
                     <Routes>
                         <Route path="/" element={<Navigate to="/map" replace />} />
                         <Route path="/map" element={<MapPage dateRange={dateRange} />} />
+                        <Route path="/surface" element={<SurfacePage dateRange={dateRange} />} />
                         <Route path="/stats" element={<StatsPage dateRange={dateRange} />} />
                         {/* add future pages here */}
                     </Routes>

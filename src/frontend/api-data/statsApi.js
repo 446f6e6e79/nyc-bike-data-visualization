@@ -56,7 +56,6 @@ export async function fetchDailyStats(filters = {}) {
     const { data } = await apiClient.get(ENDPOINTS.stats(), {
         params: { ...filters, group_by: 'day_of_week' },
     })
-
     return data
 }
 
@@ -81,7 +80,6 @@ export async function fetchTripsBetweenStations(filters = {}) {
     const { data } = await apiClient.get(ENDPOINTS.tripsBetweenStations(), {
         params: filters,
     })
-
     return data
 }
 
@@ -92,4 +90,19 @@ export async function fetchTripsBetweenStations(filters = {}) {
 export async function fetchDateRangeStats() {
     const { data } = await apiClient.get(ENDPOINTS.dateRange())
     return data
+}
+
+/**
+ * Fetches stats grouped by day_of_week AND hour, used for surface graph rendering.
+ * @param {*} filters
+ * @returns 
+ */
+export async function fetchGroupByDayAndHour(filters = {}) {
+    const baseParams = { ...filters, group_by: 'day_of_week,hour' }
+    // Fetch all rides, with requested breakdowns
+    const result = await apiClient.get(ENDPOINTS.stats(), {
+        params: baseParams,
+    }).then((res) => res.data)
+    // Convert durations from seconds to minutes for display purposes
+    return {result : [toDisplayStats(result)]}
 }

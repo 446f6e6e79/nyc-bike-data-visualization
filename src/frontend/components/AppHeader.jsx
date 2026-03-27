@@ -3,7 +3,8 @@ import DateRangeFilter from './date_filter/DateRangeFilter.jsx'
 
 const PAGES = [
     { to: '/map', label: 'Map' },
-    { to: '/stats', label: 'Stats' },
+    { to: '/surface', label: 'Surface' },
+    { to: '/stats', label: 'Stats' }
 ]
 
 /**
