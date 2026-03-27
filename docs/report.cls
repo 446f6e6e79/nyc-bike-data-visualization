@@ -101,7 +101,7 @@
 
 \newcommand{\authors}[1]{\begin{tabular}{@{}ll@{}}Davide Donà &\quad \texttt{264467}\\Andrea Blushi&\quad \texttt{264468}\\Lorenzo Di Berardino&\quad \texttt{265984}\end{tabular}}
 
-\newcommand{\maketitlepage}{
+\newcommand{\maketitlepage}[1]{
   \begin{titlepage}
     \begin{center}
       \Large University of Trento\\[-3pt]
@@ -112,7 +112,7 @@
       \includesvg[width=0.7\textwidth]{../media/logo.svg}
 
       \vspace{1cm}
-      \HHUGE\textbf{Data Visualization Proposal}
+      \HHUGE\textbf{#1}
 
       \vspace{0.5cm}
 
@@ -126,7 +126,7 @@
 
       \LARGE\authors
 
-      \vspace{3.5cm}
+      \vspace{2cm}
       \vfill
 
       \Large\MonthName\ \the\year
