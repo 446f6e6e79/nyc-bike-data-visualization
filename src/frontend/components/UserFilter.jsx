@@ -7,7 +7,7 @@ export const FILTERS = {
 const formatLabel = (value) =>
   value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-export default function UserFilter({ currentUserFilters = {}, onUserFilterChange }) {
+export default function UserFilter({ value = {}, onChange }) {
   return (
     <div className="user-filter">
       {Object.entries(FILTERS).map(([key, { label, options }]) => (
@@ -19,8 +19,8 @@ export default function UserFilter({ currentUserFilters = {}, onUserFilterChange
             <select
               id={`filter-${key}`}
               className="user-filter-select"
-              value={currentUserFilters[key] ?? ''}
-              onChange={(e) => onUserFilterChange({ ...currentUserFilters, [key]: e.target.value || undefined })}
+              value={value[key] ?? ''}
+              onChange={(e) => onChange({ ...value, [key]: e.target.value || undefined })}
             >
               <option value="">All</option>
               {options.map((opt) => (

@@ -1,8 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 
 /** Check if filters include a valid date range (start_date and end_date) to enable the query */
-export function hasDateRange(filters = {}) {
+function hasDateRange(filters = {}) {
     return Boolean(filters.start_date && filters.end_date)
+}
+/** Check if filters include user type to enable the query */
+function hasUserFilters(filters = {}) {
+    return Boolean(filters.user_type)
 }
 /**
  * Custom hook to fetch data with optional filters using React Query.
@@ -20,7 +24,7 @@ function useApiQueryWithFilters({
     queryKey,                   
     fetcher,                    
     filters = {},               
-    enabledWhen = hasDateRange, 
+    enabledWhen = hasDateRange || hasUserFilters,  // Default to enabling if there's a valid date range or user filters
     staleTime, 
     gcTime,
     fallbackData = [],

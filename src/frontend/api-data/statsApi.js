@@ -97,8 +97,8 @@ export async function fetchDateRangeStats() {
  * @param {*} filters
  * @returns 
  */
-export async function fetchGroupByDayAndHour(filters = {}) {
-    const baseParams = { ...filters, group_by: 'day_of_week,hour' }
+export async function fetchStats(filters = {}) {
+    const baseParams = { ...filters}
     // Fetch all rides, with requested breakdowns
     const result = await apiClient.get(ENDPOINTS.stats(), {
         params: baseParams,

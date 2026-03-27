@@ -6,14 +6,14 @@ import { LIMIT_TRIPS } from '../../config.jsx'
 /**
  * Custom hook to fetch and process trip flow data for the trip flow layer.
  * It retrieves trip counts, filters them based on the date range, and calculates the maximum flow for scaling purposes.
- * @param {Object} dateRange - Optional date range for filtering trip flow data.
+ * @param {Object} userFilters - Optional filters for fetching trip counts, such as date range or user-selected filters.
  * @returns {Object} An object containing the filtered trip data, maximum flow value, loading state, and error state.
  */
-export function useTripFlowLayer({ dateRange }) {
+export function useTripFlowLayer({ filters }) {
     // Build filters for trip count data
     const tripCountFilters = {
         limit: LIMIT_TRIPS,
-        ...(dateRange ?? {})
+        ...(filters ?? {})
     }
 
     // Fetch trip count data for the current date range.

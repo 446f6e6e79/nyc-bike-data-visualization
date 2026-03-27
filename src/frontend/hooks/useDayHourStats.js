@@ -1,4 +1,4 @@
-import { fetchGroupByDayAndHour } from "../api-data/statsApi";
+import { fetchStats } from "../api-data/statsApi";
 import useApiQueryWithFilters from "./baseApiQuery.js";
 
 /**
@@ -7,10 +7,12 @@ import useApiQueryWithFilters from "./baseApiQuery.js";
  * @returns An object containing day-hour stats data and loading/error states
  */
 function useDayHourStats(filters={}) {
+    const params = { ...filters, group_by: 'day_of_week,hour' }
+
     const query = useApiQueryWithFilters({
         queryKey: 'day-hour-stats',
-        fetcher: fetchGroupByDayAndHour,
-        filters,
+        fetcher: fetchStats,
+        filters: params,
     })
 
     return {

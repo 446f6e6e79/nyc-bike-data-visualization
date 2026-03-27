@@ -11,6 +11,10 @@
   @apply flex justify-end;
   }
 
+  .user-filter-header {
+    @apply flex justify-start mt-3;
+  }
+
   .app-title {
     @apply block text-white text-[1.4rem] font-semibold mt-0 mb-3 mx-0;
   }

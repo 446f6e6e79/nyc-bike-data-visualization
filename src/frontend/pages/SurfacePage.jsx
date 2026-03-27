@@ -12,18 +12,13 @@ export const SURFACE_METRICS = {
     average_distance: { label: 'Avg Distance (km)' },
 }
 
-function SurfacePage({dateRange}) {
+function SurfacePage({filters}) {
     const [activeMetric, setActiveMetric] = useState('total_rides')
-    const [currentUserFilters, setCurrentUserFilters] = useState({})
-
-    const filters = { ...dateRange, ...currentUserFilters }
-
-    const { dayHourStats, loading, error } = useDayHourStats({ ...filters })
+    const { dayHourStats, loading, error } = useDayHourStats({ filters })
 
     return (
         <>
         <SurfaceSelector activeMetric={activeMetric} setActiveMetric={setActiveMetric} />
-        <UserFilter currentUserFilters={currentUserFilters} onUserFilterChange={setCurrentUserFilters} />
         <pre style={{ background: '#f0f0f0', padding: '1rem', fontSize: '12px' }}>
             {loading ? 'Loading...' : JSON.stringify(dayHourStats, null, 2)}
         </pre>

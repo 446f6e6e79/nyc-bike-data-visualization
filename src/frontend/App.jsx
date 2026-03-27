@@ -11,18 +11,22 @@ import SurfacePage from './pages/SurfacePage.jsx'
  * @returns 
  */
 function App() {
+    // Header state for filters
     const [dateRange, setDateRange] = useState(null)
+    const [currentUserFilters, setCurrentUserFilters] = useState({})
+    // Combine filters into a single object to pass down to pages
+    const filters = { ...dateRange, ...currentUserFilters }
 
     return (
         <BrowserRouter>
             <div className="app-shell">
-                <AppHeader dateRange={dateRange} onDateRangeChange={setDateRange} />
+                <AppHeader dateRange={dateRange} onDateRangeChange={setDateRange} currentUserFilters={currentUserFilters} onUserFilterChange={setCurrentUserFilters} />
                 <div className="app-content">
                     <Routes>
                         <Route path="/" element={<Navigate to="/map" replace />} />
-                        <Route path="/map" element={<MapPage dateRange={dateRange} />} />
-                        <Route path="/surface" element={<SurfacePage dateRange={dateRange} />} />
-                        <Route path="/stats" element={<StatsPage dateRange={dateRange} />} />
+                        <Route path="/map" element={<MapPage filters={filters} />} />
+                        <Route path="/surface" element={<SurfacePage filters={filters} />} />
+                        <Route path="/stats" element={<StatsPage filters={filters} />} />
                         {/* add future pages here */}
                     </Routes>
                 </div>
