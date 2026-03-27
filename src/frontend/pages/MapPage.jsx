@@ -9,7 +9,8 @@ import Tooltip from '../map/components/Tooltip.jsx'
 // List of available map layers
 export const LAYER_OPTIONS = [
     { value: 'station_usage', hasAnimation: true, label: 'Station usage' },
-    { value: 'trip_flow', hasAnimation: false, label: 'Trip flow' }
+    { value: 'trip_flow', hasAnimation: false, label: 'Trip flow' },
+    { value: 'station_availability', hasAnimation: false, label: 'Station availability' }
     // Future layers can be added here
 ]
 // Map styles for the base tile layer

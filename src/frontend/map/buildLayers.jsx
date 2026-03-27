@@ -1,8 +1,15 @@
+// Base Layer
 import { createBaseTileLayer } from './layers/baseTileLayer.js'
+// Station Usage Layer
 import { createStationUsageLayer } from './layers/stationUsageLayer.jsx'
-import { createTripFlowLayer } from './layers/tripFlowLayer.jsx'
 import { useStationUsageLayer } from './hooks/useStationUsageLayer.jsx'
+// Trip Flow Layer
+import { createTripFlowLayer } from './layers/tripFlowLayer.jsx'
 import { useTripFlowLayer } from './hooks/useTripFlowLayer.jsx'
+// Station Availability Layer
+import { createStationAvailabilityLayer } from './layers/stationAvailabilityLayer.jsx'
+import { useStationAvailabilityLayer } from './hooks/useStationAvailabilityLayer.jsx'
+
 import { useMemo } from 'react'
 import { MAP_STYLES } from '../pages/MapPage.jsx'
 
@@ -17,11 +24,13 @@ export function buildLayers({ dateRange, currentTime, activeLayer }) {
     // Fetch and process data
     const { frameStations, maxUsage, maxDelta,loading: stationLoading, error: stationError } = useStationUsageLayer({ dateRange, currentTime })
     const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripFlowLayer({ dateRange })
+    const { stations, loading: availabilityLoading, error: availabilityError } = useStationAvailabilityLayer()
 
     // Combine loading and error states for easier handling in the component
     const stateLayers = [
         { layer: 'station_usage', loading: stationLoading, error: stationError },
-        { layer: 'trip_flow', loading: tripLoading, error: tripError }
+        { layer: 'trip_flow', loading: tripLoading, error: tripError },
+        { layer: 'station_availability', loading: availabilityLoading, error: availabilityError }
     ]
 
     // Build layers based on active layer and data
@@ -37,9 +46,13 @@ export function buildLayers({ dateRange, currentTime, activeLayer }) {
             if (!tripLoading && !tripError)
                 base.push(createTripFlowLayer({ trips, maxTripCount: maxTripFlow }))
         }
+        if (activeLayer === 'station_availability') {
+            if (!availabilityLoading && !availabilityError)
+                base.push(createStationAvailabilityLayer({ stations: stations }))
+        }
 
         return base
-    }, [frameStations, maxUsage, trips, maxTripFlow, activeLayer, stationLoading, stationError, tripLoading, tripError])
+    }, [frameStations, maxUsage, trips, maxTripFlow, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError])
 
     // Consider the loading and error states of only the active layer for the overall status
     const loading = stateLayers.find(layer => layer.layer === activeLayer)?.loading || false
