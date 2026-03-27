@@ -98,11 +98,10 @@ export async function fetchDateRangeStats() {
  * @returns 
  */
 export async function fetchStats(filters = {}) {
-    const baseParams = { ...filters}
     // Fetch all rides, with requested breakdowns
-    const result = await apiClient.get(ENDPOINTS.stats(), {
-        params: baseParams,
-    }).then((res) => res.data)
+    const { data } = await apiClient.get(ENDPOINTS.stats(), {
+        params: filters,
+    })
     // Convert durations from seconds to minutes for display purposes
-    return {result : [toDisplayStats(result)]}
+    return data
 }
