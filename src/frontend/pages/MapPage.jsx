@@ -34,7 +34,9 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 const MIN_PITCH = 0            // Minimum pitch angle for the map view
 const MAX_PITCH = 60           // Maximum pitch angle for the map view (to prevent excessive tilting)
 
-function MapPage({ dateRange }) {
+function MapPage({ filters }) {
+    //#TODO: Update endpoint filters this is a placeholder for now, it updates but nothing happens
+    
     // State for map view (center, zoom, etc.)
     const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)          // Default view state for NYC, can be adjusted as needed
     const [currentTime, setCurrentTime] = useState(7)                       // Current hour frame (0-23) for animation. Default to 7 AM     
@@ -52,7 +54,7 @@ function MapPage({ dateRange }) {
 
     // Build layers based on active layer and data
     const { layers, loading, error } = buildLayers({
-        dateRange,
+        filters: filters,
         currentTime,
         activeLayer,
         tileUrl: MAP_STYLES.light,

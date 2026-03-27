@@ -6,6 +6,8 @@
 @import './components/date-range-filter.css';
 @import './components/status.css';
 @import './stats.css';
+@import './surface.css';
+@import './user_filter.css';
 
 @tailwind base;
 @tailwind components;

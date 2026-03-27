@@ -244,12 +244,14 @@ def _get_grouped_stats(
 def get_station_ride_counts_stats(
     start_date: date | None = None,
     end_date: date | None = None,
+    user_type: MemberCasual | None = None,
+    bike_type: RideableType | None = None,
     station_id: str | None = None,
     group_by: StatsGroupBy = StatsGroupBy.NONE,
     limit: int = 100,
 ) -> list[StationRideCounts]:
     # Get rides filtered by date range and optionally by station_id
-    rides = get_filtered_rides(start_date=start_date, end_date=end_date)
+    rides = get_filtered_rides(start_date=start_date, end_date=end_date, user_type=user_type, bike_type=bike_type)
 
     # If a station_id is provided, filter the rides starting or ending at that station
     # NOTE: i can't pass it directly to get_filtered_rides because we want an OR of the conditions
@@ -399,13 +401,15 @@ def get_station_ride_counts_stats(
 
 def get_trips_between_stations_stats(
     start_date: date | None = None,
+    user_type: MemberCasual | None = None,
+    bike_type: RideableType | None = None,
     end_date: date | None = None,
     station_id: str | None = None,
     group_by: StatsGroupBy = StatsGroupBy.NONE,
     limit: int = 100,
 ) -> list[TripsCountBetweenStations]:
     # Get rides filtered by date range and optionally by station_id
-    rides = get_filtered_rides(start_date=start_date, end_date=end_date)
+    rides = get_filtered_rides(start_date=start_date, end_date=end_date, user_type=user_type, bike_type=bike_type)
 
     # If station_id is provided, filter rides to only those that start or end at the station
     if station_id:  
