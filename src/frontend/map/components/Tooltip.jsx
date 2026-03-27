@@ -1,5 +1,6 @@
 import { stationUsageTooltip } from '../layers/stationUsageLayer.jsx'
 import { tripFlowTooltip } from '../layers/tripFlowLayer.jsx'
+import { stationAvailabilityTooltip } from '../layers/stationAvailabilityLayer.jsx'
 
 /**
  * Renders a tooltip based on the active layer and the provided object.
@@ -15,6 +16,8 @@ export default function Tooltip({ object, activeLayer }) {
             return stationUsageTooltip(object)
         case 'trip_flow':
             return tripFlowTooltip(object)
+        case 'station_availability':
+            return stationAvailabilityTooltip(object)
         default:
             return null
     }

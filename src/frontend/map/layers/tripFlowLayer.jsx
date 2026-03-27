@@ -77,7 +77,6 @@ export function createTripFlowLayer({ trips, maxTripCount }) {
 * @returns {string} The tooltip content.
 */
 export function tripFlowTooltip(object) {
-    console.log('Generating tooltip for trip flow:', object)
     const rides = Math.round(Number(object.total_daily_flow) || 0)
     const from = object.start_station_name
     const to = object.end_station_name
