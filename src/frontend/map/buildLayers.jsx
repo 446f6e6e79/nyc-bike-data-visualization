@@ -15,15 +15,15 @@ import { MAP_STYLES } from '../pages/MapPage.jsx'
 
 /**
  * Function to build the layers for the map based on the active layer and the provided data. 
- * @param {Object} dateRange - Optional date range for filtering data in the layers.
+ * @param {Object} filters - Optional filters for fetching data, such as date range or user-selected filters.
  * @param {number} currentTime - Current hour frame (0-23) for filtering station usage data.
  * @param {string} activeLayer - The currently active map layer to determine which layers to build.
  * @returns {Object} The built layers and their status.
  */
-export function buildLayers({ dateRange, currentTime, activeLayer }) {
+export function buildLayers({ filters, currentTime, activeLayer }) {
     // Fetch and process data
-    const { frameStations, maxUsage, maxDelta,loading: stationLoading, error: stationError } = useStationUsageLayer({ dateRange, currentTime })
-    const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripFlowLayer({ dateRange })
+    const { frameStations, maxUsage, maxDelta,loading: stationLoading, error: stationError } = useStationUsageLayer({ filters: filters, currentTime })
+    const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters: filters })
     const { stations, loading: availabilityLoading, error: availabilityError } = useStationAvailabilityLayer()
 
     // Combine loading and error states for easier handling in the component

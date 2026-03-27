@@ -81,6 +81,8 @@ def get_stats(
 @router.get("/station_ride_counts", response_model=list[StationRideCounts])
 def get_station_ride_counts(
     group_by: StatsGroupBy = Query(default=StatsGroupBy.NONE),
+    user_type: MemberCasual | None = Query(default=None),
+    bike_type: RideableType | None = Query(default=None),
     start_date: date | None = Query(default=None), 
     end_date: date | None = Query(default=None),
     station_id: str | None = Query(default=None),
@@ -89,6 +91,8 @@ def get_station_ride_counts(
     """Get the count of rides starting or ending at each station, optionally grouped by day_of_week, hour, or both."""
     return get_station_ride_counts_stats(
         group_by=group_by,
+        user_type=user_type,
+        bike_type=bike_type,
         start_date=start_date,
         end_date=end_date,
         station_id=station_id,
@@ -98,6 +102,8 @@ def get_station_ride_counts(
 @router.get("/trips_between_stations", response_model=list[TripsCountBetweenStations])
 def get_trips_between_stations(
     group_by: StatsGroupBy = Query(default=StatsGroupBy.NONE),
+    user_type: MemberCasual | None = Query(default=None),
+    bike_type: RideableType | None = Query(default=None),
     start_date: date | None = Query(default=None), 
     end_date: date | None = Query(default=None),
     station_id: str | None = Query(default=None),
@@ -106,6 +112,8 @@ def get_trips_between_stations(
     """Get the count of rides between each station pair, optionally grouped by day_of_week, hour, or both."""
     return get_trips_between_stations_stats(
         group_by=group_by,
+        user_type=user_type,
+        bike_type=bike_type,
         start_date=start_date,
         end_date=end_date,
         station_id=station_id,
