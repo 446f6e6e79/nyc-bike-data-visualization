@@ -1,4 +1,4 @@
-import { SURFACE_METRICS } from '../pages/SurfacePage.jsx'
+import { METRIC_LABELS } from '../../pages/SurfacePage.jsx'
 
 /**
  * Component for selecting which metric to display on the surface graph.
@@ -7,16 +7,15 @@ import { SURFACE_METRICS } from '../pages/SurfacePage.jsx'
  * @returns 
  */
 function SurfaceSelector({activeMetric, setActiveMetric}) {
-
     return (
         <div className="surface-metric-selector">
-            {SURFACE_METRICS.map((metric) => (
+            {Object.entries(METRIC_LABELS).map(([key, label]) => (
                 <button
-                    key={metric.key}
-                    onClick={() => setActiveMetric(metric.key)}
-                    className={`surface-metric-btn${metric.key === activeMetric ? ' active' : ''}`}
+                    key={key}
+                    onClick={() => setActiveMetric(key)}
+                    className={`surface-metric-btn${key === activeMetric ? ' active' : ''}`}
                 >
-                    {metric.label}
+                    {label}
                 </button>
             ))}
         </div>

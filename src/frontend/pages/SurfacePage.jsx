@@ -1,22 +1,48 @@
-import { useEffect, useState } from "react";
-
+import { useState } from "react";
 import useDayHourStats from "../hooks/useDayHourStats";
-import SurfaceSelector from "../components/SurfaceSelector";
+import SurfaceSelector from "../components/surface/SurfaceSelector";
 import StatusMessage from "../components/StatusMessage";
-import SurfaceGraph from "../components/SurfaceGraph";
-import SurfaceHistograms from "../components/SurfaceHistograms";
+import SurfaceGraph from "../components/surface/SurfaceGraph";
+import SurfaceHistograms from "../components/surface/SurfaceHistograms";
 
-export const SURFACE_METRICS = [
-  { key: 'total_rides', label: 'Total Rides', fmt: v => v.toLocaleString() },
-  { key: 'total_duration_minutes', label: 'Total Duration (min)', fmt: v => Math.round(v) + ' min' },
-  { key: 'average_duration_minutes', label: 'Avg Duration (min)', fmt: v => v.toFixed(1) + ' min' },
-  { key: 'total_distance', label: 'Total Distance (km)', fmt: v => v.toFixed(1) + ' km' },
-  { key: 'average_distance', label: 'Avg Distance (km)', fmt: v => v.toFixed(2) + ' km' },
-]
+// Definitions for the metrics with their keys, labels, and formatting
+export const METRIC_GETTERS = {
+    total_rides: d => d.total_rides,
+    total_duration_minutes: d => d.total_duration_seconds / 60,
+    average_duration_minutes: d => d.average_duration_seconds / 60,
+    total_distance: d => d.total_distance_km,
+    average_distance: d => d.average_distance_km,
+}
 
+export const METRIC_LABELS = {
+    total_rides: "Total Rides",
+    total_duration_minutes: "Total Duration (min)",
+    average_duration_minutes: "Avg Duration (min)",
+    total_distance: "Total Distance (km)",
+    average_distance: "Avg Distance (km)",
+}
+
+export const METRIC_FORMATS = {
+    total_rides: v => Math.round(v).toLocaleString(),
+    total_duration_minutes: v => v.toFixed(1) + " min",
+    average_duration_minutes: v => v.toFixed(1) + " min",
+    total_distance: v => v.toFixed(1) + " km",
+    average_distance: v => v.toFixed(1) + " km",
+}
+
+/**
+ * Component for the surface graph page, which includes a metric selector, the surface graph itself, and accompanying histograms. 
+ * @param {Object} filters - The filters to apply to the data.
+ * @returns The rendered SurfacePage component, which displays the surface graph and histograms based on the selected metric and applied filters.
+ */
 function SurfacePage({filters}) {
+    //#TODO: From this file and his children refactor the CSS inline styles to a file
+    // State to track the currently active metric for the surface graph, initialized to 'total_rides'
     const [activeMetric, setActiveMetric] = useState('total_rides')
-    const { dayHourStats, loading, error } = useDayHourStats( filters )
+    // State to track the coordinates of the currently hovered point on the surface graph
+    const [coordinates, setCoordinates] = useState(null)
+    // Fetches the day-hour statistics based on the provided filters using a custom hook. The hook returns the data, loading state, and any error encountered during the fetch.
+    const { dayHourStats, loading, error } = useDayHourStats(filters)
 
     if (loading || error) {
         return <StatusMessage loading={loading} error={error} />
@@ -24,12 +50,9 @@ function SurfacePage({filters}) {
 
     return (
         <>
-        <SurfaceSelector activeMetric={activeMetric} setActiveMetric={setActiveMetric} />
-              <SurfaceGraph
-        data={dayHourStats}
-        metric={activeMetric}
-      />
-        <SurfaceHistograms data={dayHourStats} activeMetric={activeMetric} />
+            <SurfaceSelector activeMetric={activeMetric} setActiveMetric={setActiveMetric} />
+            <SurfaceGraph data={dayHourStats} activeMetric={activeMetric} setCoordinates={setCoordinates} />
+            <SurfaceHistograms data={dayHourStats} activeMetric={activeMetric} coordinates={coordinates} />
         </>
     );
 }
