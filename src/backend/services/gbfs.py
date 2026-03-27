@@ -3,7 +3,7 @@ from threading import Lock
 import requests
 from fastapi import HTTPException
 
-from src.backend.models.station import Station
+from src.backend.models.station import StationInfo, Station
 from src.backend.config import INFO_URL, STATUS_URL
 # 3-minute cache TTL to reduce load on the external API
 CACHE_TTL_SECONDS = 60 * 3
@@ -65,15 +65,14 @@ def fetch_station_data(force_refresh: bool = False) -> tuple[list, dict]:
 
     return info, status_map
 
-def _build_station_info(station_data: dict) -> Station:
-    """Build a Station response model with static station information only."""
-    return Station(
+def _build_station_info(station_data: dict) -> StationInfo:
+    """Build a StationInfo response model with static station information only."""
+    return StationInfo(
         id=str(station_data["short_name"]),
         name=station_data["name"],
         lat=station_data["lat"],
         lon=station_data["lon"],
-        bikes=None,
-        docks=None,
+        capacity=station_data["capacity"],
     )
 
 def _find_station_by_id(station_data: list[dict], station_id: str) -> dict:
@@ -95,6 +94,9 @@ def _merge_station(station_data: dict, station_status_data: dict) -> Station:
         name=station_data["name"],
         lat=station_data["lat"],
         lon=station_data["lon"],
-        bikes=st.get("num_bikes_available", 0),
-        docks=st.get("num_docks_available", 0),
+        capacity=station_data["capacity"],
+        num_bikes_available=st.get("num_bikes_available", 0),
+        num_ebikes_available=st.get("num_ebikes_available", 0),
+        num_docks_available=st.get("num_docks_available", 0),
+        num_bikes_disabled=st.get("num_bikes_disabled", 0),
     )
