@@ -11,6 +11,10 @@ WEATHER_API_URL = "https://archive-api.open-meteo.com/v1/archive"
 # URLs provided by Lyft's GBFS feed
 INFO_URL = "https://gbfs.lyft.com/gbfs/2.3/bkn/en/station_information.json"
 STATUS_URL = "https://gbfs.lyft.com/gbfs/2.3/bkn/en/station_status.json"
+# URLs for NYC bike routes data (GeoJSON format from NYC Open Data)
+BIKE_ROUTES_URL = "https://data.cityofnewyork.us/resource/mzxg-pwib.geojson?$limit=10000"
+BIKE_ROUTES_TTL_SECONDS = 3600  # 1 hour refresh for bike routes data
+
 # Cache settings for GBFS data
 TTL_SECONDS = 60  # Cache time-to-live in seconds
 # Note: The GBFS feed provides a "vehicle_types_available" field which is a list of dicts containing bike counts by type. 
