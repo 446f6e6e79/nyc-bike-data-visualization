@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppHeader from './components/AppHeader.jsx'
-import StatsPage from './pages/StatsPage.jsx'
 import MapPage from './pages/MapPage.jsx'
 import SurfacePage from './pages/SurfacePage.jsx'
 
@@ -26,7 +25,6 @@ function App() {
                         <Route path="/" element={<Navigate to="/map" replace />} />
                         <Route path="/map" element={<MapPage filters={filters} />} />
                         <Route path="/surface" element={<SurfacePage filters={filters} />} />
-                        <Route path="/stats" element={<StatsPage filters={filters} />} />
                         {/* add future pages here */}
                     </Routes>
                 </div>

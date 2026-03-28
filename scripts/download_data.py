@@ -10,7 +10,6 @@ import argparse
 import os
 import re
 from datetime import date
-from pathlib import Path
 
 from utils.distances import compute_and_save_station_distances
 from utils.rides import download_ride_data
