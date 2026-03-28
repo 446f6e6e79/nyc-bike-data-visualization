@@ -18,6 +18,8 @@ This project focuses on the visualization of bike-sharing data from New York Cit
 ```
 data-visualisation/
 ├── README.md                         # Project overview (this file)
+├── docker-compose.yml                # Docker Compose configuration for local development
+├── dockers/                          # Dockerfiles for backend and frontend services
 ├── src/
 │   └── backend                       # Backend server implementation (FastAPI)
 │   └── frontend                      # Frontend application implementation (React)
@@ -29,32 +31,6 @@ data-visualisation/
 │   └── report/                       # Final report latex files
 
 ```
-
-## Backend
-
-The backend server implementation for the bike-sharing data visualization project is located in the `src/backend`.
-Go to [src/backend/README.md](src/backend/README.md) for detailed instructions on how to start the server and access the API documentation.
-
-## Frontend
-
-The frontend application implementation for the bike-sharing data visualization project is located in the `src/frontend`.
-Go to [src/frontend/README.md](src/frontend/README.md) for detailed instructions on how to start the frontend application and access the user interface.
-
-## Downloading the datasets
-
-The datasets needed for the project can be downloaded from the Citi Bike Trip Data page at https://s3.amazonaws.com/tripdata/index.html
-
-To make the process easier, we provided a Python script that automates the downloading and merging of the trip data files based on specified date ranges. The script is located in `scripts/download_data.py`.
-
-To use the script, run the following command in your terminal:
-
-```bash
-python scripts/download_data.py
-```
-The available options for the script are:
-- `--start-date`: The start date for filtering files (in YYYYMM format). Default is "202601".
-- `--end-date`: The end date for filtering files (in YYYYMM format). Default is "" (no end date).
-- `--download-jc`: Include files from the Jersey City dataset (those starting with "JC-"). By default, these files are excluded.
 
 ## Run with Docker (Windows, Linux, macOS)
 
@@ -100,11 +76,38 @@ Note: You can also run it from the Docker Desktop built-in terminal in the same 
 - Check backend logs: `docker compose logs -f backend`
 - Check frontend logs: `docker compose logs -f frontend`
 
-### Application access
+## Local development (Linux, macOS)
+
+### Downloading the datasets
+
+To make the process easier, we provided a Python script that automates the downloading and merging of the trip data files based on specified date ranges. The script is located in `scripts/download_data.py`.
+Those files are downloaded from https://s3.amazonaws.com/tripdata/index.html.
+
+To use the script, run the following command in your terminal:
+
+```bash
+python scripts/download_data.py
+```
+
+The available options for the script are:
+
+- `--start-date`: The start date for filtering files (in YYYYMM format). Default is "202601".
+- `--end-date`: The end date for filtering files (in YYYYMM format). Default is "" (no end date).
+- `--download-jc`: Include files from the Jersey City dataset (those starting with "JC-"). By default, these files are excluded.
+
+### Backend
+
+The backend server implementation for the bike-sharing data visualization project is located in the `src/backend`.
+Go to [src/backend/README.md](src/backend/README.md) for detailed instructions on how to start the server and access the API documentation.
+
+### Frontend
+
+The frontend application implementation for the bike-sharing data visualization project is located in the `src/frontend`.
+Go to [src/frontend/README.md](src/frontend/README.md) for detailed instructions on how to start the frontend application and access the user interface.
+
+## Application access
 
 Once the services are up and running, you can access the application through the following URLs:
 
 - Frontend: `http://localhost:5173`
 - Backend API docs: `http://localhost:8000/docs`
-
-

@@ -71,8 +71,11 @@ src/frontend/
 ├── index.html                    # HTML template used by Vite
 ├── package.json                  # Frontend scripts and dependencies
 ├── vite.config.js                # Vite configuration
+├── tailwind.config.js            # Tailwind CSS configuration
 ├── api-data/                     # API constants and request configuration
 ├── components/                   # Reusable React UI components
+├── map/                          # Map-related components and utilities
+├── pages/                        # React components for different app pages
 ├── hooks/                        # Custom React hooks
 └── tests/                        # Frontend unit and integration tests
 ```
