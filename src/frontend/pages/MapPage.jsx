@@ -43,6 +43,7 @@ function MapPage({ filters }) {
     const [currentTime, setCurrentTime] = useState(7)                       // Current hour frame (0-23) for animation. Default to 7 AM     
     const [hasAnimation, setHasAnimation] = useState(true)                  // Whether the current layer supports animation
     const [activeLayer, setActiveLayer] = useState('station_usage')         // Currently selected map layer
+    const [showBikeRoutes, setShowBikeRoutes] = useState(false)             // Whether to show bike routes on the station availability layer
 
     // Handler for view map changes
     const handleViewStateChange = useCallback(({ viewState: nextViewState }) => {
@@ -58,6 +59,7 @@ function MapPage({ filters }) {
         filters: filters,
         currentTime,
         activeLayer,
+        showBikeRoutes,
         tileUrl: MAP_STYLES.light,
     })
 
@@ -92,10 +94,12 @@ function MapPage({ filters }) {
                     currentTime={currentTime}
                     setCurrentTime={setCurrentTime}
                     hasAnimation={hasAnimation}
+                    showBikeRoutes={showBikeRoutes}
+                    setShowBikeRoutes={setShowBikeRoutes}
                 />
                 <MapLegend
                     activeLayer={activeLayer}
-
+                    showBikeRoutes={showBikeRoutes}
                 />
             </>
         </div>

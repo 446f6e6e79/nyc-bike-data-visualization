@@ -13,6 +13,9 @@ export const ENDPOINTS = {
     rides: () => `${API_BASE_URL}/rides/`,
     rideById: (id) => `${API_BASE_URL}/rides/by_ride_id/${id}`,
 
+    // Bike routes
+    bikeRoutes: () => `${API_BASE_URL}/bike_routes/`,
+
     // Stats
     stats: () => `${API_BASE_URL}/stats/`,
     stationRideCounts: () => `${API_BASE_URL}/stats/station_ride_counts`,

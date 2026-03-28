@@ -11,7 +11,7 @@ import SpeedController from "./SpeedController"
  * @param {boolean} hasAnimation - Indicates whether the currently active layer supports animation, which determines if the SpeedController should be displayed.
  * @returns 
  */
-export default function MapController({ activeLayer, setActiveLayer, currentTime, setCurrentTime, hasAnimation }) {
+export default function MapController({ activeLayer, setActiveLayer, currentTime, setCurrentTime, hasAnimation, showBikeRoutes, setShowBikeRoutes }) {
     return (
         <div className="map-controls">
             {/* Dropdown to select the active map layer */}
@@ -28,6 +28,19 @@ export default function MapController({ activeLayer, setActiveLayer, currentTime
                 ))}
             </select>
             <p className="map-controls-hint">Shift + drag to rotate</p>
+
+            {/* Bike routes toggle — only relevant on the availability layer */}
+            {activeLayer === 'station_availability' && (
+                <label className="map-controls-label" style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                    <input
+                        type="checkbox"
+                        checked={showBikeRoutes}
+                        onChange={(e) => setShowBikeRoutes(e.target.checked)}
+                        style={{ cursor: 'pointer' }}
+                    />
+                    Bike routes
+                </label>
+            )}
 
             {/* Add speed controller iff current layer has animation enabled */}
             {hasAnimation && (
