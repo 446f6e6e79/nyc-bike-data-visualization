@@ -7,17 +7,17 @@ export const FACILITY_COLORS = {
     I:   [16,  185, 129, 255],   // emerald green
     II:  [37,   99, 235, 255],   // royal blue
     III: [245, 158,  11, 255],   // amber
-    IV:  [13,  148, 136, 255],   // teal
+    _default: [120, 120, 120, 255], // gray for unknown classes
 }
 
 /**
  * Human-readable labels for each facility class.
  */
 export const FACILITY_LABELS = {
-    I:   'Protected Path',
-    II:  'Bike Lane',
-    III: 'Shared Lane',
-    IV:  'Greenway',
+    I:   'Off-street Path',
+    II:  'Dedicated Lane',
+    III: 'Signed Shared Lane',
+    _default: 'Unknown'
 }
 
 /**
@@ -28,7 +28,6 @@ export const FACILITY_CSS_COLORS = {
     I:   'rgb(16,185,129)',
     II:  'rgb(37,99,235)',
     III: 'rgb(245,158,11)',
-    IV:  'rgb(13,148,136)',
     _default: 'rgb(120,120,120)',
 }
 
@@ -55,7 +54,7 @@ export function createBikeRoutesLayer({ routes }) {
         lineWidthMinPixels: LINE_WIDTH,
         lineWidthMaxPixels: LINE_WIDTH,
         // Line color based on facility class
-        getLineColor: (f) => {return FACILITY_COLORS[f.properties?.facilitycl]},
+        getLineColor: (f) => {return FACILITY_COLORS[f.facilityClass] || FACILITY_COLORS._default},
         // Hover Highlight styling
         pickable: true, // Enable picking for hover events
         autoHighlight: true,    // Highlight on hover
@@ -77,22 +76,16 @@ export function createBikeRoutesLayer({ routes }) {
  */
 export function bikeRouteTooltip(object) {
     // Avoid rendering if empty or malformed feature
-    if (!object?.properties) return ''
+    if (!object) return ''
     // Extract relevant properties with safe fallbacks
-    const { street, ft_facilit, facilitycl, bikedir, fromstreet, tostreet } =
-        object.properties
+    const { streetName, facilityClass, fromStreet, toStreet } = object
     // Map facility class to human-readable label, with a fallback for unknown classes
-    const classLabel = FACILITY_LABELS[facilitycl] ?? 'Unknown'
-    // Map bike direction codes to human-readable labels, with a fallback for unknown codes
-    const dirLabel =
-        bikedir === '1' ? 'One-way' : bikedir === '2' ? 'Bidirectional' : bikedir ?? '—'
+    const classLabel = FACILITY_LABELS[facilityClass] ?? 'Unknown'
 
     return [
-        street         ? `Streets: ${street}`                       : null,
-        fromstreet && tostreet
-                       ? `   ${fromstreet} ---> ${tostreet}`      : null,
-        `Type of facility:  ${classLabel}`,
-        `Available direction:  ${dirLabel}`,
+        `Streets: ${streetName}`,
+        `${fromStreet} ---> ${toStreet}`,
+        `Facility Class:  ${classLabel}`,
     ]
         .filter(Boolean)
         .join('\n')

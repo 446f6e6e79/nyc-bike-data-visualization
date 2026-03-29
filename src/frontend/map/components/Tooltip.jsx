@@ -19,7 +19,7 @@ export default function Tooltip({ object, activeLayer }) {
             return tripFlowTooltip(object)
         case 'infrastructure':
             // Distinguish between station availability points and bike route segments
-            if (object.properties !== undefined) {
+            if (object.geometry !== undefined) {
                 return bikeRouteTooltip(object)
             }
             return stationAvailabilityTooltip(object)
