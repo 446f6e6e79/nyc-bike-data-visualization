@@ -1,64 +1,46 @@
 import re
 import polars as pl
+from datetime import datetime
 from src.backend.loaders.bike_routes_loader import load_bike_routes_data, BikeRoutesFrame
-from src.backend.models.bike_route import BikeRoute, BikeSegmentGeometry, Coordinate
+from src.backend.models.bike_route import BikeRoute, BikeSegmentGeometry, GeometryType
 
 def _collect_if_lazy(df: BikeRoutesFrame) -> pl.DataFrame:
     """Helper to convert LazyFrame to DataFrame if needed."""
     return df.collect() if isinstance(df, pl.LazyFrame) else df
 
-def _flatten_coords(coords_raw: list) -> list[tuple[float, float]]:
-    """Helper function to flatten nested coordinate lists into a flat list of (lat, lng) tuples."""
-    flat = []
-    for item in coords_raw:
-        if isinstance(item, (list, tuple)) and item and isinstance(item[0], (list, tuple)):
-            # nested list of coordinates
-            for sub in item:
-                flat.append((float(sub[0]), float(sub[1])))
-        else:
-            flat.append((float(item[0]), float(item[1])))
-    return flat
+def _parse_wkt_multilinestring(wkt: str) -> list[list[list[float]]]:
+    """Parse a MultiLineString WKT into a list of line segments, each a list of [lng, lat] pairs."""
+    segment_re = r"\(([^()]+)\)"
+    coord_re = r"(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s+(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)"
+    return [
+        [[float(lng), float(lat)] for lng, lat in re.findall(coord_re, segment)]
+        for segment in re.findall(segment_re, wkt)
+    ]
 
-def _parse_wkt_coords(wkt: str) -> list[tuple[float, float]]:
-        """Helper function to extract coordinate pairs from WKT strings."""
-        num_re = r"(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)"
-        pairs = re.findall(num_re + r"\s+" + num_re, wkt)
-        return [(float(x), float(y)) for x, y in pairs]
-
+def _parse_wkt_linestring(wkt: str) -> list[list[float]]:
+    """Parse a LineString WKT into a list of [lng, lat] pairs."""
+    coord_re = r"(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s+(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)"
+    return [[float(lng), float(lat)] for lng, lat in re.findall(coord_re, wkt)]
 
 def load_bike_routes() -> list[BikeRoute]:
     """Fetch all bike route segments and return as BikeRoute objects."""
-    
-    # Load the bike routes data, ensuring it's collected into memory for processing
     df = _collect_if_lazy(load_bike_routes_data())
     routes = []
-    # Convert each row of the DataFrame into a BikeRoute object    
-    for row in df.iter_rows(named=True):
-        # Extract geometry information
-        geometry = row["the_geom"]
 
-        if isinstance(geometry, str):
-            # Extract geometry type and coordinates from WKT string
-            geom_type = (
-                "MultiLineString"
-                if geometry.strip().upper().startswith("MULTILINESTRING")
-                else "LineString"
-            )
-            raw_coords = _parse_wkt_coords(geometry)
-            coords = raw_coords
+    for row in df.iter_rows(named=True):
+        wkt: str = row["the_geom"]
+        is_multi = wkt.strip().upper().startswith("MULTILINESTRING")
+        geom_type = GeometryType.MULTILINESTRING if is_multi else GeometryType.LINESTRING
+        coordinates = _parse_wkt_multilinestring(wkt) if is_multi else _parse_wkt_linestring(wkt)
 
         routes.append(
             BikeRoute(
-                geometry=BikeSegmentGeometry(
-                    type=geom_type,
-                    # Add the coordinates as a list of Coordinate objects
-                    coordinates=[Coordinate(lat=coord[1], lng=coord[0]) for coord in coords],
-                ),
+                geometry=BikeSegmentGeometry(type=geom_type, coordinates=coordinates),
                 streetName=row["street"],
                 fromStreet=row["fromstreet"],
                 toStreet=row["tostreet"],
                 facilityClass=row["facilitycl"],
-                instDate=row["instdate"],
+                instDate=datetime.strptime(row["instdate"], "%m/%d/%Y").date()
             )
         )
 
