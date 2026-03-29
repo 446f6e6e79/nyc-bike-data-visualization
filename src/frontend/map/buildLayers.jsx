@@ -8,7 +8,8 @@ import { createTripFlowLayer } from './layers/tripFlowLayer.jsx'
 import { useTripFlowLayer } from './hooks/useTripFlowLayer.jsx'
 // Station Availability Layer
 import { createStationAvailabilityLayer } from './layers/stationAvailabilityLayer.jsx'
-import { useStationAvailabilityLayer } from './hooks/useStationAvailabilityLayer.jsx'
+import { createBikeRoutesLayer } from './layers/bikeRoutesLayer.jsx'
+import { useInfrastructureLayer } from './hooks/useInfrastructureLayer.jsx'
 
 import { useMemo } from 'react'
 import { MAP_STYLES } from '../pages/MapPage.jsx'
@@ -20,17 +21,17 @@ import { MAP_STYLES } from '../pages/MapPage.jsx'
  * @param {string} activeLayer - The currently active map layer to determine which layers to build.
  * @returns {Object} The built layers and their status.
  */
-export function buildLayers({ filters, currentTime, activeLayer }) {
+export function buildLayers({ filters, currentTime, activeLayer, showBikeRoutes }) {
     // Fetch and process data
     const { frameStations, maxUsage, maxDelta,loading: stationLoading, error: stationError } = useStationUsageLayer({ filters: filters, currentTime })
     const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters: filters })
-    const { stations, loading: availabilityLoading, error: availabilityError } = useStationAvailabilityLayer()
+    const { stations, bikeRoutes, loading: availabilityLoading, error: availabilityError } = useInfrastructureLayer({ showBikeRoutes })
 
     // Combine loading and error states for easier handling in the component
     const stateLayers = [
         { layer: 'station_usage', loading: stationLoading, error: stationError },
         { layer: 'trip_flow', loading: tripLoading, error: tripError },
-        { layer: 'station_availability', loading: availabilityLoading, error: availabilityError }
+        { layer: 'infrastructure', loading: availabilityLoading, error: availabilityError }
     ]
 
     // Build layers based on active layer and data
@@ -46,13 +47,16 @@ export function buildLayers({ filters, currentTime, activeLayer }) {
             if (!tripLoading && !tripError)
                 base.push(createTripFlowLayer({ trips, maxTripCount: maxTripFlow }))
         }
-        if (activeLayer === 'station_availability') {
+        if (activeLayer === 'infrastructure') {
             if (!availabilityLoading && !availabilityError)
+                if (showBikeRoutes && bikeRoutes.length > 0) {
+                    base.push(createBikeRoutesLayer({ routes: bikeRoutes }))
+                }
                 base.push(createStationAvailabilityLayer({ stations: stations }))
         }
 
         return base
-    }, [frameStations, maxUsage, trips, maxTripFlow, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError])
+    }, [frameStations, maxUsage, trips, maxTripFlow, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes])
 
     // Consider the loading and error states of only the active layer for the overall status
     const loading = stateLayers.find(layer => layer.layer === activeLayer)?.loading || false

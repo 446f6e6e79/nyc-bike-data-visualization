@@ -1,5 +1,6 @@
 import { stationUsageTooltip } from '../layers/stationUsageLayer.jsx'
 import { tripFlowTooltip } from '../layers/tripFlowLayer.jsx'
+import { bikeRouteTooltip } from '../layers/bikeRoutesLayer.jsx'
 import { stationAvailabilityTooltip } from '../layers/stationAvailabilityLayer.jsx'
 
 /**
@@ -16,7 +17,11 @@ export default function Tooltip({ object, activeLayer }) {
             return stationUsageTooltip(object)
         case 'trip_flow':
             return tripFlowTooltip(object)
-        case 'station_availability':
+        case 'infrastructure':
+            // Distinguish between station availability points and bike route segments
+            if (object.geometry !== undefined) {
+                return bikeRouteTooltip(object)
+            }
             return stationAvailabilityTooltip(object)
         default:
             return null

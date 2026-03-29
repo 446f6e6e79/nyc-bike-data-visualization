@@ -1,4 +1,5 @@
 import { ScatterplotLayer } from '@deck.gl/layers'
+import { bikeRoutesLegend } from './bikeRoutesLayer.jsx'
 
 /**
  * Creates a scatterplot layer for displaying station availability information.
@@ -45,7 +46,6 @@ function getStationColor(health) {
  * @returns {string} A formatted string with station information for the tooltip.
  */
 export function stationAvailabilityTooltip( object ) {
-    console.log(object)
     return `
             ${object.name}\n
             Available Classical Bikes: ${object.classicalBikes}
@@ -56,10 +56,10 @@ export function stationAvailabilityTooltip( object ) {
 }
 
 /**
- * Renders the legend for the station availability layer, explaining the color coding of station health.
- * @returns The JSX for the station availability legend, which includes a description of the color coding used to represent station health (green, amber, red).
+ * Generates the legend for the station availability layer, with an optional section for bike routes if they are being displayed.
+ * @param {boolean} showBikeRoutes
  */
-export function stationAvailabilityLegend() {
+export function stationAvailabilityLegend({ showBikeRoutes = false } = {}) {
     return (
         <div className="map-legend">
             <div className="map-legend-desc">
@@ -69,7 +69,14 @@ export function stationAvailabilityLegend() {
                     <b>Red</b>: Unhealthy (broken/disabled)
                 </small>
             </div>
+            {showBikeRoutes && (
+                <div style={{ marginTop: 10 }}>
+                    <small style={{ opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Bike Routes
+                    </small>
+                    {bikeRoutesLegend()}
+                </div>
+            )}
         </div>
     )
-}
-        
+}    

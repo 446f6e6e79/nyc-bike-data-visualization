@@ -8,14 +8,14 @@ import { tripFlowLegend } from "../layers/tripFlowLayer.jsx"
  * @param {string} activeLayer - The currently active map layer to determine which legend to display. 
  * @returns The JSX for the map legend, which includes a title and specific legend content based on the active layer. The legend content is defined in separate functions for each layer type, allowing for easy extension in the future by adding new entries to the availableLegends object.
  */
-export default function MapLegend({ activeLayer }) {
+export default function MapLegend({ activeLayer, showBikeRoutes }) {
     // Get label of the active layer from the options
     const activeLayerLabel = LAYER_OPTIONS.find((layer) => layer.value === activeLayer)?.label || 'Unknown layer'
     // Define the available legends for each layer type, which can be easily extended in the future by adding new entries to this object.
     const availableLegends = {
         'station_usage': stationUsageLegend(),
         'trip_flow': tripFlowLegend(),
-        'station_availability': stationAvailabilityLegend(),
+        'infrastructure': stationAvailabilityLegend({ showBikeRoutes }),
     }
 
     return (
