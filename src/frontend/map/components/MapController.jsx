@@ -1,5 +1,6 @@
 import { LAYER_OPTIONS } from "../../pages/MapPage.jsx"
 import SpeedController from "./SpeedController"
+import BikeRoutesToggle from "./BikeRoutesToggle"
 
 /**
  * Component for controlling the active map layer and animation settings. 
@@ -31,15 +32,10 @@ export default function MapController({ activeLayer, setActiveLayer, currentTime
 
             {/* Bike routes toggle — only relevant on the availability layer */}
             {activeLayer === 'station_availability' && (
-                <label className="map-controls-label" style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                    <input
-                        type="checkbox"
-                        checked={showBikeRoutes}
-                        onChange={(e) => setShowBikeRoutes(e.target.checked)}
-                        style={{ cursor: 'pointer' }}
-                    />
-                    Bike routes
-                </label>
+                <BikeRoutesToggle
+                    showBikeRoutes={showBikeRoutes}
+                    setShowBikeRoutes={setShowBikeRoutes}
+                />
             )}
 
             {/* Add speed controller iff current layer has animation enabled */}
