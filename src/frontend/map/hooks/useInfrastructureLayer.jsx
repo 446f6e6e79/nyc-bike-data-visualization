@@ -9,7 +9,7 @@ import useBikeRoutes from '../../hooks/useBikeRoutes.js'
  * @param {boolean} showBikeRoutes - Whether to include bike route data in the returned object.
  * @returns 
  */
-export function useStationAvailabilityLayer({ showBikeRoutes = false } = {}) {
+export function useInfrastructureLayer({ showBikeRoutes = false } = {}) {
     const { stationData, loading: stationsLoading, error: stationsError } = useStationAvailability()
     const { bikeRoutes, loading: routesLoading, error: routesError } = useBikeRoutes()
 

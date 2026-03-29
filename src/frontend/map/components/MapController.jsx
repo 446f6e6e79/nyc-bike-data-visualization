@@ -31,7 +31,7 @@ export default function MapController({ activeLayer, setActiveLayer, currentTime
             <p className="map-controls-hint">Shift + drag to rotate</p>
 
             {/* Bike routes toggle — only relevant on the availability layer */}
-            {activeLayer === 'station_availability' && (
+            {activeLayer === 'infrastructure' && (
                 <BikeRoutesToggle
                     showBikeRoutes={showBikeRoutes}
                     setShowBikeRoutes={setShowBikeRoutes}

@@ -15,7 +15,7 @@ export default function MapLegend({ activeLayer, showBikeRoutes }) {
     const availableLegends = {
         'station_usage': stationUsageLegend(),
         'trip_flow': tripFlowLegend(),
-        'station_availability': stationAvailabilityLegend({ showBikeRoutes }),
+        'infrastructure': stationAvailabilityLegend({ showBikeRoutes }),
     }
 
     return (
