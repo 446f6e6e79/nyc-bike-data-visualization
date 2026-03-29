@@ -2,9 +2,6 @@
     Script to download and merge the bike-sharing trip data from the S3 bucket.
     The script will filter files by date range and dataset type (JC or non-JC)
     and convert the CSV files inside each downloaded ZIP into a single parquet file.
-
-    #TODO: Add functionality to download only missing data files from the specified date range
-    For weather data and station data, check if the data already exists and it is at most 1 month old before downloading again
 """
 import argparse
 import os
@@ -14,8 +11,8 @@ from datetime import date
 from utils.distances import compute_and_save_station_distances
 from utils.rides import download_ride_data
 from utils.weather import download_weather_data
+from utils.bike_routes import download_bike_routes
 from src.backend.config import (
-    BASE_URL_RIDE_DATA,
     DATA_DIR,
     RIDES_DATA_DIR,
     WEATHER_DATA_DIR,
@@ -23,6 +20,7 @@ from src.backend.config import (
     DEFAULT_START_DATE,
     DEFAULT_END_DATE,
     DOWNLOAD_JC,
+    BIKE_ROUTES_DATA_DIR,
 )
 
 def validate_yyyymm(date_value: str, arg_name: str) -> None:
@@ -81,9 +79,10 @@ def main():
     os.makedirs(RIDES_DATA_DIR, exist_ok=True)
     os.makedirs(STATION_DATA_DIR, exist_ok=True)
     os.makedirs(WEATHER_DATA_DIR, exist_ok=True)
+    os.makedirs(BIKE_ROUTES_DATA_DIR, exist_ok=True)
 
     # Download and convert the filtered files
-    download_ride_data(args.start_date, args.end_date, BASE_URL_RIDE_DATA, RIDES_DATA_DIR, download_jc=args.download_jc)
+    download_ride_data(args.start_date, args.end_date, download_jc=args.download_jc)
 
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances(force_download=args.force_download)
@@ -91,5 +90,7 @@ def main():
     # Download hourly weather data for the requested date range
     download_weather_data(args.start_date, args.end_date, force_download=args.force_download)
 
+    # Download and preprocess bike route data
+    download_bike_routes(force_download=args.force_download)
 if __name__ == "__main__":
     main()

@@ -8,12 +8,12 @@ BACKEND_ROOT = Path(__file__).resolve().parent
 BASE_URL_RIDE_DATA = "https://s3.amazonaws.com/tripdata/"
 WEATHER_API_URL = "https://archive-api.open-meteo.com/v1/archive"
 
+# URL for downloading bike route data from NYC Open Data
+BIKE_ROUTES_URL = "https://data.cityofnewyork.us/api/views/mzxg-pwib/rows.csv?accessType=DOWNLOAD"
+
 # URLs provided by Lyft's GBFS feed
 INFO_URL = "https://gbfs.lyft.com/gbfs/2.3/bkn/en/station_information.json"
 STATUS_URL = "https://gbfs.lyft.com/gbfs/2.3/bkn/en/station_status.json"
-# URLs for NYC bike routes data (GeoJSON format from NYC Open Data)
-BIKE_ROUTES_URL = "https://data.cityofnewyork.us/resource/mzxg-pwib.geojson?$limit=10000"
-BIKE_ROUTES_TTL_SECONDS = 3600  # 1 hour refresh for bike routes data
 
 # Cache settings for GBFS data
 TTL_SECONDS = 60  # Cache time-to-live in seconds
@@ -28,6 +28,8 @@ RIDES_DATA_DIR = DATA_DIR / "rides"             # Directory for processed ride d
 WEATHER_DATA_DIR = DATA_DIR / "weather"         # Directory for processed weather data
 STATION_DATA_DIR = DATA_DIR / "stations"        # Directory for precomputed station-pair distances
 STATION_DISTANCES_PATH = STATION_DATA_DIR / "station_pair_distances.parquet"
+BIKE_ROUTES_DATA_DIR = DATA_DIR / "bike_routes" # Directory for preprocessed bike route data
+BIKE_ROUTES_PATH = BIKE_ROUTES_DATA_DIR / "bike_routes.parquet"
 
 # Setting for weather data retrieval
 NYC_COORDS = (40.7823234, -73.9654161)
