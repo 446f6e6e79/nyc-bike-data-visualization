@@ -1,17 +1,35 @@
-from typing import Optional
+from enum import Enum
 from pydantic import BaseModel
 
-class BikeRouteGeometry(BaseModel):
-    type: str                    # "LineString" or "MultiLineString"
-    coordinates: list            # list of [lon, lat] pairs, representing a list that identifies the path of the bike route
 
+class Coordinate(BaseModel):
+    """Model representing a geographic coordinate with latitude and longitude."""
+    lat: float
+    lng: float
+
+
+class GeometryType(str, Enum):
+    """Enum for the type of geometry in the bike route data.
+    Possible values include:
+    - LineString: A single line representing a bike route segment
+    - MultiLineString: Multiple lines representing a bike route segment that may have multiple paths
+      (e.g. a loop or a route with branches)
+    """
+    LINESTRING = "LineString"
+    MULTILINESTRING = "MultiLineString"
+
+
+class BikeSegmentGeometry(BaseModel):
+    type: GeometryType
+    coordinates: list[Coordinate]
+
+
+# TODO: enrich with other information
 class BikeRoute(BaseModel):
     """A single NYC bike route segment."""
-    geometry: BikeRouteGeometry
-    street: Optional[str] = None         # street name
-    facilitycl: Optional[str] = None     # facility class (e.g. "I", "II", "III", "IV")
-    facilitytyp: Optional[str] = None    # e.g. "Greenway", "Protected Path"
-    tf_facilit: Optional[str] = None     # travel direction facility (T→F)
-    ft_facilit: Optional[str] = None     # travel direction facility (F→T)
-    bikedir: Optional[str] = None        # direction: "TF", "FT", "TW"
-    borough: Optional[str] = None
+    geometry: BikeSegmentGeometry
+    streetName: str
+    fromStreet: str
+    toStreet: str
+    facilityClass: str          # The type of bike facility. A value from ['I', 'II', 'III', 'L']
+    instDate: str               # The date the bike route segment was installed, in YYYY-MM-DD format

@@ -11,7 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.backend.routes import stations, rides, stats, bike_routes
 from src.backend.loaders.distances_loader import load_distances_data
 from src.backend.loaders.rides_loader import load_ride_data
-from src.backend.loaders.weather_loader import load_weather_data   
+from src.backend.loaders.weather_loader import load_weather_data 
+from src.backend.loaders.bike_routes_loader import load_bike_routes_data 
 
 from src.backend.config import IN_MEMORY_CACHE_ENABLED as IN_MEMORY, TEST_ENV_VAR, LOG_FILE_PATH, LOG_LEVEL
 
@@ -47,6 +48,7 @@ async def lifespan(app: FastAPI):
     load_ride_data(inMemory=IN_MEMORY, test=test)
     load_distances_data(inMemory=IN_MEMORY, test=test)
     load_weather_data(inMemory=IN_MEMORY, test=test)
+    load_bike_routes_data(inMemory=IN_MEMORY, test=test)
     yield
 
 

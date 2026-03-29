@@ -1,74 +1,65 @@
-import time
-from threading import Lock
+import re
+import polars as pl
+from src.backend.loaders.bike_routes_loader import load_bike_routes_data, BikeRoutesFrame
+from src.backend.models.bike_route import BikeRoute, BikeSegmentGeometry, Coordinate
 
-import requests
-from fastapi import HTTPException
+def _collect_if_lazy(df: BikeRoutesFrame) -> pl.DataFrame:
+    """Helper to convert LazyFrame to DataFrame if needed."""
+    return df.collect() if isinstance(df, pl.LazyFrame) else df
 
-from src.backend.config import BIKE_ROUTES_URL, BIKE_ROUTES_TTL_SECONDS
+def _flatten_coords(coords_raw: list) -> list[tuple[float, float]]:
+    """Helper function to flatten nested coordinate lists into a flat list of (lat, lng) tuples."""
+    flat = []
+    for item in coords_raw:
+        if isinstance(item, (list, tuple)) and item and isinstance(item[0], (list, tuple)):
+            # nested list of coordinates
+            for sub in item:
+                flat.append((float(sub[0]), float(sub[1])))
+        else:
+            flat.append((float(item[0]), float(item[1])))
+    return flat
 
-_cache_lock = Lock()
-_cache: dict = {
-    "timestamp": 0.0,
-    "features": None,
-}
+def _parse_wkt_coords(wkt: str) -> list[tuple[float, float]]:
+        """Helper function to extract coordinate pairs from WKT strings."""
+        num_re = r"(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)"
+        pairs = re.findall(num_re + r"\s+" + num_re, wkt)
+        return [(float(x), float(y)) for x, y in pairs]
 
-def _fetch_from_source() -> list[dict]:
-    """Fetch GeoJSON feature list from the NYC Open Data endpoint."""
-    response = requests.get(BIKE_ROUTES_URL, timeout=(5, 30))
-    response.raise_for_status()
-    geojson = response.json()
-    return geojson.get("features", [])
 
-def fetch_bike_routes(force_refresh: bool = False) -> list[dict]:
-    """
-    Return bike route GeoJSON features with a 1-hour in-memory cache.
-    Falls back to stale cache if the upstream API is unavailable.
-    """
-    now = time.monotonic()
+def load_bike_routes() -> list[BikeRoute]:
+    """Fetch all bike route segments and return as BikeRoute objects."""
+    
+    # Load the bike routes data, ensuring it's collected into memory for processing
+    df = _collect_if_lazy(load_bike_routes_data())
+    routes = []
+    # Convert each row of the DataFrame into a BikeRoute object    
+    for row in df.iter_rows(named=True):
+        # Extract geometry information
+        geometry = row["the_geom"]
 
-    with _cache_lock:
-        cache_valid = (
-            not force_refresh
-            and _cache["features"] is not None
-            and (now - _cache["timestamp"] < BIKE_ROUTES_TTL_SECONDS)
+        if isinstance(geometry, str):
+            # Extract geometry type and coordinates from WKT string
+            geom_type = (
+                "MultiLineString"
+                if geometry.strip().upper().startswith("MULTILINESTRING")
+                else "LineString"
+            )
+            raw_coords = _parse_wkt_coords(geometry)
+            coords = raw_coords
+
+        routes.append(
+            BikeRoute(
+                geometry=BikeSegmentGeometry(
+                    type=geom_type,
+                    # Add the coordinates as a list of Coordinate objects
+                    coordinates=[Coordinate(lat=coord[1], lng=coord[0]) for coord in coords],
+                ),
+                streetName=row["street"],
+                fromStreet=row["fromstreet"],
+                toStreet=row["tostreet"],
+                facilityClass=row["facilitycl"],
+                instDate=row["instdate"],
+            )
         )
-        if cache_valid:
-            return _cache["features"]
 
-    try:
-        features = _fetch_from_source()
-    except Exception as e:
-        with _cache_lock:
-            if _cache["features"] is not None:
-                return _cache["features"]
-        raise HTTPException(
-            status_code=503,
-            detail=f"Failed to fetch bike routes: {e}",
-        )
-
-    with _cache_lock:
-        _cache["timestamp"] = time.monotonic()
-        _cache["features"] = features
-
-    return features
-
-def _build_bike_route(feature: dict) -> dict:
-    """
-    Extract only the fields needed by the frontend from a raw GeoJSON feature.
-    Returns a plain dict matching the BikeRoute model.
-    """
-    props = feature.get("properties") or {}
-    geometry = feature.get("geometry") or {}
-    return {
-        "geometry": {
-            "type": geometry.get("type", "LineString"),
-            "coordinates": geometry.get("coordinates", []),
-        },
-        "street": props.get("street"),
-        "facilitycl": props.get("facilitycl"),
-        "facilitytyp": props.get("facilitytyp"),
-        "tf_facilit": props.get("tf_facilit"),
-        "ft_facilit": props.get("ft_facilit"),
-        "bikedir": props.get("bikedir"),
-        "borough": props.get("borough"),
-    }
+    return routes

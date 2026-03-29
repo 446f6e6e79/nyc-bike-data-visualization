@@ -30,6 +30,9 @@ def download_bike_routes(force_download: bool = False) -> None:
     
     # Read the file directly from the URL
     df = pl.read_csv(BIKE_ROUTES_URL)
+    #TODO: implement any necessary preprocessing steps here
+
+    
     # Write the DataFrame to a parquet file for faster future access
     df.write_parquet(
         BIKE_ROUTES_PATH,
