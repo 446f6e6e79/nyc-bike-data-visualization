@@ -31,19 +31,19 @@ export const FACILITY_CSS_COLORS = {
     _default: 'rgb(120,120,120)',
 }
 
-/** Line widths (metres) per class, for deck.gl getLineWidth. */
+/** Line widths (pixels) per class, for deck.gl getLineWidth. */
 const LINE_WIDTH = 5
 
 /**
  * Builds the GeoJSON line layer for bike routes.
  * @param {Array}    routes         - Array of GeoJSON Feature objects.
- * @param {Function} [onHover]      - Callback for hover events.
+ * @param {number|null} hoveredBikeId - The bikeid of the currently hovered route segment, or null if none.
+ * @param {function} onRoutePick    - Callback function to handle hover/click events on route segments.
  * @returns {GeoJsonLayer|null}
  */
-export function createBikeRoutesLayer({ routes }) {
+export function createBikeRoutesLayer({ routes, hoveredBikeId, onRoutePick }) {
     // To prevent rendering an empty layer, return null if there are no routes
     if (!routes?.length) return null
-    // The layer styling is based on the facility class (I, II, III, IV) for color and width.
     return new GeoJsonLayer({
         id: 'bike-routes-line-layer',
         data: routes,
@@ -53,16 +53,24 @@ export function createBikeRoutesLayer({ routes }) {
         lineWidthUnits: 'pixels',
         lineWidthMinPixels: LINE_WIDTH,
         lineWidthMaxPixels: LINE_WIDTH,
-        // Line color based on facility class
-        getLineColor: (f) => {return FACILITY_COLORS[f.facilityClass] || FACILITY_COLORS._default},
-        // Hover Highlight styling
-        pickable: true, // Enable picking for hover events
-        autoHighlight: true,    // Highlight on hover
-        highlightColor: [255, 255, 255, 220],   // Bright white highlight with some opacity 
-        // Update triggers to ensure the layer re-renders when the routes data changes
+        // Line color: highlight every segment sharing the hovered bikeId,
+        getLineColor: (f) => {
+            const base = FACILITY_COLORS[f.facilityClass] ?? FACILITY_COLORS._default
+            if (hoveredBikeId == null) return base
+            return f.bikeid === hoveredBikeId
+                ? [255, 255, 255, 255]              // HIGHLIGHTED SEGMENTS
+                : [base[0], base[1], base[2], 255] // NOT SELECTED BIKE ROUTES
+            // No hover active — normal class-based colour
+        },
+        // Hover events
+        pickable: true,
+        autoHighlight: false,   // Manual highlighting via getLineColor above
+        onHover: onRoutePick,
+        onClick: onRoutePick,
+        // Rebuild colour accessor whenever routes data or the hovered id changes
         updateTriggers: {
-            getLineColor:  [routes],
-            getLineWidth:  [routes],
+            getLineColor: [hoveredBikeId],
+            getLineWidth: [routes],
         },
     })
 }

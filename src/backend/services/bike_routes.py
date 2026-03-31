@@ -36,6 +36,7 @@ def load_bike_routes() -> list[BikeRoute]:
         routes.append(
             BikeRoute(
                 geometry=BikeSegmentGeometry(type=geom_type, coordinates=coordinates),
+                bikeid=row["bikeid"],
                 streetName=row["street"],
                 fromStreet=row["fromstreet"],
                 toStreet=row["tostreet"],

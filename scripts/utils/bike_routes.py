@@ -10,7 +10,6 @@ def _clean_bike_data(df: pl.DataFrame) -> pl.DataFrame:
 
     # Drop columns unused by the frontend
     df = df.drop([
-        'bikeid',
         'prevbikeid',
         'status',       # redundant after filtering
         'ret_date',     # null for all current records

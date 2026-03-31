@@ -11,7 +11,7 @@ import { createStationAvailabilityLayer } from './layers/stationAvailabilityLaye
 import { createBikeRoutesLayer } from './layers/bikeRoutesLayer.jsx'
 import { useInfrastructureLayer } from './hooks/useInfrastructureLayer.jsx'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { MAP_STYLES } from '../pages/MapPage.jsx'
 
 /**
@@ -26,6 +26,12 @@ export function buildLayers({ filters, currentTime, activeLayer, showBikeRoutes 
     const { frameStations, maxUsage, maxDelta,loading: stationLoading, error: stationError } = useStationUsageLayer({ filters: filters, currentTime })
     const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters: filters })
     const { stations, bikeRoutes, loading: availabilityLoading, error: availabilityError } = useInfrastructureLayer({ showBikeRoutes })
+    // State for hovered bike route segment
+    const [hoveredBikeId, setHoveredBikeId] = useState(null)
+    const handleRoutePick = (info) => {
+        const route = info?.object
+        setHoveredBikeId(route?.bikeid ?? route?.properties?.bikeid ?? null)
+    }
 
     // Combine loading and error states for easier handling in the component
     const stateLayers = [
@@ -50,13 +56,13 @@ export function buildLayers({ filters, currentTime, activeLayer, showBikeRoutes 
         if (activeLayer === 'infrastructure') {
             if (!availabilityLoading && !availabilityError)
                 if (showBikeRoutes && bikeRoutes.length > 0) {
-                    base.push(createBikeRoutesLayer({ routes: bikeRoutes }))
+                    base.push(createBikeRoutesLayer({ routes: bikeRoutes, hoveredBikeId: hoveredBikeId, onRoutePick: handleRoutePick }))
                 }
                 base.push(createStationAvailabilityLayer({ stations: stations }))
         }
 
         return base
-    }, [frameStations, maxUsage, trips, maxTripFlow, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes])
+    }, [frameStations, maxUsage, trips, maxTripFlow, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes, hoveredBikeId])
 
     // Consider the loading and error states of only the active layer for the overall status
     const loading = stateLayers.find(layer => layer.layer === activeLayer)?.loading || false
