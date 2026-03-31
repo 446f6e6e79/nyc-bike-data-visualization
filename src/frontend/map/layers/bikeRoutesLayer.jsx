@@ -37,11 +37,11 @@ const LINE_WIDTH = 5
 /**
  * Builds the GeoJSON line layer for bike routes.
  * @param {Array}    routes         - Array of GeoJSON Feature objects.
- * @param {number|null} hoveredBikeId - The bikeid of the currently hovered route segment, or null if none.
+ * @param {number|null} hoveredrouteID - The routeID of the currently hovered route segment, or null if none.
  * @param {function} onRoutePick    - Callback function to handle hover/click events on route segments.
  * @returns {GeoJsonLayer|null}
  */
-export function createBikeRoutesLayer({ routes, hoveredBikeId, onRoutePick }) {
+export function createBikeRoutesLayer({ routes, hoveredrouteID, onRoutePick }) {
     // To prevent rendering an empty layer, return null if there are no routes
     if (!routes?.length) return null
     return new GeoJsonLayer({
@@ -53,11 +53,11 @@ export function createBikeRoutesLayer({ routes, hoveredBikeId, onRoutePick }) {
         lineWidthUnits: 'pixels',
         lineWidthMinPixels: LINE_WIDTH,
         lineWidthMaxPixels: LINE_WIDTH,
-        // Line color: highlight every segment sharing the hovered bikeId,
+        // Line color: highlight every segment sharing the hovered routeID,
         getLineColor: (f) => {
             const base = FACILITY_COLORS[f.facilityClass] ?? FACILITY_COLORS._default
-            if (hoveredBikeId == null) return base
-            return f.bikeid === hoveredBikeId
+            if (hoveredrouteID == null) return base
+            return f.routeID === hoveredrouteID
                 ? [255, 255, 255, 255]              // HIGHLIGHTED SEGMENTS
                 : [base[0], base[1], base[2], 255] // NOT SELECTED BIKE ROUTES
             // No hover active — normal class-based colour
@@ -69,7 +69,7 @@ export function createBikeRoutesLayer({ routes, hoveredBikeId, onRoutePick }) {
         onClick: onRoutePick,
         // Rebuild colour accessor whenever routes data or the hovered id changes
         updateTriggers: {
-            getLineColor: [hoveredBikeId],
+            getLineColor: [hoveredrouteID],
             getLineWidth: [routes],
         },
     })

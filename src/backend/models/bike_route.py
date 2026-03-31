@@ -21,7 +21,7 @@ class FacilityClass(str, Enum):
 class BikeRoute(BaseModel):
     """A single NYC bike route segment."""
     geometry: BikeSegmentGeometry
-    bikeid: int
+    routeID: int
     streetName: str
     fromStreet: str
     toStreet: str

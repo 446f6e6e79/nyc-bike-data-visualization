@@ -27,10 +27,10 @@ export function buildLayers({ filters, currentTime, activeLayer, showBikeRoutes 
     const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters: filters })
     const { stations, bikeRoutes, loading: availabilityLoading, error: availabilityError } = useInfrastructureLayer({ showBikeRoutes })
     // State for hovered bike route segment
-    const [hoveredBikeId, setHoveredBikeId] = useState(null)
+    const [hoveredrouteID, setHoveredrouteID] = useState(null)
     const handleRoutePick = (info) => {
         const route = info?.object
-        setHoveredBikeId(route?.bikeid ?? route?.properties?.bikeid ?? null)
+        setHoveredrouteID(route?.routeID ?? route?.properties?.routeID ?? null)
     }
 
     // Combine loading and error states for easier handling in the component
@@ -56,13 +56,13 @@ export function buildLayers({ filters, currentTime, activeLayer, showBikeRoutes 
         if (activeLayer === 'infrastructure') {
             if (!availabilityLoading && !availabilityError)
                 if (showBikeRoutes && bikeRoutes.length > 0) {
-                    base.push(createBikeRoutesLayer({ routes: bikeRoutes, hoveredBikeId: hoveredBikeId, onRoutePick: handleRoutePick }))
+                    base.push(createBikeRoutesLayer({ routes: bikeRoutes, hoveredrouteID: hoveredrouteID, onRoutePick: handleRoutePick }))
                 }
                 base.push(createStationAvailabilityLayer({ stations: stations }))
         }
 
         return base
-    }, [frameStations, maxUsage, trips, maxTripFlow, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes, hoveredBikeId])
+    }, [frameStations, maxUsage, trips, maxTripFlow, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes, hoveredrouteID])
 
     // Consider the loading and error states of only the active layer for the overall status
     const loading = stateLayers.find(layer => layer.layer === activeLayer)?.loading || false
