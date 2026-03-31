@@ -88,7 +88,7 @@ def main():
     compute_and_save_station_distances(force_download=args.force_download)
 
     # Download hourly weather data for the requested date range
-    download_weather_data(args.start_date, args.end_date, force_download=args.force_download)
+    download_weather_data(args.start_date, args.end_date)
 
     # Download and preprocess bike route data
     download_bike_routes(force_download=args.force_download)
