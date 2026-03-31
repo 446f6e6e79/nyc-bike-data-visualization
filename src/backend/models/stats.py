@@ -6,6 +6,8 @@ class DatasetDateRange(BaseModel):
     min_date: date | None
     max_date: date | None
 
+#TODO: change days_count to hours_count and calculate average counts per hour instead of per day
+#TODO: add fields for average speed
 class Stats(BaseModel):
     """Base class for statistics models."""
     total_rides: int
@@ -16,6 +18,8 @@ class Stats(BaseModel):
     total_distance_km: float
 
 # Defines how we can group stats: by day_of_week, hour, both, or not at all (none)
+#TODO: add a grouping option for (months/season-> decide which one is better)
+#TODO: add a grouping option for weather conditions 
 class StatsGroupBy(str, Enum):
     NONE = "none"
     DAY_OF_WEEK = "day_of_week"
