@@ -8,7 +8,7 @@ def test_get_stats_no_filters():
     assert response.status_code == 200
     payload = response.json()
     assert payload["total_rides"] == 2
-    assert payload["days_count"] == 1
+    assert payload["hours_count"] == 2
     assert payload["average_duration_seconds"] > 0
     assert payload["average_distance_km"] > 0
     assert payload["total_duration_seconds"] > 0
@@ -24,7 +24,7 @@ def test_get_stats_user_type():
     assert response.status_code == 200
     payload = response.json()
     assert payload["total_rides"] == 0
-    assert payload["days_count"] == 0
+    assert payload["hours_count"] == 0
     assert payload["average_duration_seconds"] == 0
     assert payload["average_distance_km"] == 0
     assert payload["total_duration_seconds"] == 0
@@ -41,7 +41,7 @@ def test_get_stats_day_of_week_comma_separated():
     assert response.status_code == 200
     payload = response.json()
     assert payload["total_rides"] == 2
-    assert payload["days_count"] == 1
+    assert payload["hours_count"] == 2
 
 
 def test_get_stats_day_of_week_friday_only():
@@ -54,7 +54,7 @@ def test_get_stats_day_of_week_friday_only():
     assert response.status_code == 200
     payload = response.json()
     assert payload["total_rides"] == 2
-    assert payload["days_count"] == 1
+    assert payload["hours_count"] == 2
 
 
 def test_get_stats_day_of_week_saturday_only():
@@ -67,7 +67,7 @@ def test_get_stats_day_of_week_saturday_only():
     assert response.status_code == 200
     payload = response.json()
     assert payload["total_rides"] == 0
-    assert payload["days_count"] == 0
+    assert payload["hours_count"] == 0
 
 
 def test_get_stats_day_of_week_invalid_value():
@@ -91,7 +91,7 @@ def test_get_stats_group_by_none_matches_default():
     payload = response.json()
     assert isinstance(payload, dict)
     assert payload["total_rides"] == 2
-    assert payload["days_count"] == 1
+    assert payload["hours_count"] == 2
 
 
 def test_get_stats_grouped_default_day_of_week():
@@ -110,7 +110,7 @@ def test_get_stats_grouped_default_day_of_week():
 
     friday = next(row for row in payload if row["day_of_week"] == 4)
     assert friday["total_rides"] == 2
-    assert friday["days_count"] == 1
+    assert friday["hours_count"] == 2
 
 
 def test_get_stats_grouped_by_hour():
@@ -258,7 +258,7 @@ def test_get_station_counts_grouped_by_day_of_week():
             assert "outgoing_rides" in group
             assert "incoming_rides" in group
             assert "total_rides" in group
-            assert "days_count" in group
+            assert "hours_count" in group
             assert group["hour"] is None
             assert 0 <= group["day_of_week"] <= 6
             assert group["total_rides"] == group["outgoing_rides"] + group["incoming_rides"]

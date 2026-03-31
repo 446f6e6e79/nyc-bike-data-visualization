@@ -22,7 +22,7 @@ def _stats_aggregations() -> list[pl.Expr]:
     """Helper to return the list of aggregations needed to calculate stats for grouped queries."""
     return [
         pl.len().alias("total_rides"),
-        pl.col("started_at").dt.date().n_unique().alias("days_count"),
+        pl.col("started_at").dt.truncate("1h").n_unique().alias("hours_count"),
         pl.col("trip_duration_seconds").mean().alias("average_duration_seconds"),
         pl.col("distance_km").mean().alias("average_distance_km"),
         pl.col("trip_duration_seconds").sum().alias("total_duration_seconds"),
@@ -93,7 +93,7 @@ def _get_overall_stats(
     if df.is_empty():
         return Stats(
             total_rides=0,
-            days_count=0,
+            hours_count=0,
             average_duration_seconds=0.0,
             average_distance_km=0.0,
             total_duration_seconds=0.0,
@@ -101,7 +101,7 @@ def _get_overall_stats(
         )
     return Stats(
         total_rides=df.shape[0],
-        days_count=df["started_at"].dt.date().n_unique(),
+        hours_count=df["started_at"].dt.truncate("1h").n_unique(),
         average_duration_seconds=df["trip_duration_seconds"].mean(),
         average_distance_km=df["distance_km"].mean(),
         total_duration_seconds=df["trip_duration_seconds"].sum(),
@@ -151,7 +151,7 @@ def _get_grouped_stats(
             base.join(grouped, on="day_of_week", how="left")
             .with_columns([
                 pl.col("total_rides").fill_null(0).cast(pl.Int64),
-                pl.col("days_count").fill_null(0).cast(pl.Int64),
+                pl.col("hours_count").fill_null(0).cast(pl.Int64),
                 pl.col("average_duration_seconds").fill_null(0.0),
                 pl.col("average_distance_km").fill_null(0.0),
                 pl.col("total_duration_seconds").fill_null(0.0),
@@ -164,7 +164,7 @@ def _get_grouped_stats(
                 day_of_week=row["day_of_week"],
                 hour=None,
                 total_rides=row["total_rides"],
-                days_count=row["days_count"],
+                hours_count=row["hours_count"],
                 average_duration_seconds=row["average_duration_seconds"],
                 average_distance_km=row["average_distance_km"],
                 total_duration_seconds=row["total_duration_seconds"],
@@ -184,7 +184,7 @@ def _get_grouped_stats(
             base.join(grouped, on="hour", how="left")
             .with_columns([
                 pl.col("total_rides").fill_null(0).cast(pl.Int64),
-                pl.col("days_count").fill_null(0).cast(pl.Int64),
+                pl.col("hours_count").fill_null(0).cast(pl.Int64),
                 pl.col("average_duration_seconds").fill_null(0.0),
                 pl.col("average_distance_km").fill_null(0.0),
                 pl.col("total_duration_seconds").fill_null(0.0),
@@ -197,7 +197,7 @@ def _get_grouped_stats(
                 day_of_week=None,
                 hour=row["hour"],
                 total_rides=row["total_rides"],
-                days_count=row["days_count"],
+                hours_count=row["hours_count"],
                 average_duration_seconds=row["average_duration_seconds"],
                 average_distance_km=row["average_distance_km"],
                 total_duration_seconds=row["total_duration_seconds"],
@@ -219,7 +219,7 @@ def _get_grouped_stats(
         base.join(grouped, on=["day_of_week", "hour"], how="left")
         .with_columns([
             pl.col("total_rides").fill_null(0).cast(pl.Int64),
-            pl.col("days_count").fill_null(0).cast(pl.Int64),
+            pl.col("hours_count").fill_null(0).cast(pl.Int64),
             pl.col("average_duration_seconds").fill_null(0.0),
             pl.col("average_distance_km").fill_null(0.0),
             pl.col("total_duration_seconds").fill_null(0.0),
@@ -232,7 +232,7 @@ def _get_grouped_stats(
             day_of_week=row["day_of_week"],
             hour=row["hour"],
             total_rides=row["total_rides"],
-            days_count=row["days_count"],
+            hours_count=row["hours_count"],
             average_duration_seconds=row["average_duration_seconds"],
             average_distance_km=row["average_distance_km"],
             total_duration_seconds=row["total_duration_seconds"],
@@ -288,7 +288,7 @@ def get_station_ride_counts_stats(
             pl.first("start_station_name").alias("station_name"),         # Name of the station (from the ride start station metadata)
             pl.first("start_lat").alias("lat"),                             # Latitude of the station (taken from the starting point of the ride)
             pl.first("start_lng").alias("lon"),                             # Longitude of the station   
-            pl.col("started_at").dt.date().n_unique().alias("days_count"),  # Number of unique days with rides starting at the station (used to understand how many days contributed to the ride count)
+            pl.col("started_at").dt.truncate("1h").n_unique().alias("hours_count"), # Number of unique hours with rides starting at the station
         ])
         .rename({"start_station_id": "station_id"})                         # Rename the station_id column for the outgoing counts to "station_id" for easier joining later
     )
@@ -300,7 +300,7 @@ def get_station_ride_counts_stats(
             pl.first("end_station_name").alias("station_name"),           # Name of the station (from the ride end station metadata)
             pl.first("end_lat").alias("lat"),                               # Latitude of the station (taken from the ending point of the ride)
             pl.first("end_lng").alias("lon"),                               # Longitude of the station
-            pl.col("started_at").dt.date().n_unique().alias("days_count"),  # Number of unique days with rides ending at the station (used to understand how many days contributed to the ride count)
+            pl.col("started_at").dt.truncate("1h").n_unique().alias("hours_count"), # Number of unique hours with rides ending at the station
         ])
         .rename({"end_station_id": "station_id"})                           # Rename the station_id column for the incoming counts to "station_id" for easier joining later
     )
@@ -308,7 +308,7 @@ def get_station_ride_counts_stats(
     # Define the keys to join outgoing and incoming counts on. If grouping by time periods, we need to include those in the join keys
     join_keys = [*group_cols, "station_id"] if group_cols else ["station_id"]
 
-    # Join the outgoing and incoming counts on the station_id (and time period columns if grouping) to get a combined view of rides starting and ending at each station, along with their lat/lon and days_count. We use an outer join to ensure we include stations that only have outgoing or only have incoming rides, filling nulls with 0 for counts and coalescing lat/lon from either side of the join.
+    # Join the outgoing and incoming counts on the station_id (and time period columns if grouping) to get a combined view of rides starting and ending at each station, along with their lat/lon and hours_count. We use an outer join to ensure we include stations that only have outgoing or only have incoming rides, filling nulls with 0 for counts and coalescing lat/lon from either side of the join.
     station_counts = outgoing.join(
         incoming,
         on=join_keys,
@@ -327,11 +327,11 @@ def get_station_ride_counts_stats(
         pl.coalesce("lon", "lon_right").alias("lon"),
         pl.col("outgoing").fill_null(0),
         pl.col("incoming").fill_null(0),
-        # For the days_count, we take the max of the outgoing and incoming days_count to avoid double-counting days where there are both outgoing and incoming rides at the station.
+        # For the hours_count, we take the max of the outgoing and incoming hours_count to avoid double-counting hours where there are both outgoing and incoming rides at the station.
         pl.max_horizontal(
-            pl.col("days_count").fill_null(0),
-            pl.col("days_count_right").fill_null(0),
-        ).alias("days_count"),
+            pl.col("hours_count").fill_null(0),
+            pl.col("hours_count_right").fill_null(0),
+        ).alias("hours_count"),
     ])
 
     # Calculate the total rides for each station by summing the outgoing and incoming counts.
@@ -368,7 +368,7 @@ def get_station_ride_counts_stats(
                 outgoing_rides=row["outgoing"],
                 incoming_rides=row["incoming"],
                 total_rides=row["total_rides"],
-                days_count=row["days_count"],
+                hours_count=row["hours_count"],
             )
         )
 
@@ -467,7 +467,7 @@ def get_trips_between_stations_stats(
         (pl.col("start_station_id") <= pl.col("end_station_id")).alias("is_forward"),
     ])
 
-    pair_days = (
+    pair_hours = (
         rides.with_columns([
             *group_exprs,
             pl.when(pl.col("start_station_id") <= pl.col("end_station_id"))
@@ -486,7 +486,7 @@ def get_trips_between_stations_stats(
             .alias("pair_id"),
         ])
         .group_by([*group_cols, "pair_id"] if group_cols else ["pair_id"])
-        .agg(pl.col("started_at").dt.date().n_unique().alias("days_count"))
+        .agg(pl.col("started_at").dt.truncate("1h").n_unique().alias("hours_count"))
     )
 
     # Separate forward and reverse counts, naming them station_a and station_b consistently
@@ -524,7 +524,7 @@ def get_trips_between_stations_stats(
         how="outer",
         suffix="_right",
     ).join(
-        pair_days,
+        pair_hours,
         on=[*group_cols, "pair_id"] if group_cols else ["pair_id"],
         how="left",
     ).select([
@@ -543,7 +543,7 @@ def get_trips_between_stations_stats(
         # Fill nulls with 0 for counts where there is no data in one direction
         pl.col("a_to_b_count").fill_null(0),
         pl.col("b_to_a_count").fill_null(0),
-        pl.col("days_count").fill_null(0),
+        pl.col("hours_count").fill_null(0),
     ])
 
     paired_counts = paired_counts.with_columns(
@@ -579,7 +579,7 @@ def get_trips_between_stations_stats(
                 a_to_b_count=row["a_to_b_count"],
                 b_to_a_count=row["b_to_a_count"],
                 total_rides=row["total_rides"],
-                days_count=row["days_count"],
+                hours_count=row["hours_count"],
             )
         )
 

@@ -6,12 +6,11 @@ class DatasetDateRange(BaseModel):
     min_date: date | None
     max_date: date | None
 
-#TODO: change days_count to hours_count and calculate average counts per hour instead of per day
 #TODO: add fields for average speed
 class Stats(BaseModel):
     """Base class for statistics models."""
     total_rides: int
-    days_count: int        # Number of unique days in the dataset, used to calculate average daily counts
+    hours_count: int        # Number of hours that the stats are calculated over, used to calculate average hourly counts
     average_duration_seconds: float
     average_distance_km: float
     total_duration_seconds: float
@@ -39,7 +38,7 @@ class GroupedStationRideCount(BaseModel):
     outgoing_rides: int
     incoming_rides: int
     total_rides: int
-    days_count: int        # Number of unique days in the dataset for this station, used to calculate average daily counts
+    hours_count: int        # Number of hours that the stats are calculated over, used to calculate average hourly counts
 
 class StationRideCounts(BaseModel):
     """Station-level metadata with grouped ride buckets."""
@@ -58,7 +57,7 @@ class GroupedTripsCountBetweenStations(BaseModel):
     a_to_b_count: int
     b_to_a_count: int
     total_rides: int
-    days_count: int     # Number of unique days in the dataset for this station pair, used to calculate average daily counts
+    hours_count: int     # Number of hours that the stats are calculated over, used to calculate average hourly counts
 
 class TripsCountBetweenStations(BaseModel):
     """Station-level metadata with grouped trip count buckets between station pairs."""
