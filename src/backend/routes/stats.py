@@ -8,6 +8,7 @@ from src.backend.models.stats import (
     StationRideCounts,
     TripsCountBetweenStations,
     StatsGroupBy,
+    RideCountGroupBy,
 )
 from src.backend.services.stats import (
     get_stats_data,
@@ -80,7 +81,7 @@ def get_stats(
 
 @router.get("/station_ride_counts", response_model=list[StationRideCounts])
 def get_station_ride_counts(
-    group_by: StatsGroupBy = Query(default=StatsGroupBy.NONE),
+    group_by: RideCountGroupBy = Query(default=RideCountGroupBy.NONE),
     user_type: MemberCasual | None = Query(default=None),
     bike_type: RideableType | None = Query(default=None),
     start_date: date | None = Query(default=None), 
@@ -101,7 +102,7 @@ def get_station_ride_counts(
 
 @router.get("/trips_between_stations", response_model=list[TripsCountBetweenStations])
 def get_trips_between_stations(
-    group_by: StatsGroupBy = Query(default=StatsGroupBy.NONE),
+    group_by: RideCountGroupBy = Query(default=RideCountGroupBy.NONE),
     user_type: MemberCasual | None = Query(default=None),
     bike_type: RideableType | None = Query(default=None),
     start_date: date | None = Query(default=None), 

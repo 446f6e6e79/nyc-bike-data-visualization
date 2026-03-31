@@ -94,15 +94,19 @@ def add_trip_duration(rides: pl.LazyFrame) -> pl.LazyFrame:
     )
 
 def _enrich_rides_with_weather(rides: pl.LazyFrame, weather: pl.LazyFrame) -> pl.LazyFrame:
-    """
-    Enrich rides with nearest hourly weather record based on started_at.
-    Returns rides with a nested `weather` struct column.
-    """
-    weather_cols = [c for c in weather.columns if c != "time"]
+    # Normalize weather column names to match the Pydantic response model up front
+    weather = weather.rename({
+        "datetime": "time",
+        "temperature_2m": "temperature",
+        "wind_speed_10m": "wind_speed",
+    })
+    weather_cols = [c for c in weather.collect_schema().names() if c != "time"]
+
     return (
         rides
+        .sort("started_at")
         .join_asof(
-            weather,
+            weather.sort("time"),
             left_on="started_at",
             right_on="time",
             strategy="nearest",

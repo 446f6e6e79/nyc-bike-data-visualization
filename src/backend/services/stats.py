@@ -129,108 +129,30 @@ def _get_grouped_stats(
         start_station_id=start_station_id,
         end_station_id=end_station_id,
         join_distances=True,
+        # Group the stats by weather code only if the group_by parameter is set to group by weather
+        join_weather=group_by == StatsGroupBy.WEATHER_CODE
     )
     rides = add_trip_duration(rides)
     df = _collect_if_lazy(rides)
 
-    # Define expressions for extracting day_of_week and hour from started_at for grouping
-    day_expr = (pl.col("started_at").dt.weekday() - 1).alias("day_of_week") # NOTE: Polars weekday() returns [1,7] for Monday-Sunday, we adjust to [0,6] with -1
-    hour_expr = pl.col("started_at").dt.hour().alias("hour")
+    # For weather grouping, extract weather_code from the nested weather struct
+    if group_by == StatsGroupBy.WEATHER_CODE:
+        df = df.with_columns(
+            pl.col("weather").struct.field("weather_code").alias("weather_code")
+        )
+    
 
-    # If we are grouping by day_of_week
-    if group_by == StatsGroupBy.DAY_OF_WEEK:
-        # Create a base DataFrame to ensure a response row for each day of the week
-        base = pl.DataFrame({"day_of_week": list(range(7))})
-        grouped = (
-            df.group_by(day_expr).agg(_stats_aggregations())
-            if not df.is_empty()
-            else pl.DataFrame(schema={"day_of_week": pl.Int64})
-        )
-        # Join the grouped stats with the base DataFrame to ensure all days of the week are represented, filling nulls with 0 or appropriate defaults
-        grouped = (
-            base.join(grouped, on="day_of_week", how="left")
-            .with_columns([
-                pl.col("total_rides").fill_null(0).cast(pl.Int64),
-                pl.col("hours_count").fill_null(0).cast(pl.Int64),
-                pl.col("average_duration_seconds").fill_null(0.0),
-                pl.col("average_distance_km").fill_null(0.0),
-                pl.col("total_duration_seconds").fill_null(0.0),
-                pl.col("total_distance_km").fill_null(0.0),
-            ])
-            .sort("day_of_week")
-        )
-        return [
-            GroupedStats(
-                day_of_week=row["day_of_week"],
-                hour=None,
-                total_rides=row["total_rides"],
-                hours_count=row["hours_count"],
-                average_duration_seconds=row["average_duration_seconds"],
-                average_distance_km=row["average_distance_km"],
-                total_duration_seconds=row["total_duration_seconds"],
-                total_distance_km=row["total_distance_km"],
-            )
-            for row in grouped.iter_rows(named=True)
-        ]
-    # If we are grouping by hour
-    if group_by == StatsGroupBy.HOUR:
-        base = pl.DataFrame({"hour": list(range(24))})
-        grouped = (
-            df.group_by(hour_expr).agg(_stats_aggregations())
-            if not df.is_empty()
-            else pl.DataFrame(schema={"hour": pl.Int64})
-        )
-        grouped = (
-            base.join(grouped, on="hour", how="left")
-            .with_columns([
-                pl.col("total_rides").fill_null(0).cast(pl.Int64),
-                pl.col("hours_count").fill_null(0).cast(pl.Int64),
-                pl.col("average_duration_seconds").fill_null(0.0),
-                pl.col("average_distance_km").fill_null(0.0),
-                pl.col("total_duration_seconds").fill_null(0.0),
-                pl.col("total_distance_km").fill_null(0.0),
-            ])
-            .sort("hour")
-        )
-        return [
-            GroupedStats(
-                day_of_week=None,
-                hour=row["hour"],
-                total_rides=row["total_rides"],
-                hours_count=row["hours_count"],
-                average_duration_seconds=row["average_duration_seconds"],
-                average_distance_km=row["average_distance_km"],
-                total_duration_seconds=row["total_duration_seconds"],
-                total_distance_km=row["total_distance_km"],
-            )
-            for row in grouped.iter_rows(named=True)
-        ]
-    # If we are grouping by both day_of_week and hour, we create a base DataFrame with all combinations of day_of_week and hour to ensure we return a row for each combination, even if there are no rides for that combination
-    base = (
-        pl.DataFrame({"day_of_week": list(range(7))})
-        .join(pl.DataFrame({"hour": list(range(24))}), how="cross")
-    )
-    grouped = (
-        df.group_by([day_expr, hour_expr]).agg(_stats_aggregations())
-        if not df.is_empty()
-        else pl.DataFrame(schema={"day_of_week": pl.Int64, "hour": pl.Int64})
-    )
-    grouped = (
-        base.join(grouped, on=["day_of_week", "hour"], how="left")
-        .with_columns([
-            pl.col("total_rides").fill_null(0).cast(pl.Int64),
-            pl.col("hours_count").fill_null(0).cast(pl.Int64),
-            pl.col("average_duration_seconds").fill_null(0.0),
-            pl.col("average_distance_km").fill_null(0.0),
-            pl.col("total_duration_seconds").fill_null(0.0),
-            pl.col("total_distance_km").fill_null(0.0),
-        ])
-        .sort(["day_of_week", "hour"])
-    )
-    return [
-        GroupedStats(
-            day_of_week=row["day_of_week"],
-            hour=row["hour"],
+    day_expr = (pl.col("started_at").dt.weekday() - 1).alias("day_of_week")
+    hour_expr = pl.col("started_at").dt.hour().alias("hour")
+    if group_by == StatsGroupBy.WEATHER_CODE:
+        weather_expr = pl.col("weather_code").alias("weather_code")
+        
+    def _make_grouped_stats(row: dict) -> GroupedStats:
+        """Build a GroupedStats instance from a row dict, safely extracting optional fields."""
+        return GroupedStats(
+            day_of_week=row.get("day_of_week"),
+            hour=row.get("hour"),
+            weather_code=row.get("weather_code"),
             total_rides=row["total_rides"],
             hours_count=row["hours_count"],
             average_duration_seconds=row["average_duration_seconds"],
@@ -238,8 +160,73 @@ def _get_grouped_stats(
             total_duration_seconds=row["total_duration_seconds"],
             total_distance_km=row["total_distance_km"],
         )
-        for row in grouped.iter_rows(named=True)
-    ]
+
+    def _fill_nulls(df: pl.DataFrame) -> pl.DataFrame:
+        """Fill nulls in aggregated stats columns with appropriate defaults."""
+        return df.with_columns([
+            pl.col("total_rides").fill_null(0).cast(pl.Int64),
+            pl.col("hours_count").fill_null(0).cast(pl.Int64),
+            pl.col("average_duration_seconds").fill_null(0.0),
+            pl.col("average_distance_km").fill_null(0.0),
+            pl.col("total_duration_seconds").fill_null(0.0),
+            pl.col("total_distance_km").fill_null(0.0),
+        ])
+
+    # GROUP BY: day_of_week
+    if group_by == StatsGroupBy.DAY_OF_WEEK:
+        base = pl.DataFrame({"day_of_week": list(range(7))})
+        grouped = (
+            df.group_by(day_expr).agg(_stats_aggregations())
+            if not df.is_empty()
+            else pl.DataFrame(schema={"day_of_week": pl.Int64})
+        )
+        grouped = _fill_nulls(base.join(grouped, on="day_of_week", how="left")).sort("day_of_week")
+        return [_make_grouped_stats(row) for row in grouped.iter_rows(named=True)]
+
+    # GROUP BY: hour
+    if group_by == StatsGroupBy.HOUR:
+        base = pl.DataFrame({"hour": list(range(24))})
+        grouped = (
+            df.group_by(hour_expr).agg(_stats_aggregations())
+            if not df.is_empty()
+            else pl.DataFrame(schema={"hour": pl.Int64})
+        )
+        grouped = _fill_nulls(base.join(grouped, on="hour", how="left")).sort("hour")
+        return [_make_grouped_stats(row) for row in grouped.iter_rows(named=True)]
+
+    # GROUP BY: weather_code
+    # Unlike day_of_week and hour, weather codes are open-ended — we can't
+    # pre-build a base of "all possible values", so we only return rows that
+    # actually appear in the data. Null weather_code rows are dropped.
+    if group_by == StatsGroupBy.WEATHER_CODE:
+        if df.is_empty():
+            return []
+        grouped = (
+            df.drop_nulls("weather_code")
+            .group_by(weather_expr)
+            .agg(_stats_aggregations())
+        )
+        grouped = _fill_nulls(grouped).sort("weather_code")
+        return [_make_grouped_stats(row) for row in grouped.iter_rows(named=True)]
+
+    # GROUP BY: day_of_week + hour
+    if group_by == StatsGroupBy.DAY_OF_WEEK_AND_HOUR:
+        base = (
+            pl.DataFrame({"day_of_week": list(range(7))})
+            .join(pl.DataFrame({"hour": list(range(24))}), how="cross")
+        )
+        grouped = (
+            df.group_by([day_expr, hour_expr]).agg(_stats_aggregations())
+            if not df.is_empty()
+            else pl.DataFrame(schema={"day_of_week": pl.Int64, "hour": pl.Int64})
+        )
+        grouped = (
+            _fill_nulls(base.join(grouped, on=["day_of_week", "hour"], how="left"))
+            .sort(["day_of_week", "hour"])
+        )
+        return [_make_grouped_stats(row) for row in grouped.iter_rows(named=True)]
+
+    raise ValueError(f"Unsupported group_by value: {group_by}")
 
 def get_station_ride_counts_stats(
     start_date: date | None = None,

@@ -16,20 +16,26 @@ class Stats(BaseModel):
     total_duration_seconds: float
     total_distance_km: float
 
-# Defines how we can group stats: by day_of_week, hour, both, or not at all (none)
-#TODO: add a grouping option for (months/season-> decide which one is better)
-#TODO: add a grouping option for weather conditions 
 class StatsGroupBy(str, Enum):
     NONE = "none"
     DAY_OF_WEEK = "day_of_week"
     HOUR = "hour"
     DAY_OF_WEEK_AND_HOUR = "day_of_week,hour"
+    WEATHER_CODE = "weather"
+
+class RideCountGroupBy(str, Enum):
+    NONE = "none"
+    DAY_OF_WEEK = "day_of_week"
+    HOUR = "hour"
+    DAY_OF_WEEK_AND_HOUR = "day_of_week,hour"
+    # No weather — not applicable for station ride counts or trips between stations
 
 # Extends Stats with optional day_of_week and hour fields for grouping by day of week, hour, or both
 class GroupedStats(Stats):
     """Statistics model grouped by day of week, hour, or both."""
-    day_of_week: int | None = None # Day of week data refers to (0=Monday, 6=Sunday), or None if not grouped by day of week
-    hour: int | None = None        # Hour of day data refers to (0-23), or None if not grouped by hour
+    day_of_week: int | None = None      # Day of week data refers to (0=Monday, 6=Sunday), or None if not grouped by day of week
+    hour: int | None = None             # Hour of day data refers to (0-23), or None if not grouped by hour
+    weather_code: int | None = None     # Weather condition for the group, or None if not grouped by weather
 
 class GroupedStationRideCount(BaseModel):
     """Grouped bucket of rides starting or ending at a station."""
