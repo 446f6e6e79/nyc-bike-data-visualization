@@ -4,6 +4,7 @@ import AppHeader from './components/AppHeader.jsx'
 import MapPage from './pages/MapPage.jsx'
 import SurfacePage from './pages/SurfacePage.jsx'
 import WeatherPage from './pages/WeatherPage.jsx'
+import prefetchData from './hooks/prefetcher.js'
 
 /**
  * App component that sets up the main structure of the application, including routing and layout. 
@@ -16,7 +17,8 @@ function App() {
     const [currentUserFilters, setCurrentUserFilters] = useState({})
     // Combine filters into a single object to pass down to pages
     const filters = { ...dateRange, ...currentUserFilters }
-
+    // Prefetch data for the current filters (this will be cached by the hooks)
+    prefetchData(filters)
     return (
         <BrowserRouter>
             <div className="app-shell">
