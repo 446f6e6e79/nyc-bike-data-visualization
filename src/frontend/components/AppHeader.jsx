@@ -5,6 +5,7 @@ import UserFilter from './UserFilter.jsx'
 const PAGES = [
     { to: '/map', label: 'Map' },
     { to: '/surface', label: 'Surface' },
+    { to: '/weather', label: 'Weather' },
 ]
 
 /**
