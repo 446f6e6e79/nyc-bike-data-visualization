@@ -45,14 +45,13 @@ def test_group_by_none_hours_count_uses_explicit_range_when_empty(monkeypatch):
     stats = stats_service.get_stats_data(
         start_date=date(2024, 1, 5),
         end_date=date(2024, 1, 5),
-        start_hour=5,
     )
 
     assert stats.total_rides == 0
-    assert stats.hours_count == 1
+    assert stats.hours_count == 24
 
 
-def test_group_by_none_hours_count_respects_start_hour_over_multiple_days(monkeypatch):
+def test_group_by_none_hours_count_spans_multiple_days(monkeypatch):
     rides = _rides_df([
         {
             "started_at": datetime(2024, 1, 5, 5, 10),
@@ -69,7 +68,7 @@ def test_group_by_none_hours_count_respects_start_hour_over_multiple_days(monkey
     monkeypatch.setattr(stats_service, "get_filtered_rides", lambda **_: rides)
     monkeypatch.setattr(stats_service, "add_trip_duration", lambda x: x)
 
-    stats = stats_service.get_stats_data(start_hour=5)
+    stats = stats_service.get_stats_data()
 
     assert stats.total_rides == 2
-    assert stats.hours_count == 2
+    assert stats.hours_count == 48

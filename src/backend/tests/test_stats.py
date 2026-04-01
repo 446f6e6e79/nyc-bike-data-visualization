@@ -31,55 +31,6 @@ def test_get_stats_user_type():
     assert payload["total_distance_km"] == 0
 
 
-def test_get_stats_day_of_week_comma_separated():
-    """Test that /stats/ accepts comma-separated day_of_week query values."""
-    response = requests.get(
-        f"{BASE_URL}/stats/",
-        params={"day_of_week": "4,5"},
-        timeout=DEFAULT_TIMEOUT,
-    )
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["total_rides"] == 2
-    assert payload["hours_count"] == 2
-
-
-def test_get_stats_day_of_week_friday_only():
-    """Test that day_of_week=4 (Friday) matches the test fixture rides."""
-    response = requests.get(
-        f"{BASE_URL}/stats/",
-        params={"day_of_week": "4"},
-        timeout=DEFAULT_TIMEOUT,
-    )
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["total_rides"] == 2
-    assert payload["hours_count"] == 2
-
-
-def test_get_stats_day_of_week_saturday_only():
-    """Test that day_of_week=5 (Saturday) does not match Friday-only fixture rides."""
-    response = requests.get(
-        f"{BASE_URL}/stats/",
-        params={"day_of_week": "5"},
-        timeout=DEFAULT_TIMEOUT,
-    )
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["total_rides"] == 0
-    assert payload["hours_count"] == 0
-
-
-def test_get_stats_day_of_week_invalid_value():
-    """Test that /stats/ rejects out-of-range day_of_week values."""
-    response = requests.get(
-        f"{BASE_URL}/stats/",
-        params={"day_of_week": "7"},
-        timeout=DEFAULT_TIMEOUT,
-    )
-    assert response.status_code == 422
-
-
 def test_get_stats_group_by_none_matches_default():
     """Test that group_by=none returns the same non-grouped stats shape."""
     response = requests.get(

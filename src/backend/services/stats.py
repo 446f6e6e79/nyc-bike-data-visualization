@@ -13,78 +13,80 @@ from src.backend.models.stats import (
 from src.backend.services.rides import add_trip_duration, get_filtered_rides
 from src.backend.loaders.rides_loader import RideFrame
 
-def _collect_if_lazy(df: RideFrame) -> pl.DataFrame:
-    """Helper to convert LazyFrame to DataFrame if needed."""
-    return df.collect() if isinstance(df, pl.LazyFrame) else df
+
+def _to_lazy(df: RideFrame | pl.DataFrame | pl.LazyFrame) -> pl.LazyFrame:
+    return df.lazy() if isinstance(df, pl.DataFrame) else df
+
+
+def _fill_null_exprs() -> list[pl.Expr]:
+    return [
+        pl.col("total_rides").fill_null(0).cast(pl.Int64),
+        pl.col("average_duration_seconds").fill_null(0.0),
+        pl.col("average_distance_km").fill_null(0.0),
+        pl.col("total_duration_seconds").fill_null(0.0),
+        pl.col("total_distance_km").fill_null(0.0),
+    ]
 
 def _build_time_dimension(
     start_date: date,
     end_date: date,
     weather_df: pl.DataFrame | None = None,
-) -> pl.LazyFrame:
+    base_for_group_by: StatsGroupBy | None = None,
+) -> pl.DataFrame:
     """
     Create a time dimension DataFrame with hourly timestamps between start_date and end_date.
     This allows us to group rides by time periods (day of week, hour) even if there are no rides
     in certain periods, ensuring we get a complete set of time buckets in our stats results.
     """
+    # Create a DataFrame with one row per hour in the date range
     start_dt = datetime.combine(start_date, time.min)
     end_dt = datetime.combine(end_date, time.max)
-
-    df = pl.LazyFrame({
+    df = pl.DataFrame({
         "started_at": pl.datetime_range(
             start=start_dt,
             end=end_dt,
             interval="1h",
             eager=True,
         )
-    })
-
-    df = df.with_columns([
+    }).with_columns([
         (pl.col("started_at").dt.weekday() - 1).alias("day_of_week"),
         pl.col("started_at").dt.hour().alias("hour"),
     ])
 
-    if weather_df is None:
-        return df
-
-    weather = weather_df
-    rename_map: dict[str, str] = {}
-    if "datetime" in weather.columns:
-        rename_map["datetime"] = "time"
-    if "temperature_2m" in weather.columns:
-        rename_map["temperature_2m"] = "temperature"
-    if "wind_speed_10m" in weather.columns:
-        rename_map["wind_speed_10m"] = "wind_speed"
-    if rename_map:
-        weather = weather.rename(rename_map)
-
-    return (
-        df
-        .sort("started_at")
-        .join_asof(
-            weather.sort("time"),
-            left_on="started_at",
-            right_on="time",
-            strategy="nearest",
-            tolerance="30m",
+    # If weather data is provided, join it onto the time dimension so each hour carries its weather_code
+    if weather_df is not None:
+        df = (
+            df
+            .sort("started_at")
+            .join_asof(
+                weather_df.sort("datetime"),
+                left_on="started_at",
+                right_on="datetime",
+                strategy="nearest",
+                tolerance="30m",
+            )
         )
-    )
 
-#TODO: check if we are really using day of the week filtering or hour filtering
-def _apply_time_dimension_filters(
-    time_dim: pl.LazyFrame,
-    day_of_week: int | list[int] | None = None,
-    start_hour: int | None = None,
-) -> pl.LazyFrame:
-    if day_of_week is not None:
-        day_values = day_of_week if isinstance(day_of_week, list) else [day_of_week]
-        time_dim = time_dim.filter(pl.col("day_of_week").is_in(day_values))
+    if base_for_group_by is None:
+        return df
+    # If a time-dimension column is the base for grouping, return the unique values of that column to ensure all groups are represented
+    if base_for_group_by == StatsGroupBy.DAY_OF_WEEK:
+        return df.select("day_of_week").unique().sort("day_of_week")
 
-    if start_hour is not None:
-        time_dim = time_dim.filter(pl.col("hour") == start_hour)
+    if base_for_group_by == StatsGroupBy.HOUR:
+        return df.select("hour").unique().sort("hour")
 
-    return time_dim
+    if base_for_group_by == StatsGroupBy.DAY_OF_WEEK_AND_HOUR:
+        return (
+            df.select(["day_of_week", "hour"])
+            .unique()
+            .sort(["day_of_week", "hour"])
+        )
+    
+    if base_for_group_by == StatsGroupBy.WEATHER_CODE:
+        return df.select("weather_code").drop_nulls().unique().sort("weather_code")
 
+    return pl.DataFrame()
 
 def _resolve_time_bounds(
     start_date: date | None,
@@ -92,12 +94,17 @@ def _resolve_time_bounds(
     rides_df: pl.DataFrame,
     infer_if_missing: bool,
 ) -> tuple[date | None, date | None]:
+    """Helper function to resolve the actual date range to use for stats calculations, 
+    based on provided parameters and data coverage."""
     
+    # If start and end dates are both provided, use them
     if start_date is not None and end_date is not None:
         return start_date, end_date
+    # If inference is disabled or the rides DataFrame is empty, return the provided bounds
     if not infer_if_missing or rides_df.is_empty():
         return start_date, end_date
 
+    # Infer missing bounds from the data
     bounds = rides_df.select([
         pl.col("started_at").dt.date().min().alias("min_date"),
         pl.col("started_at").dt.date().max().alias("max_date"),
@@ -107,57 +114,21 @@ def _resolve_time_bounds(
     resolved_end = end_date if end_date is not None else bounds["max_date"]
     return resolved_start, resolved_end
 
-def _time_dimension_base(
-    start_date: date | None,
-    end_date: date | None,
-    group_by: StatsGroupBy,
-    day_of_week: int | list[int] | None = None,
-    start_hour: int | None = None,
-) -> pl.DataFrame | None:
-    """
-    Return a base DataFrame of all possible time buckets for the given group_by mode,
-    derived from the time dimension when start_date and end_date are both provided.
-    Returns None when the date range is unknown or the group_by does not use time buckets.
-    """
-    if start_date is None or end_date is None:
-        return None
-    if group_by not in (StatsGroupBy.DAY_OF_WEEK, StatsGroupBy.HOUR, StatsGroupBy.DAY_OF_WEEK_AND_HOUR):
-        return None
-
-    time_dim = _build_time_dimension(start_date, end_date)
-    time_dim = _apply_time_dimension_filters(time_dim, day_of_week=day_of_week, start_hour=start_hour)
-
-    if group_by == StatsGroupBy.DAY_OF_WEEK:
-        return time_dim.select("day_of_week").unique().sort("day_of_week")
-
-    if group_by == StatsGroupBy.HOUR:
-        return time_dim.select("hour").unique().sort("hour")
-
-    if group_by == StatsGroupBy.DAY_OF_WEEK_AND_HOUR:
-        return (
-            time_dim.select(["day_of_week", "hour"])
-            .unique()
-            .sort(["day_of_week", "hour"])
-        )
-
-    return None  # unreachable, but satisfies type checker
-
 def _hours_count_from_time_dimension(
     start_date: date,
     end_date: date,
     group_by: StatsGroupBy,
-    day_of_week: int | list[int] | None = None,
-    start_hour: int | None = None,
     weather_df: pl.DataFrame | None = None,
 ) -> pl.DataFrame:
     """
     Compute the number of hours in the date range for each group bucket, derived from the time
-    dimension. This ensures that empty hours are still counted in the hours_count for each group,
-    which is used as the denominator for computing hourly averages (e.g. total_rides / hours_count).
+    dimension. This ensures that empty hours are still counted in the hours_count for each group.
     """
-    time_dim = _build_time_dimension(start_date, end_date, weather_df=weather_df)
-    time_dim = _apply_time_dimension_filters(time_dim, day_of_week=day_of_week, start_hour=start_hour)
-
+    time_dim = _build_time_dimension(
+        start_date,
+        end_date,
+        weather_df=weather_df,
+    )
     if group_by == StatsGroupBy.NONE:
         return pl.DataFrame({"hours_count": [time_dim.height]})
 
@@ -180,6 +151,84 @@ def _hours_count_from_time_dimension(
 
     return pl.DataFrame(schema={"hours_count": pl.UInt32})
 
+def _compute_grouped_stats(
+    rides_lf: pl.LazyFrame,             # The filtered rides LazyFrame
+    base: pl.DataFrame,                 # The base time dimension DataFrame with all group buckets
+    group_exprs: list[pl.Expr],         # Expressions to group by (e.g. day_of_week, hour)
+    group_cols: list[str],              # Corresponding column names for the group expressions
+    resolved_start_date: date | None,   # Resolved start date for the stats (inferred from data if not provided)
+    resolved_end_date: date | None,     # Resolved end date for the stats (inferred from data if not provided)
+    group_by: StatsGroupBy,             # The grouping mode (e.g. by day_of_week, hour, etc.)
+    weather_df: pl.DataFrame | None = None,
+) -> pl.LazyFrame:
+    grouped = rides_lf.group_by(group_exprs).agg(_stats_aggregations())
+
+    result = (
+        base.lazy()
+        .join(grouped, on=group_cols, how="left")
+        .with_columns(_fill_null_exprs())
+        .sort(group_cols)
+    )
+
+    return _attach_hours_count_lazy(
+        result,
+        group_cols,
+        resolved_start_date,
+        resolved_end_date,
+        group_by,
+        weather_df=weather_df,
+    )
+
+
+def _fill_nulls(df: pl.DataFrame) -> pl.DataFrame:
+    return df.with_columns(_fill_null_exprs())
+
+
+def _attach_hours_count_lazy(
+    lf: pl.LazyFrame,
+    group_cols: list[str],
+    resolved_start_date: date | None,
+    resolved_end_date: date | None,
+    group_by: StatsGroupBy,
+    weather_df: pl.DataFrame | None = None,
+) -> pl.LazyFrame:
+    if resolved_start_date and resolved_end_date:
+        hours_count = _hours_count_from_time_dimension(
+            start_date=resolved_start_date,
+            end_date=resolved_end_date,
+            group_by=group_by,
+            weather_df=weather_df,
+        )
+        return (
+            lf.join(hours_count.lazy(), on=group_cols, how="left")
+            .with_columns(pl.col("hours_count").fill_null(0).cast(pl.Int64))
+        )
+
+    return lf.with_columns(pl.lit(0).cast(pl.Int64).alias("hours_count"))
+
+
+def _attach_hours_count(
+    df: pl.DataFrame,
+    group_cols: list[str],
+    resolved_start_date: date | None,
+    resolved_end_date: date | None,
+    group_by: StatsGroupBy,
+    weather_df: pl.DataFrame | None = None,
+) -> pl.DataFrame:
+    if resolved_start_date and resolved_end_date:
+        hours_count = _hours_count_from_time_dimension(
+            start_date=resolved_start_date,
+            end_date=resolved_end_date,
+            group_by=group_by,
+            weather_df=weather_df,
+        )
+        return (
+            df.join(hours_count, on=group_cols, how="left")
+            .with_columns(pl.col("hours_count").fill_null(0).cast(pl.Int64))
+        )
+
+    return df.with_columns(pl.lit(0).cast(pl.Int64).alias("hours_count"))
+
 def _stats_aggregations() -> list[pl.Expr]:
     """
     Helper to return the list of aggregations needed to calculate stats for grouped queries.
@@ -200,8 +249,6 @@ def get_stats_data(
     bike_type: RideableType | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
-    day_of_week: int | list[int] | None = None,
-    start_hour: int | None = None,
     start_station_id: str | None = None,
     end_station_id: str | None = None,
 ) -> Stats | list[GroupedStats]:
@@ -213,8 +260,6 @@ def get_stats_data(
             bike_type=bike_type,
             start_date=start_date,
             end_date=end_date,
-            day_of_week=day_of_week,
-            start_hour=start_hour,
             start_station_id=start_station_id,
             end_station_id=end_station_id,
         )
@@ -224,8 +269,6 @@ def get_stats_data(
         bike_type=bike_type,
         start_date=start_date,
         end_date=end_date,
-        day_of_week=day_of_week,
-        start_hour=start_hour,
         start_station_id=start_station_id,
         end_station_id=end_station_id,
     )
@@ -236,8 +279,6 @@ def _get_overall_stats(
     bike_type: RideableType | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
-    day_of_week: int | list[int] | None = None,
-    start_hour: int | None = None,
     start_station_id: str | None = None,
     end_station_id: str | None = None,
 ) -> Stats:
@@ -246,22 +287,24 @@ def _get_overall_stats(
         bike_type=bike_type,
         start_date=start_date,
         end_date=end_date,
-        day_of_week=day_of_week,
-        start_hour=start_hour,
         start_station_id=start_station_id,
         end_station_id=end_station_id,
         join_distances=True,
     )
 
-    rides = add_trip_duration(rides)
-    df = _collect_if_lazy(rides)
+    rides_lf = _to_lazy(add_trip_duration(rides))
+    stats_row = rides_lf.select([
+        pl.len().alias("total_rides"),
+        pl.col("trip_duration_seconds").mean().alias("average_duration_seconds"),
+        pl.col("distance_km").mean().alias("average_distance_km"),
+        pl.col("trip_duration_seconds").sum().alias("total_duration_seconds"),
+        pl.col("distance_km").sum().alias("total_distance_km"),
+        pl.col("started_at").dt.date().min().alias("min_date"),
+        pl.col("started_at").dt.date().max().alias("max_date"),
+    ]).collect().row(0, named=True)
 
-    resolved_start_date, resolved_end_date = _resolve_time_bounds(
-        start_date=start_date,
-        end_date=end_date,
-        rides_df=df,
-        infer_if_missing=True,
-    )
+    resolved_start_date = start_date if start_date is not None else stats_row["min_date"]
+    resolved_end_date = end_date if end_date is not None else stats_row["max_date"]
 
     hours_count = 0
     if resolved_start_date is not None and resolved_end_date is not None:
@@ -269,12 +312,12 @@ def _get_overall_stats(
             start_date=resolved_start_date,
             end_date=resolved_end_date,
             group_by=StatsGroupBy.NONE,
-            day_of_week=day_of_week,
-            start_hour=start_hour,
         )
         hours_count = int(hours_count_df.item(0, "hours_count"))
 
-    if df.is_empty():
+    total_rides = int(stats_row["total_rides"] or 0)
+
+    if total_rides == 0:
         return Stats(
             total_rides=0,
             hours_count=hours_count,
@@ -285,12 +328,12 @@ def _get_overall_stats(
         )
 
     return Stats(
-        total_rides=df.shape[0],
+        total_rides=total_rides,
         hours_count=hours_count,
-        average_duration_seconds=df["trip_duration_seconds"].mean(),
-        average_distance_km=df["distance_km"].mean(),
-        total_duration_seconds=df["trip_duration_seconds"].sum(),
-        total_distance_km=df["distance_km"].sum(),
+        average_duration_seconds=float(stats_row["average_duration_seconds"] or 0.0),
+        average_distance_km=float(stats_row["average_distance_km"] or 0.0),
+        total_duration_seconds=float(stats_row["total_duration_seconds"] or 0.0),
+        total_distance_km=float(stats_row["total_distance_km"] or 0.0),
     )
 
 
@@ -300,8 +343,6 @@ def _get_grouped_stats(
     bike_type: RideableType | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
-    day_of_week: int | list[int] | None = None,
-    start_hour: int | None = None,
     start_station_id: str | None = None,
     end_station_id: str | None = None,
 ) -> list[GroupedStats]:
@@ -310,8 +351,6 @@ def _get_grouped_stats(
         bike_type=bike_type,
         start_date=start_date,
         end_date=end_date,
-        day_of_week=day_of_week,
-        start_hour=start_hour,
         start_station_id=start_station_id,
         end_station_id=end_station_id,
         join_distances=True,
@@ -320,14 +359,8 @@ def _get_grouped_stats(
         join_weather=False,
     )
 
-    rides = add_trip_duration(rides)
-    df = _collect_if_lazy(rides)
-    resolved_start_date, resolved_end_date = _resolve_time_bounds(
-        start_date=start_date,
-        end_date=end_date,
-        rides_df=df,
-        infer_if_missing=False,
-    )
+    rides_lf = _to_lazy(add_trip_duration(rides))
+    resolved_start_date, resolved_end_date = start_date, end_date
 
     day_expr = (pl.col("started_at").dt.weekday() - 1).alias("day_of_week")
     hour_expr = pl.col("started_at").dt.hour().alias("hour")
@@ -346,78 +379,51 @@ def _get_grouped_stats(
             total_distance_km=row["total_distance_km"],
         )
 
-    def _fill_nulls(df: pl.DataFrame) -> pl.DataFrame:
-        """Fill nulls in aggregated stats columns with appropriate defaults."""
-        return df.with_columns([
-            pl.col("total_rides").fill_null(0).cast(pl.Int64),
-            pl.col("average_duration_seconds").fill_null(0.0),
-            pl.col("average_distance_km").fill_null(0.0),
-            pl.col("total_duration_seconds").fill_null(0.0),
-            pl.col("total_distance_km").fill_null(0.0),
-        ])
-
-    def _attach_hours_count(df: pl.DataFrame, group_cols: list[str]) -> pl.DataFrame:
-        """
-        Join the correct hours_count from the time dimension onto the grouped stats DataFrame.
-        Falls back to 0 when no date range is available (e.g. no start_date/end_date provided).
-        """
-        if resolved_start_date and resolved_end_date:
-            hours_count = _hours_count_from_time_dimension(
-                start_date=resolved_start_date,
-                end_date=resolved_end_date,
-                group_by=group_by,
-                day_of_week=day_of_week,
-                start_hour=start_hour,
-            )
-            return (
-                df.join(hours_count, on=group_cols, how="left")
-                .with_columns(pl.col("hours_count").fill_null(0).cast(pl.Int64))
-            )
-        return df.with_columns(pl.lit(0).cast(pl.Int64).alias("hours_count"))
-
     # GROUP BY: day_of_week
     if group_by == StatsGroupBy.DAY_OF_WEEK:
-        base = _time_dimension_base(
+        base = None
+        if resolved_start_date is not None and resolved_end_date is not None:
+            base = _build_time_dimension(
+                resolved_start_date,
+                resolved_end_date,
+                base_for_group_by=group_by,
+            )
+        if base is None:
+            base = pl.DataFrame({"day_of_week": list(range(7))})
+        grouped = _attach_hours_count_lazy(
+            base.lazy()
+            .join(rides_lf.group_by(day_expr).agg(_stats_aggregations()), on="day_of_week", how="left")
+            .with_columns(_fill_null_exprs())
+            .sort("day_of_week"),
+            ["day_of_week"],
             resolved_start_date,
             resolved_end_date,
             group_by,
-            day_of_week=day_of_week,
-            start_hour=start_hour,
-        )
-        if base is None:
-            base = pl.DataFrame({"day_of_week": list(range(7))})
-        grouped = (
-            df.group_by(day_expr).agg(_stats_aggregations())
-            if not df.is_empty()
-            else pl.DataFrame(schema={"day_of_week": pl.Int64})
-        )
-        grouped = _attach_hours_count(
-            _fill_nulls(base.join(grouped, on="day_of_week", how="left")).sort("day_of_week"),
-            ["day_of_week"],
-        )
+        ).collect()
         return [_make_grouped_stats(row) for row in grouped.iter_rows(named=True)]
 
     # GROUP BY: hour
     if group_by == StatsGroupBy.HOUR:
-        base = _time_dimension_base(
+        base = None
+        if resolved_start_date is not None and resolved_end_date is not None:
+            base = _build_time_dimension(
+                resolved_start_date,
+                resolved_end_date,
+                base_for_group_by=group_by,
+            )
+        if base is None:
+            base = pl.DataFrame({"hour": list(range(24))})
+
+        result = _compute_grouped_stats(
+            rides_lf,
+            base,
+            [hour_expr],
+            ["hour"],
             resolved_start_date,
             resolved_end_date,
             group_by,
-            day_of_week=day_of_week,
-            start_hour=start_hour,
-        )
-        if base is None:
-            base = pl.DataFrame({"hour": list(range(24))})
-        grouped = (
-            df.group_by(hour_expr).agg(_stats_aggregations())
-            if not df.is_empty()
-            else pl.DataFrame(schema={"hour": pl.Int64})
-        )
-        grouped = _attach_hours_count(
-            _fill_nulls(base.join(grouped, on="hour", how="left")).sort("hour"),
-            ["hour"],
-        )
-        return [_make_grouped_stats(row) for row in grouped.iter_rows(named=True)]
+        ).collect()
+        return [_make_grouped_stats(row) for row in result.iter_rows(named=True)]
 
     # GROUP BY: weather_code
     # Instead of joining weather onto rides (which misses hours with no rides), we join rides
@@ -425,26 +431,22 @@ def _get_grouped_stats(
     if group_by == StatsGroupBy.WEATHER_CODE:
         if resolved_start_date is None or resolved_end_date is None:
             # Without a date range we can't build the time dimension — fall back to ride-side join
-            if df.is_empty():
-                return []
             rides_with_weather = get_filtered_rides(
                 user_type=user_type, bike_type=bike_type,
                 start_date=start_date, end_date=end_date,
-                day_of_week=day_of_week, start_hour=start_hour,
                 start_station_id=start_station_id, end_station_id=end_station_id,
                 join_distances=True, join_weather=True,
             )
-            rides_with_weather = add_trip_duration(rides_with_weather)
-            df = _collect_if_lazy(rides_with_weather)
-            df = df.with_columns(
-                pl.col("weather").struct.field("weather_code").alias("weather_code")
-            )
+            rides_with_weather_lf = _to_lazy(add_trip_duration(rides_with_weather))
             grouped = (
-                df.drop_nulls("weather_code")
+                rides_with_weather_lf
+                .with_columns(pl.col("weather").struct.field("weather_code").alias("weather_code"))
+                .drop_nulls("weather_code")
                 .group_by("weather_code")
                 .agg(_stats_aggregations())
                 .with_columns(pl.lit(0).cast(pl.Int64).alias("hours_count"))
                 .sort("weather_code")
+                .collect()
             )
             return [_make_grouped_stats(row) for row in grouped.iter_rows(named=True)]
 
@@ -458,27 +460,12 @@ def _get_grouped_stats(
             resolved_end_date,
             weather_df=weather_df,
         )
-        time_dim_w = _apply_time_dimension_filters(
-            time_dim_w,
-            day_of_week=day_of_week,
-            start_hour=start_hour,
-        )
 
         # Truncate each ride's started_at to the hour so we can join onto the time dimension
-        rides_hourly = (
-            df.with_columns(pl.col("started_at").dt.truncate("1h").alias("started_at_hour"))
-            if not df.is_empty()
-            else df.with_columns(pl.lit(None).cast(pl.Datetime).alias("started_at_hour"))
-        )
+        rides_hourly = rides_lf.with_columns(pl.col("started_at").dt.truncate("1h").alias("started_at_hour"))
 
         # Group rides by hour bucket first, aggregating stats per hour
-        rides_by_hour = (
-            rides_hourly
-            .group_by("started_at_hour")
-            .agg(_stats_aggregations())
-            if not df.is_empty()
-            else pl.DataFrame(schema={"started_at_hour": pl.Datetime})
-        )
+        rides_by_hour = rides_hourly.group_by("started_at_hour").agg(_stats_aggregations())
 
         # Join ride-hour aggregates onto the time dimension to attach weather_code to each hour,
         # including hours with no rides (they will have null ride stats, filled with 0 below).
@@ -486,6 +473,7 @@ def _get_grouped_stats(
             time_dim_w
             .select(["started_at", "weather_code"])
             .rename({"started_at": "started_at_hour"})
+            .lazy()
             .join(rides_by_hour, on="started_at_hour", how="left")
         )
 
@@ -512,31 +500,39 @@ def _get_grouped_stats(
             .sort("weather_code")
         )
 
-        grouped = _attach_hours_count(grouped, ["weather_code"])
+        grouped = _attach_hours_count_lazy(
+            grouped,
+            ["weather_code"],
+            resolved_start_date,
+            resolved_end_date,
+            group_by,
+            weather_df=weather_df,
+        ).collect()
         return [_make_grouped_stats(row) for row in grouped.iter_rows(named=True)]
 
     # GROUP BY: day_of_week + hour
     if group_by == StatsGroupBy.DAY_OF_WEEK_AND_HOUR:
-        base = _time_dimension_base(
-            resolved_start_date,
-            resolved_end_date,
-            group_by,
-            day_of_week=day_of_week,
-            start_hour=start_hour,
-        )
+        base = None
+        if resolved_start_date is not None and resolved_end_date is not None:
+            base = _build_time_dimension(
+                resolved_start_date,
+                resolved_end_date,
+                base_for_group_by=group_by,
+            )
         if base is None:
             base = pl.DataFrame({"day_of_week": list(range(7))}).join(
                 pl.DataFrame({"hour": list(range(24))}), how="cross"
             )
-        grouped = (
-            df.group_by([day_expr, hour_expr]).agg(_stats_aggregations())
-            if not df.is_empty()
-            else pl.DataFrame(schema={"day_of_week": pl.Int64, "hour": pl.Int64})
-        )
-        grouped = _attach_hours_count(
-            _fill_nulls(base.join(grouped, on=["day_of_week", "hour"], how="left")).sort(["day_of_week", "hour"]),
+        grouped = _attach_hours_count_lazy(
+            base.lazy()
+            .join(rides_lf.group_by([day_expr, hour_expr]).agg(_stats_aggregations()), on=["day_of_week", "hour"], how="left")
+            .with_columns(_fill_null_exprs())
+            .sort(["day_of_week", "hour"]),
             ["day_of_week", "hour"],
-        )
+            resolved_start_date,
+            resolved_end_date,
+            group_by,
+        ).collect()
         return [_make_grouped_stats(row) for row in grouped.iter_rows(named=True)]
 
     raise ValueError(f"Unsupported group_by value: {group_by}")
@@ -647,7 +643,7 @@ def get_station_ride_counts_stats(
     else:
         station_counts = station_counts.with_columns(pl.lit(0).cast(pl.Int64).alias("hours_count"))
 
-    station_counts = _collect_if_lazy(station_counts)
+    station_counts = station_counts.collect() if isinstance(station_counts, pl.LazyFrame) else station_counts
 
     if station_counts.is_empty():
         return []
@@ -879,7 +875,7 @@ def get_trips_between_stations_stats(
     else:
         paired_counts = paired_counts.with_columns(pl.lit(0).cast(pl.Int64).alias("hours_count"))
 
-    paired_counts = _collect_if_lazy(paired_counts)
+    paired_counts = paired_counts.collect() if isinstance(paired_counts, pl.LazyFrame) else paired_counts
 
     if paired_counts.is_empty():
         return []

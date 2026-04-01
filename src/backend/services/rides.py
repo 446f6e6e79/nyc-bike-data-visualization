@@ -24,8 +24,6 @@ def get_filtered_rides(
     - ride_id: Filter by specific ride ID
     - user_type: Filter by user type (member or casual)
     - start_date, end_date: Filter by ride start date range
-    - day_of_week: Filter by day of the week (0=Monday, 6=Sunday) or list of days
-    - start_hour: Filter by start hour
     - start_station_id, end_station_id: Filter by station IDs
     - end_date: Filter by ride end date range
     - end_station_id: Filter by end station ID
