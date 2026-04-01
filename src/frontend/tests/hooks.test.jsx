@@ -7,6 +7,9 @@ import useDayHourStats from '../hooks/useDayHourStats.js'
 import useStationRideCounts from '../hooks/useStationRideCounts.js'
 import useStationAvailability from '../hooks/useStationAvailability.js'
 import useTripCounts from '../hooks/useTripCounts.js'
+import useHourlyStats from '../hooks/useHourlyStats.js'
+import useWeeklyStats from '../hooks/useWeeklyStats.js'
+import useWeatherStats from '../hooks/useWeatherStats.js'
 
 // Stub axios via apiClient — all hooks use apiClient.get(), which returns { data: ... }
 vi.mock('../api-data/apiClient', () => ({
@@ -43,6 +46,21 @@ describe('hooks smoke tests', () => {
 
     it('useTripCounts resolves without throwing', async () => {
         const { result } = renderHook(() => useTripCounts(TEST_FILTERS), { wrapper })
+        await waitFor(() => expect(result.current).toBeDefined())
+    })
+
+    it('useHourlyStats resolves without throwing', async () => {
+        const { result } = renderHook(() => useHourlyStats(TEST_FILTERS), { wrapper })
+        await waitFor(() => expect(result.current).toBeDefined())
+    })
+
+    it('useWeeklyStats resolves without throwing', async () => {
+        const { result } = renderHook(() => useWeeklyStats(TEST_FILTERS), { wrapper })
+        await waitFor(() => expect(result.current).toBeDefined())
+    })
+
+    it('useWeatherStats resolves without throwing', async () => {
+        const { result } = renderHook(() => useWeatherStats(TEST_FILTERS), { wrapper })
         await waitFor(() => expect(result.current).toBeDefined())
     })
 })

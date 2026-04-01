@@ -6,6 +6,7 @@ import { createQueryWrapper } from './testQueryClient.jsx'
 import AppHeader from '../components/AppHeader'
 import MapPage from '../pages/MapPage'
 import SurfacePage from '../pages/SurfacePage'
+import WeatherPage from '../pages/WeatherPage'
 import App from '../App.jsx'
 
 // Stub axios via apiClient — all hooks use apiClient.get()
@@ -35,5 +36,9 @@ describe('components smoke tests', () => {
 
     it('SurfacePage renders without crashing', () => {
         render(<MemoryRouter><SurfacePage /></MemoryRouter>, { wrapper })
+    })
+
+    it('WeatherPage renders without crashing', () => {
+        render(<MemoryRouter><WeatherPage /></MemoryRouter>, { wrapper })
     })
 })
