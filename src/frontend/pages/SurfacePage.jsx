@@ -1,11 +1,14 @@
 import { useState } from "react";
 import useDayHourStats from "../hooks/useDayHourStats";
+import useWeeklyStats from "../hooks/useWeeklyStats";
+import useHourlyStats from "../hooks/useHourlyStats";
 import SurfaceSelector from "../components/surface/SurfaceSelector";
 import StatusMessage from "../components/StatusMessage";
 import SurfaceGraph from "../components/surface/SurfaceGraph";
 import SurfaceHistograms from "../components/surface/SurfaceHistograms";
 
 // Definitions for the metrics with their keys, labels, and formatting
+//#TODO: Remove useless metrics (already done with hours count)
 export const METRIC_GETTERS = {
     total_rides: d => d.total_rides,
     total_duration_minutes: d => d.total_duration_seconds / 60,
@@ -30,6 +33,14 @@ export const METRIC_FORMATS = {
     average_distance: v => v.toFixed(1) + " km",
 }
 
+export const METRIC_UNITS = {
+    total_rides: "rides",
+    total_duration_minutes: "min",
+    average_duration_minutes: "min",
+    total_distance: "km",
+    average_distance: "km",
+}
+
 /**
  * Component for the surface graph page, which includes a metric selector, the surface graph itself, and accompanying histograms. 
  * @param {Object} filters - The filters to apply to the data.
@@ -42,8 +53,12 @@ function SurfacePage({filters}) {
     // State to track the coordinates of the currently hovered point on the surface graph
     const [coordinates, setCoordinates] = useState(null)
     // Fetches the day-hour statistics based on the provided filters using a custom hook. The hook returns the data, loading state, and any error encountered during the fetch.
-    const { dayHourStats, loading, error } = useDayHourStats(filters)
-
+    const { dayHourStats, loading: loadingDayHourStats, error: errorDayHourStats } = useDayHourStats(filters)
+    const { dayStats, loading: loadingDayStats, error: errorDayStats } = useWeeklyStats(filters)
+    const { hourStats, loading: loadingHourStats, error: errorHourStats } = useHourlyStats(filters)
+    // Aggregate states
+    const loading = loadingDayHourStats || loadingDayStats || loadingHourStats
+    const error = errorDayHourStats || errorDayStats || errorHourStats
     if (loading || error) {
         return <StatusMessage loading={loading} error={error} />
     }
@@ -52,7 +67,7 @@ function SurfacePage({filters}) {
         <>
             <SurfaceSelector activeMetric={activeMetric} setActiveMetric={setActiveMetric} />
             <SurfaceGraph data={dayHourStats} activeMetric={activeMetric} setCoordinates={setCoordinates} />
-            <SurfaceHistograms data={dayHourStats} activeMetric={activeMetric} coordinates={coordinates} />
+            <SurfaceHistograms hourData={hourStats} dayData={dayStats} activeMetric={activeMetric} coordinates={coordinates} />
         </>
     );
 }

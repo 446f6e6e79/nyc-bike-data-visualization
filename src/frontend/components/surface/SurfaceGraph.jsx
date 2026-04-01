@@ -1,7 +1,7 @@
 import Plot from "react-plotly.js"
 import { useMemo } from "react"
 import { HOUR_LABELS, DAY_LABELS, normalizeDay } from "../../config.jsx"
-import { METRIC_LABELS, METRIC_GETTERS } from "../../pages/SurfacePage.jsx"
+import { METRIC_LABELS, METRIC_GETTERS, METRIC_FORMATS } from "../../pages/SurfacePage.jsx"
 
 const BLUE_COLORSCALE = [
     [0.0, "#deedf8"],
@@ -24,7 +24,7 @@ const BLUE_COLORSCALE = [
 function SurfaceGraph({ data, activeMetric, setCoordinates }) {
     // If no data is available, return null to avoid rendering the graph
     if (!data || data.length === 0) return null
-    // Preprocesses the input data to create a 2D array (Z
+    // Preprocesses the input data to create a 2D array (Z matrix) that represents the metric values for each combination of day and hour, which will be used as the Z values for the surface graph. The useMemo hook is used to optimize performance by memoizing the computed Z matrix, so it only recalculates when the input data or active metric changes.
     const Z = useMemo(() => {
         // Formats the data
         const metric = METRIC_GETTERS[activeMetric]
@@ -39,6 +39,12 @@ function SurfaceGraph({ data, activeMetric, setCoordinates }) {
         return grid
     }, [data, activeMetric])
 
+    // Prepares the text for the hover tooltips by formatting the Z values using the appropriate metric formatter, allowing the tooltips to display human-readable values when hovering over the surface graph.
+    const hoverText = useMemo(() => {
+        const formatMetric = METRIC_FORMATS[activeMetric]
+        return Z.map(row => row.map(value => formatMetric(value)))
+    }, [Z, activeMetric])
+
     return (
         <Plot
             data={[{
@@ -46,12 +52,13 @@ function SurfaceGraph({ data, activeMetric, setCoordinates }) {
                 z: Z,
                 x: HOUR_LABELS,
                 y: DAY_LABELS,
+                text: hoverText,
                 colorscale: BLUE_COLORSCALE,
                 showscale: false,
                 hovertemplate:
                     "<b>%{y}</b><br>" +
                     "Hour: %{x}<br>" +
-                    `${METRIC_LABELS[activeMetric]}: <b>%{z:.2f}</b><extra></extra>`,
+                    `${METRIC_LABELS[activeMetric]}: <b>%{text}</b><extra></extra>`,
             }]}
             layout={{
                 paper_bgcolor: "#ffffff",
