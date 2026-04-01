@@ -13,7 +13,15 @@ const BAR_MUTED = "rgba(50,102,173,0.2)" // A muted blue color with transparency
  * @returns A canvas element where the Chart.js bar chart will be rendered.
  */
 
-export default function BarChart({ data, labels, format, highlight={} }) {
+export default function BarChart({
+    data = [],
+    labels = [],
+    format,
+    highlight = null,
+    xAxisTitle,
+    yAxisTitle,
+    unit,
+}) {
     // Refs to store the canvas element and the Chart.js instance, allowing us to create and destroy the chart as needed when the data or highlight changes.
     const canvasRef = useRef(null)
     const chartRef = useRef(null)
@@ -43,17 +51,29 @@ export default function BarChart({ data, labels, format, highlight={} }) {
                 },
                 scales: {
                     x: {
+                        title: {
+                            display: Boolean(xAxisTitle),
+                            text: xAxisTitle,
+                        },
                         ticks: { maxRotation: 0, autoSkip: false },
                         grid: { display: false },
                         border: { display: false }
                     },
                     y: {
+                        beginAtZero: true,
+                        title: {
+                            display: Boolean(yAxisTitle),
+                            text: yAxisTitle,
+                        },
                         ticks: {
                             maxTicksLimit: 5,
                             callback: v => {
-                                if (v >= 1e6) return (v / 1e6).toFixed(1) + "M"
-                                if (v >= 1e3) return (v / 1e3).toFixed(0) + "k"
-                                return v.toFixed(1)
+                                if (unit === "rides") {
+                                    if (v >= 1e6) return (v / 1e6).toFixed(1) + "M"
+                                    if (v >= 1e3) return (v / 1e3).toFixed(0) + "k"
+                                    return Math.round(v).toLocaleString()
+                                }
+                                return Number(v).toFixed(1)
                             }
                         },
                         grid: { color: "rgba(0,0,0,0.06)" },
@@ -64,7 +84,7 @@ export default function BarChart({ data, labels, format, highlight={} }) {
         })
 
         return () => chartRef.current?.destroy()
-    }, [data])
+    }, [data, labels, colors, format, xAxisTitle, yAxisTitle, unit])
 
     return <canvas ref={canvasRef} />
 }
