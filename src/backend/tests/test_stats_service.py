@@ -1,9 +1,13 @@
 from datetime import date, datetime
-
 import polars as pl
+from pathlib import Path
+import sys
 
-from src.backend.services import stats as stats_service
-
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+    
+from src.backend.services.stats import baseStats as stats_service
 
 def _rides_df(rows: list[dict]) -> pl.LazyFrame:
     return pl.DataFrame(rows).lazy()

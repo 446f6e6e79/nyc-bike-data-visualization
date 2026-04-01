@@ -8,11 +8,14 @@ from test_helpers import (
     assert_weather_fields,
 )
 
+DATE_PARAMS = {"start_date": "2026-01-02", "end_date": "2026-01-02"}
+
 def test_get_rides_returns_mock_dataset_records():
     """Test that /rides returns base mock rides when enrich joins are disabled."""
     response = requests.get(
         f"{BASE_URL}/rides/",
         params={
+            **DATE_PARAMS,
             "user_type": "member",
             "join_weather": "false",
             "join_distances": "false",
@@ -36,6 +39,7 @@ def test_get_rides_with_joins_returns_enriched_fields():
     response = requests.get(
         f"{BASE_URL}/rides/",
         params={
+            **DATE_PARAMS,
             "user_type": "member",
             "join_weather": "true",
             "join_distances": "true",

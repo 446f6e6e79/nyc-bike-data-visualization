@@ -2,7 +2,7 @@ import requests
 
 from test_helpers import BASE_URL, DEFAULT_TIMEOUT
 
-DATE_PARAMS = {"start_date": "2024-01-05", "end_date": "2024-01-05"}
+DATE_PARAMS = {"start_date": "2026-01-02", "end_date": "2026-01-02"}
 
 def test_get_stats_no_filters():
     """Test that /stats/ returns expected fields with no filters."""
@@ -48,7 +48,7 @@ def test_get_stats_group_by_none_matches_default():
 
 
 def test_get_stats_grouped_default_day_of_week():
-    """Test that /stats/ supports group_by=day_of_week with 7 rows."""
+    """Test that /stats/ supports group_by=day_of_week for the selected range."""
     response = requests.get(
         f"{BASE_URL}/stats/",
         params={**DATE_PARAMS, "group_by": "day_of_week"},
@@ -57,8 +57,8 @@ def test_get_stats_grouped_default_day_of_week():
     assert response.status_code == 200
     payload = response.json()
 
-    assert len(payload) == 7
-    assert [row["day_of_week"] for row in payload] == [0, 1, 2, 3, 4, 5, 6]
+    assert len(payload) == 1
+    assert [row["day_of_week"] for row in payload] == [4]
     assert all(row["hour"] is None for row in payload)
 
     friday = next(row for row in payload if row["day_of_week"] == 4)
@@ -97,7 +97,7 @@ def test_get_stats_grouped_by_day_and_hour():
     assert response.status_code == 200
     payload = response.json()
 
-    assert len(payload) == 7 * 24
+    assert len(payload) == 24
     assert sum(row["total_rides"] for row in payload) == 2
 
     friday_hour_5 = next(
@@ -106,13 +106,8 @@ def test_get_stats_grouped_by_day_and_hour():
     friday_hour_15 = next(
         row for row in payload if row["day_of_week"] == 4 and row["hour"] == 15
     )
-    saturday_hour_5 = next(
-        row for row in payload if row["day_of_week"] == 5 and row["hour"] == 5
-    )
-
     assert friday_hour_5["total_rides"] == 1
     assert friday_hour_15["total_rides"] == 1
-    assert saturday_hour_5["total_rides"] == 0
 
 def test_get_trips_between_stations():
     """Test that /stats/trips_between_stations returns expected fields."""
