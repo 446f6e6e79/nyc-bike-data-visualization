@@ -19,7 +19,7 @@ const PAGES = [
 function AppHeader({ dateRange, onDateRangeChange, currentUserFilters, onUserFilterChange }) {
     return (
         <header className="app-header">
-            <h1 className="app-title">🚲 Citi Bike Analytics</h1>
+            <h1 className="app-title">Citi Bike Analytics</h1>
             <nav>
                 {PAGES.map(({ to, label }) => (
                     <NavLink

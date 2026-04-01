@@ -13,7 +13,7 @@ def _normalize_weather_types(df: WeatherFrame) -> WeatherFrame:
     return df.with_columns(
         pl.col("datetime").cast(pl.Datetime, strict=False),
         pl.col("temperature_2m").cast(pl.Float64, strict=False),
-        pl.col("wind_speed").cast(pl.Float64, strict=False),
+        pl.col("wind_speed_10m").cast(pl.Float64, strict=False),
         pl.col("precipitation").cast(pl.Float64, strict=False),
         pl.col("weather_code").cast(pl.Int64, strict=False),
     )

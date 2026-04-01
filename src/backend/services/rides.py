@@ -85,6 +85,8 @@ def _enrich_rides_with_weather(rides: pl.LazyFrame, weather: pl.LazyFrame) -> pl
         "datetime": "time",
         "temperature_2m": "temperature",
         "wind_speed_10m": "wind_speed",
+        "weather_code": "weather_code",
+        "precipitation": "precipitation",
     })
     weather_cols = [c for c in weather.collect_schema().names() if c != "time"]
 
