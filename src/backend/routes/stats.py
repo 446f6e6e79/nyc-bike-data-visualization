@@ -1,5 +1,5 @@
 from datetime import date
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from src.backend.models.ride import MemberCasual, RideableType
 from src.backend.models.stats import (
     DatasetDateRange,
@@ -10,11 +10,9 @@ from src.backend.models.stats import (
     StatsGroupBy,
     RideCountGroupBy,
 )
-from src.backend.services.stats import (
-    get_stats_data,
-    get_station_ride_counts_stats,
-    get_trips_between_stations_stats,
-)
+from src.backend.services.stats.baseStats import get_stats_data
+from src.backend.services.stats.flowCounts import get_trips_between_stations_stats
+from src.backend.services.stats.stationCounts import get_station_ride_counts_stats
 from src.backend.loaders.rides_loader import get_data_range_coverage
 
 router = APIRouter(prefix="/stats", tags=["stats"])
@@ -24,8 +22,8 @@ def get_stats(
     group_by: StatsGroupBy = Query(default=StatsGroupBy.NONE),
     user_type: MemberCasual | None = Query(default=None),
     bike_type: RideableType | None = Query(default=None),
-    start_date: date | None = Query(default=None),
-    end_date: date | None = Query(default=None),
+    start_date: date = Query(...),
+    end_date: date = Query(...),
     start_station_id: str | None = Query(default=None),
     end_station_id: str | None = Query(default=None)
 ):
@@ -45,8 +43,8 @@ def get_station_ride_counts(
     group_by: RideCountGroupBy = Query(default=RideCountGroupBy.NONE),
     user_type: MemberCasual | None = Query(default=None),
     bike_type: RideableType | None = Query(default=None),
-    start_date: date | None = Query(default=None), 
-    end_date: date | None = Query(default=None),
+    start_date: date = Query(...), 
+    end_date: date = Query(...),
     station_id: str | None = Query(default=None),
     limit: int | None = Query(default=100, ge=1, le=3000)
 ):
@@ -66,8 +64,8 @@ def get_trips_between_stations(
     group_by: RideCountGroupBy = Query(default=RideCountGroupBy.NONE),
     user_type: MemberCasual | None = Query(default=None),
     bike_type: RideableType | None = Query(default=None),
-    start_date: date | None = Query(default=None), 
-    end_date: date | None = Query(default=None),
+    start_date: date = Query(...), 
+    end_date: date = Query(...),
     station_id: str | None = Query(default=None),
     limit: int | None = Query(default=100, ge=1, le=1000)
 ):

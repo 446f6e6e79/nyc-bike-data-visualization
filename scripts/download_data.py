@@ -22,7 +22,8 @@ from src.backend.config import (
     DOWNLOAD_JC,
     BIKE_ROUTES_DATA_DIR,
 )
-
+# TODO: should we remove the dataset outside the specified range?
+#Right now, there might be problems if we install different ranges of data at different times
 def validate_yyyymm(date_value: str, arg_name: str) -> None:
     """
     Validate that the provided date value is in the format YYYYMM and represents a valid month.

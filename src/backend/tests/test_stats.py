@@ -2,13 +2,15 @@ import requests
 
 from test_helpers import BASE_URL, DEFAULT_TIMEOUT
 
+DATE_PARAMS = {"start_date": "2024-01-05", "end_date": "2024-01-05"}
+
 def test_get_stats_no_filters():
     """Test that /stats/ returns expected fields with no filters."""
-    response = requests.get(f"{BASE_URL}/stats/", timeout=DEFAULT_TIMEOUT)
+    response = requests.get(f"{BASE_URL}/stats/", params=DATE_PARAMS, timeout=DEFAULT_TIMEOUT)
     assert response.status_code == 200
     payload = response.json()
     assert payload["total_rides"] == 2
-    assert payload["hours_count"] == 2
+    assert payload["hours_count"] == 24
     assert payload["average_duration_seconds"] > 0
     assert payload["average_distance_km"] > 0
     assert payload["total_duration_seconds"] > 0
@@ -18,13 +20,13 @@ def test_get_stats_user_type():
     """Test that /stats/ returns expected fields for a given user type."""
     response = requests.get(
         f"{BASE_URL}/stats/",
-        params={"user_type": "casual"},
+        params={**DATE_PARAMS, "user_type": "casual"},
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
     payload = response.json()
     assert payload["total_rides"] == 0
-    assert payload["hours_count"] == 0
+    assert payload["hours_count"] == 24
     assert payload["average_duration_seconds"] == 0
     assert payload["average_distance_km"] == 0
     assert payload["total_duration_seconds"] == 0
@@ -35,21 +37,21 @@ def test_get_stats_group_by_none_matches_default():
     """Test that group_by=none returns the same non-grouped stats shape."""
     response = requests.get(
         f"{BASE_URL}/stats/",
-        params={"group_by": "none"},
+        params={**DATE_PARAMS, "group_by": "none"},
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
     payload = response.json()
     assert isinstance(payload, dict)
     assert payload["total_rides"] == 2
-    assert payload["hours_count"] == 2
+    assert payload["hours_count"] == 24
 
 
 def test_get_stats_grouped_default_day_of_week():
     """Test that /stats/ supports group_by=day_of_week with 7 rows."""
     response = requests.get(
         f"{BASE_URL}/stats/",
-        params={"group_by": "day_of_week"},
+        params={**DATE_PARAMS, "group_by": "day_of_week"},
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
@@ -61,14 +63,14 @@ def test_get_stats_grouped_default_day_of_week():
 
     friday = next(row for row in payload if row["day_of_week"] == 4)
     assert friday["total_rides"] == 2
-    assert friday["hours_count"] == 2
+    assert friday["hours_count"] == 24
 
 
 def test_get_stats_grouped_by_hour():
     """Test that /stats/ supports grouping by hour and returns 24 rows."""
     response = requests.get(
         f"{BASE_URL}/stats/",
-        params={"group_by": "hour"},
+        params={**DATE_PARAMS, "group_by": "hour"},
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
@@ -89,7 +91,7 @@ def test_get_stats_grouped_by_day_and_hour():
     """Test that /stats/ supports grouping by day_of_week and hour together."""
     response = requests.get(
         f"{BASE_URL}/stats/",
-        params={"group_by": "day_of_week,hour"},
+        params={**DATE_PARAMS, "group_by": "day_of_week,hour"},
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
@@ -116,6 +118,7 @@ def test_get_trips_between_stations():
     """Test that /stats/trips_between_stations returns expected fields."""
     response = requests.get(
         f"{BASE_URL}/stats/trips_between_stations",
+        params=DATE_PARAMS,
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
@@ -152,7 +155,7 @@ def test_get_trips_between_stations_with_invalid_station_id():
     """Test that /stats/trips_between_stations returns empty for unknown station_id."""
     response = requests.get(
         f"{BASE_URL}/stats/trips_between_stations",
-        params={"station_id": "invalid_station_id"},
+        params={**DATE_PARAMS, "station_id": "invalid_station_id"},
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
@@ -161,7 +164,7 @@ def test_get_trips_between_stations_with_invalid_station_id():
 
 def test_get_station_counts():
     """Test that /stats/station_ride_counts returns expected station counts."""
-    response = requests.get(f"{BASE_URL}/stats/station_ride_counts", timeout=DEFAULT_TIMEOUT)
+    response = requests.get(f"{BASE_URL}/stats/station_ride_counts", params=DATE_PARAMS, timeout=DEFAULT_TIMEOUT)
     assert response.status_code == 200
     payload = response.json()
     assert len(payload) == 4
@@ -186,7 +189,7 @@ def test_get_station_counts_grouped_by_day_of_week():
     """Test that grouped station counts are returned in nested station-first shape."""
     response = requests.get(
         f"{BASE_URL}/stats/station_ride_counts",
-        params={"group_by": "day_of_week"},
+        params={**DATE_PARAMS, "group_by": "day_of_week"},
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
@@ -219,7 +222,7 @@ def test_get_trips_between_stations_grouped_by_hour():
     """Test that /stats/trips_between_stations supports group_by=hour."""
     response = requests.get(
         f"{BASE_URL}/stats/trips_between_stations",
-        params={"group_by": "hour"},
+        params={**DATE_PARAMS, "group_by": "hour"},
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200

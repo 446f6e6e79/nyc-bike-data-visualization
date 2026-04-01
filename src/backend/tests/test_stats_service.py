@@ -26,7 +26,10 @@ def test_group_by_none_hours_count_infers_bounds_and_counts_empty_hours(monkeypa
     monkeypatch.setattr(stats_service, "get_filtered_rides", lambda **_: rides)
     monkeypatch.setattr(stats_service, "add_trip_duration", lambda x: x)
 
-    stats = stats_service.get_stats_data()
+    stats = stats_service.get_stats_data(
+        start_date=date(2024, 1, 5),
+        end_date=date(2024, 1, 5),
+    )
 
     assert stats.total_rides == 2
     assert stats.hours_count == 24
@@ -68,7 +71,10 @@ def test_group_by_none_hours_count_spans_multiple_days(monkeypatch):
     monkeypatch.setattr(stats_service, "get_filtered_rides", lambda **_: rides)
     monkeypatch.setattr(stats_service, "add_trip_duration", lambda x: x)
 
-    stats = stats_service.get_stats_data()
+    stats = stats_service.get_stats_data(
+        start_date=date(2024, 1, 5),
+        end_date=date(2024, 1, 6),
+    )
 
     assert stats.total_rides == 2
     assert stats.hours_count == 48
