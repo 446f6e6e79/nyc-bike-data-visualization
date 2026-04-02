@@ -1,9 +1,9 @@
-import useDayHourStats from './useDayHourStats';
-import useHourlyStats from './useHourlyStats';
-import useWeeklyStats from './useWeeklyStats';
-import useWeatherStats from './useWeatherStats';
-import useTripCounts from './useTripCounts';
-import useStationRideCounts from './useStationRideCounts';
+import useDayHourStats from '../hooks/useDayHourStats';
+import useHourlyStats from '../hooks/useHourlyStats';
+import useWeeklyStats from '../hooks/useWeeklyStats';
+import useWeatherStats from '../hooks/useWeatherStats';
+import useTripCounts from '../hooks/useTripCounts';
+import useStationRideCounts from '../hooks/useStationRideCounts';
 
 import { LIMIT_STATIONS, LIMIT_TRIPS } from '../config';
 
@@ -13,6 +13,9 @@ import { LIMIT_STATIONS, LIMIT_TRIPS } from '../config';
  * @param {Object} filters - An object containing any filters to apply when fetching data
  */
 export default function prefetchData(filters) {
+    // Don't prefetch if there are no filters, as the hooks will likely not fetch anything useful without them
+    if (!filters) return
+    // Call all hooks to prefetch data for the current filters (this will be cached by the hooks)
     useDayHourStats(filters);
     useHourlyStats(filters);
     useWeeklyStats(filters);

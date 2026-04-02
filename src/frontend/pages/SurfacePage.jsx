@@ -3,7 +3,7 @@ import useDayHourStats from "../hooks/useDayHourStats";
 import useWeeklyStats from "../hooks/useWeeklyStats";
 import useHourlyStats from "../hooks/useHourlyStats";
 import SurfaceSelector from "../components/surface/SurfaceSelector";
-import StatusMessage from "../components/StatusMessage";
+import StatusMessage from "../features/header/components/StatusMessage";
 import SurfaceGraph from "../components/surface/SurfaceGraph";
 import SurfaceHistograms from "../components/surface/SurfaceHistograms";
 

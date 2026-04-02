@@ -3,7 +3,7 @@ import DeckGL from '@deck.gl/react'
 import { buildLayers } from '../components/map/buildLayers.jsx'
 import MapController from '../components/map/components/MapController.jsx'
 import MapLegend from '../components/map/components/MapLegend.jsx'
-import StatusMessage from '../components/StatusMessage.jsx'
+import StatusMessage from '../features/header/components/StatusMessage.jsx'
 import Tooltip from '../components/map/components/Tooltip.jsx'
 
 // List of available map layers

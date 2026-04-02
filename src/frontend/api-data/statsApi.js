@@ -1,5 +1,5 @@
-import apiClient from './apiClient.js'
-import { ENDPOINTS } from './apiConstants.js'
+import apiClient from '../clients/apiClient.js'
+import { ENDPOINTS } from '../clients/apiConstants.js'
 
 /**
  * Fetches ride counts for each station, with optional filters.
@@ -22,15 +22,6 @@ export async function fetchTripsBetweenStations(filters = {}) {
     const { data } = await apiClient.get(ENDPOINTS.tripsBetweenStations(), {
         params: filters,
     })
-    return data
-}
-
-/**
- * Fetches data range coverage information from the backend
- * @returns An object containing the minimum and maximum dates covered in the dataset
- */
-export async function fetchDateRangeStats() {
-    const { data } = await apiClient.get(ENDPOINTS.dateRange())
     return data
 }
 

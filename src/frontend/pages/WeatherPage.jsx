@@ -1,5 +1,5 @@
 import useWeatherStats from "../hooks/useWeatherStats"
-import StatusMessage from "../components/StatusMessage"
+import StatusMessage from "../features/header/components/StatusMessage"
 import ScatterPlot from "../components/ScatterPlot"
 
 //#TODO: Check codes

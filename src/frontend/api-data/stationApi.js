@@ -1,5 +1,5 @@
-import apiClient from './apiClient.js'
-import { ENDPOINTS } from './apiConstants.js'
+import apiClient from '../clients/apiClient.js'
+import { ENDPOINTS } from '../clients/apiConstants.js'
 
 /**
  * Fetches station availability information from the backend

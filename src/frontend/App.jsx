@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import AppHeader from './components/AppHeader.jsx'
+import AppHeader from './features/header/AppHeader.jsx'
 import MapPage from './pages/MapPage.jsx'
 import SurfacePage from './pages/SurfacePage.jsx'
 import WeatherPage from './pages/WeatherPage.jsx'
-import prefetchData from './hooks/prefetcher.js'
+import prefetchData from './utils/prefetcher.js'
 
 /**
  * App component that sets up the main structure of the application, including routing and layout. 
@@ -12,17 +12,13 @@ import prefetchData from './hooks/prefetcher.js'
  * @returns 
  */
 function App() {
-    // Header state for filters
-    const [dateRange, setDateRange] = useState(null)
-    const [currentUserFilters, setCurrentUserFilters] = useState({})
-    // Combine filters into a single object to pass down to pages
-    const filters = { ...dateRange, ...currentUserFilters }
+    const [filters, setFilters] = useState({})
     // Prefetch data for the current filters (this will be cached by the hooks)
     prefetchData(filters)
     return (
         <BrowserRouter>
             <div className="app-shell">
-                <AppHeader dateRange={dateRange} onDateRangeChange={setDateRange} currentUserFilters={currentUserFilters} onUserFilterChange={setCurrentUserFilters} />
+                <AppHeader filters={filters} onFiltersChange={setFilters} />
                 <div className="app-content">
                     <Routes>
                         <Route path="/" element={<Navigate to="/map" replace />} />

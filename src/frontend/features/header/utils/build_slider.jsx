@@ -1,7 +1,5 @@
-/**Slider Utilities */
-import { useCallback } from 'react'
-import { MONTH_LABELS } from '../../config.jsx'
-
+import { MONTH_LABELS } from '../../../config.jsx'
+ 
 // Calculate the month index corresponding to a pointer event's clientX position relative to the track's bounding rectangle, ensuring the result is clamped within valid bounds.
 export function getBoundaryIndex(clientX, rect, totalMonths) {
     if (rect.width === 0 || totalMonths <= 1) return 0
@@ -55,33 +53,3 @@ export function buildYearLabels(minDate, totalMonths) {
         left: ((((firstIndex + lastIndex) / 2) + 0.5) / totalMonths) * 100,
     }))
 }
-
-// Handle component represents the draggable handles for resizing the date range selection, supporting keyboard interactions for accessibility by allowing users to step through months using arrow keys.
-export function Handle({ side, value, min, max, label, onStep }) {
-    // Handle left and right arrow keys to step through months, ensuring the value stays within the provided min and max bounds.
-    const handleKeyDown = useCallback((event) => {
-        const step = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0
-        if (!step) return
-
-        event.preventDefault()
-        onStep(value + step)
-    }, [onStep, value])
-
-    // Render a button element for the handle, with appropriate ARIA attributes for accessibility, and styling classes based on the side (start or end) of the handle.
-    return (
-        <button
-            type="button"
-            role="slider"
-            aria-label={side === 'start' ? 'Start month handle' : 'End month handle'}
-            aria-valuemin={min}
-            aria-valuemax={max}
-            aria-valuenow={value}
-            aria-valuetext={label}
-            onKeyDown={handleKeyDown}
-            className={`date-range-filter__handle date-range-filter__handle--${side}`}
-        >
-            <div className="date-range-filter__handle-line" />
-        </button>
-    )
-}
-
