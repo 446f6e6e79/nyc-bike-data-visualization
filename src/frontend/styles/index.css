@@ -1,12 +1,12 @@
 @import './base.css';
 @import './layout.css';
-@import './map.css';
-@import './components/charts.css';
-@import './components/date-range-filter.css';
-@import './components/status.css';
+@import '../features/map/styles/map.css';
+@import '../features/weather/styles/charts.css';
+@import '../features/header/styles/date-range-filter.css';
+@import './status.css';
 @import './stats.css';
-@import './surface.css';
-@import './user_filter.css';
+@import '../features/temporal/styles/surface.css';
+@import '../features/header/styles/user_filter.css';
 
 @tailwind base;
 @tailwind components;
