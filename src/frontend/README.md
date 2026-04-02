@@ -65,17 +65,31 @@ npm run test
 
 ```text
 src/frontend/
-├── main.jsx                      # Frontend entry point
-├── App.jsx                       # Root React component
-├── App.css                       # Global styles
-├── index.html                    # HTML template used by Vite
-├── package.json                  # Frontend scripts and dependencies
-├── vite.config.js                # Vite configuration
-├── tailwind.config.js            # Tailwind CSS configuration
-├── api-data/                     # API constants and request configuration
-├── components/                   # Reusable React UI components
-├── map/                          # Map-related components and utilities
-├── pages/                        # React components for different app pages
-├── hooks/                        # Custom React hooks
-└── tests/                        # Frontend unit and integration tests
+├── main.jsx                  # App entry point
+├── App.jsx                   # Root layout and routing
+├── clients/                  # API client and React Query helpers
+├── components/               # Shared UI used across features
+├── features/                 # Feature-first modules
+│   ├── header/               # Global header and filter controls
+│   ├── map/                  # Interactive map page and map layers
+│   ├── temporal/             # Time-based charts 
+│   └── weather/              # Weather impact visualizations
+├── services/                 # Shared API-facing service functions
+├── styles/                   # Shared/global stylesheet entrypoints
+├── tests/                    # Frontend tests
+└── utils/                    # Cross-feature utilities
 ```
+
+Example feature layout:
+
+```text
+src/frontend/features/header/
+├── AppHeader.jsx            # Feature entry component used by App.jsx
+├── components/              # Header-specific UI pieces
+├── hooks/                   # State and interaction logic for header filters
+├── services/                # Feature-specific API helpers
+├── styles/                  # Header-only styles
+└── utils/                   # Small formatting and helper functions
+```
+
+
