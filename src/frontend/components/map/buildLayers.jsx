@@ -2,17 +2,17 @@
 import { createBaseTileLayer } from './layers/baseTileLayer.js'
 // Station Usage Layer
 import { createStationUsageLayer } from './layers/stationUsageLayer.jsx'
-import { useStationUsageLayer } from './hooks/useStationUsageLayer.jsx'
+import { useStationUsageLayer } from './states/useStationUsageLayer.jsx'
 // Trip Flow Layer
 import { createTripFlowLayer } from './layers/tripFlowLayer.jsx'
-import { useTripFlowLayer } from './hooks/useTripFlowLayer.jsx'
+import { useTripFlowLayer } from './states/useTripFlowLayer.jsx'
 // Station Availability Layer
 import { createStationAvailabilityLayer } from './layers/stationAvailabilityLayer.jsx'
 import { createBikeRoutesLayer } from './layers/bikeRoutesLayer.jsx'
-import { useInfrastructureLayer } from './hooks/useInfrastructureLayer.jsx'
+import { useInfrastructureLayer } from './states/useInfrastructureLayer.jsx'
 
 import { useMemo, useState } from 'react'
-import { MAP_STYLES } from '../pages/MapPage.jsx'
+import { MAP_STYLES } from '../../pages/MapPage.jsx'
 
 /**
  * Function to build the layers for the map based on the active layer and the provided data. 

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import useStationRideCounts from '../../hooks/useStationRideCounts.js'
+import useStationRideCounts from '../../../hooks/useStationRideCounts.js'
 import { selectStations, getStationForCurrentTime, getMaxUsage, getMaxDelta} from '../selectors/stationUsage.js'
-import { LIMIT_STATIONS } from '../../config.jsx'
+import { LIMIT_STATIONS } from '../../../config.jsx'
 
 /**
  * Custom hook to fetch and process station usage data for the station usage layer. 

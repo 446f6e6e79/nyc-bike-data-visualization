@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import DeckGL from '@deck.gl/react'
-import { buildLayers } from '../map/buildLayers.jsx'
-import MapController from '../map/components/MapController.jsx'
-import MapLegend from '../map/components/MapLegend.jsx'
+import { buildLayers } from '../components/map/buildLayers.jsx'
+import MapController from '../components/map/components/MapController.jsx'
+import MapLegend from '../components/map/components/MapLegend.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
-import Tooltip from '../map/components/Tooltip.jsx'
+import Tooltip from '../components/map/components/Tooltip.jsx'
 
 // List of available map layers
 export const LAYER_OPTIONS = [

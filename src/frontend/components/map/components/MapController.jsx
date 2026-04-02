@@ -1,4 +1,4 @@
-import { LAYER_OPTIONS } from "../../pages/MapPage.jsx"
+import { LAYER_OPTIONS } from "../../../pages/MapPage.jsx"
 import SpeedController from "./SpeedController"
 import BikeRoutesToggle from "./BikeRoutesToggle"
 
