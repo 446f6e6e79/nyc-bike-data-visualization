@@ -4,7 +4,7 @@ import {
     selectMaxFlow,
 } from '../utils/selectors/tripFlow.js'
 import useTripCounts from './useTripCounts.js'
-import { LIMIT_TRIPS } from '../../../config.jsx'
+import { LIMIT_TRIPS } from '../../../utils/config.jsx'
 
 /**
  * Custom hook to fetch and process trip flow data for the trip flow layer.

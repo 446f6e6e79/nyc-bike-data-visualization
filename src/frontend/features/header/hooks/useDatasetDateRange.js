@@ -1,5 +1,5 @@
 import { fetchDateRange } from '../services/fetchDateRange.js'
-import useApiQueryWithFilters from '../../../hooks/baseApiQuery.js'
+import useApiQueryWithFilters from '../../../clients/baseApiQuery.js'
 
 /**
  * Custom hook to fetch the dataset date range coverage stats

@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react"
-import { normalizeDay } from "../../../config.jsx"
+import { normalizeDay } from "../../../utils/config.jsx"
 import { getMetricConfig } from "../utils/metric_formatter.jsx"
 
 /**

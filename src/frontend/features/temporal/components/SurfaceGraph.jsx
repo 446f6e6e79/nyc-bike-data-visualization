@@ -1,5 +1,5 @@
 import Plot from "react-plotly.js"
-import { HOUR_LABELS, DAY_LABELS } from "../../../config.jsx"
+import { HOUR_LABELS, DAY_LABELS } from "../../../utils/config.jsx"
 import useSurfaceGraph from "../hooks/useSurfaceGraph"
 
 const BLUE_COLORSCALE = [

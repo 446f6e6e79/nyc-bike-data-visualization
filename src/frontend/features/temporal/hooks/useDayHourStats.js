@@ -1,5 +1,5 @@
 import { fetchStats } from "../../../routes/statsApi.js";
-import useApiQueryWithFilters from "../../../hooks/baseApiQuery.js";
+import useApiQueryWithFilters from "../../../clients/baseApiQuery.js";
 
 /**
  * Custom hook to fetch stats grouped by day_of_week and hour, used for surface graph rendering.

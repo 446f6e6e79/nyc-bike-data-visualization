@@ -1,5 +1,5 @@
-import { fetchStats } from "../routes/statsApi.js";
-import useApiQueryWithFilters from "./baseApiQuery.js";
+import { fetchStats } from "../../../routes/statsApi.js";
+import useApiQueryWithFilters from "../../../clients/baseApiQuery.js";
 
 /**
  * Custom hook to fetch stats grouped by weather, used for surface graph rendering.

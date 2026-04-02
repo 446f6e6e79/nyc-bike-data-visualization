@@ -1,4 +1,4 @@
-import { MONTH_LABELS } from '../../../config.jsx'
+import { MONTH_LABELS } from '../../../utils/config.jsx'
  
 // Calculate the month index corresponding to a pointer event's clientX position relative to the track's bounding rectangle, ensuring the result is clamped within valid bounds.
 export function getBoundaryIndex(clientX, rect, totalMonths) {

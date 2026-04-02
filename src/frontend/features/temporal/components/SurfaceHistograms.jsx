@@ -1,5 +1,5 @@
 import { getMetricConfig } from "../utils/metric_formatter.jsx"
-import { DAY_LABELS, HOUR_LABELS } from "../../../config.jsx"
+import { DAY_LABELS, HOUR_LABELS } from "../../../utils/config.jsx"
 import BarChart from "./BarChart.jsx"
 
 /**

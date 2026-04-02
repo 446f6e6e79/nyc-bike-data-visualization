@@ -1,40 +1,15 @@
 
 import { useEffect, useRef, useMemo } from "react"
 import { Chart } from "chart.js/auto"
-import { WMO_WEATHER_CODES, GROUPED_WEATHER_CODES, getWeatherGroup } from "../pages/WeatherPage.jsx"
-import { getMetricValue } from "../features/temporal/utils/metric_formatter.jsx"
-
-// Function to determine the radius of each point in the scatter plot based on the total number of rides
-const pointRadius = rides => Math.max(4, Math.min(12, Math.sqrt(rides) / 5 + 3))
-
-/**
- * Formats the weather data for use in the scatter plot
- * @param {Array} data - The raw weather data
- * @returns {Array} The formatted data with additional metrics and weather group information for each data point
- */
-function formatData(data) {
-    return data.map(d => {
-        const code = d.weather_code
-        const weatherGroup = getWeatherGroup(code)
-        const weatherLabel = WMO_WEATHER_CODES[code]
-        const hoursCount = d.hours_count
-        const totalRides = getMetricValue("total_rides", d)
-        return {
-            totalRides,
-            avgDistanceKm: getMetricValue("average_distance", d),
-            avgDurationMin: getMetricValue("average_duration_minutes", d),
-            ridesPerHour: totalRides / hoursCount,
-            weatherGroup,
-            weatherLabel,
-        }
-    })
-}
+import { GROUPED_WEATHER_CODES } from "../utils/wmo_code_handler.jsx"
+import { formatData, pointRadius } from "../utils/scatterplot.jsx"
 
 /**
  * Component for rendering a scatter plot of weather data
  * @param {{ Array }} data - The props for the component
  * @returns {JSX.Element} The rendered scatter plot
  */
+//#TODO: Fix this style to move it to a hook if remains like this
 export default function ScatterPlot({ data }) {
     // Refs to store the canvas element and the Chart.js instance
     const canvasRef = useRef(null)

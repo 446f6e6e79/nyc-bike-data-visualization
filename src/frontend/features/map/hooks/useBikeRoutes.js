@@ -1,5 +1,5 @@
 import { fetchBikeRoutes } from '../services/bikeRoutesApi.js'
-import useApiQueryWithFilters from '../../../hooks/baseApiQuery.js'
+import useApiQueryWithFilters from '../../../clients/baseApiQuery.js'
 
 /**
  * Custom hook to fetch NYC bike route GeoJSON segments.

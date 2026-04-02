@@ -3,7 +3,7 @@ import useDateRangeCommit from '../hooks/useDateRangeCommit.js'
 import useDateRangePresentation from '../hooks/useDatePresentation.js'
 import useSliderHandler from '../hooks/useSliderHandler.js'
 import SliderHandle from './SliderHandle.jsx'
-import { MONTH_LABELS } from '../../../config.jsx'
+import { MONTH_LABELS } from '../../../utils/config.jsx'
 
 /**
  * DateRangeFilter component provides an interactive slider for selecting a date range based on the dataset's coverage.

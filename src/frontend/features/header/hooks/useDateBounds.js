@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useDatasetDateRange } from './useDatasetDateRange.js'
 import { normalizeBounds } from '../utils/date_formatter.jsx'
-import { MAX_COVERED_MONTHS } from '../../../config.jsx'
+import { MAX_COVERED_MONTHS } from '../../../utils/config.jsx'
 
 /**
  * Provides normalized dataset bounds and slider defaults.

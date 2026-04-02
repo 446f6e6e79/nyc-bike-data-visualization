@@ -1,5 +1,5 @@
 import { fetchTripsBetweenStations } from '../../../routes/statsApi.js'
-import useApiQueryWithFilters from '../../../hooks/baseApiQuery.js'
+import useApiQueryWithFilters from '../../../clients/baseApiQuery.js'
 
 /**
  * Hook to fetch trip counts between station pairs with optional filters.

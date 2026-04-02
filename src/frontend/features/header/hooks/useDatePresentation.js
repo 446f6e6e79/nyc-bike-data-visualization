@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { buildMarkers, buildYearLabels } from '../utils/build_slider.jsx'
-import { MONTH_LABELS } from '../../../config.jsx'
+import { MONTH_LABELS } from '../../../utils/config.jsx'
 
 /**
  * Derives UI-facing labels, markers, and state flags for DateRangeFilter.

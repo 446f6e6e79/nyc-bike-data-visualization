@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppHeader from './features/header/AppHeader.jsx'
 import MapPage from './features/map/MapPage.jsx'
 import TemporalPage from './features/temporal/TemporalPage.jsx'
-import WeatherPage from './pages/WeatherPage.jsx'
+import WeatherPage from './features/weather/WeatherPage.jsx'
 import prefetchData from './utils/prefetcher.js'
 
 /**
