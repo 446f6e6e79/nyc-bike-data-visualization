@@ -4,9 +4,8 @@ export default {
     './index.html',
     './components/**/*.{js,jsx}',
     'App.jsx',
-    './pages/**/*.{js,jsx}',
-    './hooks/**/*.{js,jsx}',
     './styles/**/*.css',
+    './features/**/*.{js,jsx,css}',
   ],
   theme: {
     extend: {
