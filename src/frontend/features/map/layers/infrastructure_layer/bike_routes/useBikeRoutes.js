@@ -1,4 +1,4 @@
-import { fetchBikeRoutes } from '../../../services/bikeRoutesApi.js'
+import { fetchBikeRoutes } from './bikeRoutesApi.js'
 import useApiQueryWithFilters from '../../../../../clients/baseApiQuery.js'
 
 /**

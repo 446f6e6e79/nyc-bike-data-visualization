@@ -1,4 +1,4 @@
-import { fetchStationAvailability } from '../../../services/stationApi.js'
+import { fetchStationAvailability } from './stationAvailabilityApi.js'
 import useApiQueryWithFilters from '../../../../../clients/baseApiQuery.js'
 
 /**
