@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppHeader from './features/header/AppHeader.jsx'
 import MapPage from './features/map/MapPage.jsx'
-import SurfacePage from './pages/SurfacePage.jsx'
+import TemporalPage from './features/temporal/TemporalPage.jsx'
 import WeatherPage from './pages/WeatherPage.jsx'
 import prefetchData from './utils/prefetcher.js'
 
@@ -23,7 +23,7 @@ function App() {
                     <Routes>
                         <Route path="/" element={<Navigate to="/map" replace />} />
                         <Route path="/map" element={<MapPage filters={filters} />} />
-                        <Route path="/surface" element={<SurfacePage filters={filters} />} />
+                        <Route path="/temporal" element={<TemporalPage filters={filters} />} />
                         <Route path="/weather" element={<WeatherPage filters={filters} />} />
                     </Routes>
                 </div>

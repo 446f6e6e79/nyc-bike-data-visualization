@@ -1,4 +1,4 @@
-import { fetchTripsBetweenStations } from '../../../api-data/statsApi.js'
+import { fetchTripsBetweenStations } from '../../../routes/statsApi.js'
 import useApiQueryWithFilters from '../../../hooks/baseApiQuery.js'
 
 /**

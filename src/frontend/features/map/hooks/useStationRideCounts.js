@@ -1,4 +1,4 @@
-import { fetchStationRideCounts } from '../../../api-data/statsApi.js'
+import { fetchStationRideCounts } from '../../../routes/statsApi.js'
 import useApiQueryWithFilters from '../../../hooks/baseApiQuery.js'
 
 /**

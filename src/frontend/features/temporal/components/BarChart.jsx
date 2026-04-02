@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react"
 import { Chart } from "chart.js/auto"
+import { formatTooltipLabel, formatYAxisTick } from "../utils/barchart.tsx"
 
 const BAR_SOLID = "#3266ad" // A solid blue color for the highlighted bar in the chart
 const BAR_MUTED = "rgba(50,102,173,0.2)" // A muted blue color with transparency for the non-highlighted bars in the chart, creating a visual contrast to emphasize the highlighted bar.
@@ -26,6 +27,8 @@ export default function BarChart({
     const canvasRef = useRef(null)
     const chartRef = useRef(null)
     const colors = labels.map(label => (label === highlight ? BAR_SOLID : BAR_MUTED))
+    const tooltipLabelCallback = formatTooltipLabel.bind(null, format)
+    const yAxisTickCallback = formatYAxisTick.bind(null, unit)
     // Effect hook to create the Chart.js bar chart when the component mounts or when the data, labels, format
     useEffect(() => {
         chartRef.current = new Chart(canvasRef.current, {
@@ -46,7 +49,7 @@ export default function BarChart({
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        callbacks: { label: ctx => " " + format(ctx.parsed.y) }
+                        callbacks: { label: tooltipLabelCallback }
                     }
                 },
                 scales: {
@@ -67,14 +70,7 @@ export default function BarChart({
                         },
                         ticks: {
                             maxTicksLimit: 5,
-                            callback: v => {
-                                if (unit === "rides") {
-                                    if (v >= 1e6) return (v / 1e6).toFixed(1) + "M"
-                                    if (v >= 1e3) return (v / 1e3).toFixed(0) + "k"
-                                    return Math.round(v).toLocaleString()
-                                }
-                                return Number(v).toFixed(1)
-                            }
+                            callback: yAxisTickCallback,
                         },
                         grid: { color: "rgba(0,0,0,0.06)" },
                         border: { display: false }
@@ -84,7 +80,7 @@ export default function BarChart({
         })
 
         return () => chartRef.current?.destroy()
-    }, [data, labels, colors, format, xAxisTitle, yAxisTitle, unit])
+    }, [data, labels, colors, tooltipLabelCallback, xAxisTitle, yAxisTitle, yAxisTickCallback])
 
     return <canvas ref={canvasRef} />
 }

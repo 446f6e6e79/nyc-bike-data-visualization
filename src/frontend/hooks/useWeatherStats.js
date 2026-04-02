@@ -1,4 +1,4 @@
-import { fetchStats } from "../api-data/statsApi";
+import { fetchStats } from "../routes/statsApi.js";
 import useApiQueryWithFilters from "./baseApiQuery.js";
 
 /**

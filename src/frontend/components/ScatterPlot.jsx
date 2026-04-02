@@ -2,7 +2,7 @@
 import { useEffect, useRef, useMemo } from "react"
 import { Chart } from "chart.js/auto"
 import { WMO_WEATHER_CODES, GROUPED_WEATHER_CODES, getWeatherGroup } from "../pages/WeatherPage.jsx"
-import { METRIC_GETTERS } from "../pages/SurfacePage.jsx"
+import { getMetricValue } from "../features/temporal/utils/metric_formatter.jsx"
 
 // Function to determine the radius of each point in the scatter plot based on the total number of rides
 const pointRadius = rides => Math.max(4, Math.min(12, Math.sqrt(rides) / 5 + 3))
@@ -18,11 +18,12 @@ function formatData(data) {
         const weatherGroup = getWeatherGroup(code)
         const weatherLabel = WMO_WEATHER_CODES[code]
         const hoursCount = d.hours_count
+        const totalRides = getMetricValue("total_rides", d)
         return {
-            totalRides: METRIC_GETTERS.total_rides(d),
-            avgDistanceKm: METRIC_GETTERS.average_distance(d),
-            avgDurationMin: METRIC_GETTERS.average_duration_minutes(d),
-            ridesPerHour: METRIC_GETTERS.total_rides(d) / hoursCount,  // Add any additional metrics you want to show in the tooltip here
+            totalRides,
+            avgDistanceKm: getMetricValue("average_distance", d),
+            avgDurationMin: getMetricValue("average_duration_minutes", d),
+            ridesPerHour: totalRides / hoursCount,
             weatherGroup,
             weatherLabel,
         }

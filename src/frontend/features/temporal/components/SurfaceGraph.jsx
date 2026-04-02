@@ -1,7 +1,6 @@
 import Plot from "react-plotly.js"
-import { useMemo } from "react"
-import { HOUR_LABELS, DAY_LABELS, normalizeDay } from "../../config.jsx"
-import { METRIC_LABELS, METRIC_GETTERS, METRIC_FORMATS } from "../../pages/SurfacePage.jsx"
+import { HOUR_LABELS, DAY_LABELS } from "../../../config.jsx"
+import useSurfaceGraph from "../hooks/useSurfaceGraph"
 
 const BLUE_COLORSCALE = [
     [0.0, "#deedf8"],
@@ -24,26 +23,11 @@ const BLUE_COLORSCALE = [
 function SurfaceGraph({ data, activeMetric, setCoordinates }) {
     // If no data is available, return null to avoid rendering the graph
     if (!data || data.length === 0) return null
-    // Preprocesses the input data to create a 2D array (Z matrix) that represents the metric values for each combination of day and hour, which will be used as the Z values for the surface graph. The useMemo hook is used to optimize performance by memoizing the computed Z matrix, so it only recalculates when the input data or active metric changes.
-    const Z = useMemo(() => {
-        // Formats the data
-        const metric = METRIC_GETTERS[activeMetric]
-        // Initializes a 7x24 grid to hold the metric values for each day-hour combination
-        const grid = Array.from({ length: 7 }, () => Array(24).fill(0))
-        // Populates the grid
-        for (let i = 0; i < data.length; i++) {
-            const d = data[i]
-            const day = normalizeDay(d.day_of_week)
-            grid[day][d.hour] = metric(d)
-        }
-        return grid
-    }, [data, activeMetric])
-
-    // Prepares the text for the hover tooltips by formatting the Z values using the appropriate metric formatter, allowing the tooltips to display human-readable values when hovering over the surface graph.
-    const hoverText = useMemo(() => {
-        const formatMetric = METRIC_FORMATS[activeMetric]
-        return Z.map(row => row.map(value => formatMetric(value)))
-    }, [Z, activeMetric])
+    const { metric, Z, hoverText, handleSurfaceClick } = useSurfaceGraph({
+        data,
+        activeMetric,
+        setCoordinates,
+    })
 
     return (
         <Plot
@@ -58,7 +42,7 @@ function SurfaceGraph({ data, activeMetric, setCoordinates }) {
                 hovertemplate:
                     "<b>%{y}</b><br>" +
                     "Hour: %{x}<br>" +
-                    `${METRIC_LABELS[activeMetric]}: <b>%{text}</b><extra></extra>`,
+                    `${metric.label}: <b>%{text}</b><extra></extra>`,
             }]}
             layout={{
                 paper_bgcolor: "#ffffff",
@@ -90,7 +74,7 @@ function SurfaceGraph({ data, activeMetric, setCoordinates }) {
                         zerolinecolor: "#99c4e8",
                     },
                     zaxis: {
-                        title: { text: METRIC_LABELS[activeMetric], font: { color: "#000000", size: 16 } },
+                        title: { text: metric.label, font: { color: "#000000", size: 16 } },
                         tickfont: { color: "#000000", size: 12 },
                         gridcolor: "#c0d8ef",
                         backgroundcolor: "#f4f9fd",
@@ -104,15 +88,8 @@ function SurfaceGraph({ data, activeMetric, setCoordinates }) {
                 margin: { l: 0, r: 0, b: 0, t: 20 },
                 font: { family: "'DM Mono', monospace", color: "#000000" },
             }}
-            // Event handler for when the user hovers over a point
-            onClick={(eventData) => {
-                const point = eventData.points[0]
-                setCoordinates({
-                    day: point.y,
-                    hour: point.x,
-                    value: point.z,
-                })
-            }}
+            // Event handler for when the user clicks over a point
+            onClick={handleSurfaceClick}
             // Disables the mode bar and other interactive features to maintain a clean and static visualization
             config={{
                 displayModeBar: false,

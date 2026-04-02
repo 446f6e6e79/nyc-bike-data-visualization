@@ -5,7 +5,7 @@ import RiderBikeFilter from './components/RiderBikeFilter.jsx'
 
 const PAGES = [
     { to: '/map', label: 'Map' },
-    { to: '/surface', label: 'Surface' },
+    { to: '/temporal', label: 'Temporal' },
     { to: '/weather', label: 'Weather' },
 ]
 

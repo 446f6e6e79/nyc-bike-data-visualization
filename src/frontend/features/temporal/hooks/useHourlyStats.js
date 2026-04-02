@@ -1,5 +1,5 @@
-import { fetchStats } from "../api-data/statsApi.js";
-import useApiQueryWithFilters from "./baseApiQuery.js";
+import { fetchStats } from "../../../routes/statsApi.js";
+import useApiQueryWithFilters from "../../../hooks/baseApiQuery.js";
 
 /**
  * Custom hook to fetch stats grouped by hour, used for surface graph rendering.
