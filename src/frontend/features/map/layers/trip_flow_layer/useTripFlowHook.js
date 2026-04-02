@@ -2,9 +2,9 @@ import { useMemo } from 'react'
 import {
     selectTrips,
     selectMaxFlow,
-} from '../utils/selectors/tripFlow.js'
+} from './tripFlowSelector.js'
 import useTripCounts from './useTripCounts.js'
-import { LIMIT_TRIPS } from '../../../utils/config.jsx'
+import { LIMIT_TRIPS } from '../../../../utils/config.jsx'
 
 /**
  * Custom hook to fetch and process trip flow data for the trip flow layer.

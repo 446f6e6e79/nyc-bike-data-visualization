@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import {
     selectStationAvailability,
-} from '../utils/selectors/stationAvailability.js'
-import useStationAvailability from './useStationAvailability.js'
-import useBikeRoutes from './useBikeRoutes.js'
+} from './stations/stationAvailabilitySelector.js'
+import useStationAvailability from './stations/useStationAvailability.js'
+import useBikeRoutes from './bike_routes/useBikeRoutes.js'
 
 /**
  *  Custom hook to provide combined data for station availability and bike routes.

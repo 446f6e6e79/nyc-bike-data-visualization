@@ -5,8 +5,8 @@ import {
     getStationForCurrentTime,
     getMaxUsage,
     getMaxDelta,
-} from '../utils/selectors/stationUsage.js'
-import { LIMIT_STATIONS } from '../../../utils/config.jsx'
+} from './stationUsageSelector.js'
+import { LIMIT_STATIONS } from '../../../../utils/config.jsx'
 
 /**
  * Custom hook to fetch and process station usage data for the station usage layer. 

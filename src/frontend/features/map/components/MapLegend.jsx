@@ -1,7 +1,7 @@
 import { LAYER_OPTIONS } from "../MapPage.jsx"
-import { stationAvailabilityLegend } from "../utils/layers/stationAvailabilityLayer.jsx"
-import { stationUsageLegend } from "../utils/layers/stationUsageLayer.jsx"
-import { tripFlowLegend } from "../utils/layers/tripFlowLayer.jsx"
+import { stationAvailabilityLegend } from "../layers/infrastructure_layer/stations/stationAvailabilityLayer.jsx"
+import { stationUsageLegend } from "../layers/station_usage_layer/stationUsageLayer.jsx"
+import { tripFlowLegend } from "../layers/trip_flow_layer/tripFlowLayer.jsx"
 
 /**
  * Renders the map legend based on the currently active layer. 

@@ -1,5 +1,5 @@
 import { ScatterplotLayer } from '@deck.gl/layers'
-import { bikeRoutesLegend } from './bikeRoutesLayer.jsx'
+import { bikeRoutesLegend } from '../bike_routes/bikeRoutesLayer.jsx'
 
 /**
  * Creates a scatterplot layer for displaying station availability information.
