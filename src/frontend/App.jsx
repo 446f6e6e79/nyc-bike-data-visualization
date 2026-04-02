@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppHeader from './features/header/AppHeader.jsx'
-import MapPage from './pages/MapPage.jsx'
+import MapPage from './features/map/MapPage.jsx'
 import SurfacePage from './pages/SurfacePage.jsx'
 import WeatherPage from './pages/WeatherPage.jsx'
 import prefetchData from './utils/prefetcher.js'

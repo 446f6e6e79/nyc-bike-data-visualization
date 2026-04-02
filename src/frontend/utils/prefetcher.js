@@ -2,8 +2,8 @@ import useDayHourStats from '../hooks/useDayHourStats';
 import useHourlyStats from '../hooks/useHourlyStats';
 import useWeeklyStats from '../hooks/useWeeklyStats';
 import useWeatherStats from '../hooks/useWeatherStats';
-import useTripCounts from '../hooks/useTripCounts';
-import useStationRideCounts from '../hooks/useStationRideCounts';
+import useTripCounts from '../features/map/hooks/useTripCounts';
+import useStationRideCounts from '../features/map/hooks/useStationRideCounts';
 
 import { LIMIT_STATIONS, LIMIT_TRIPS } from '../config';
 

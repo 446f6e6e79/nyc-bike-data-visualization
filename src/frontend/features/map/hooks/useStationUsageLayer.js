@@ -1,6 +1,11 @@
 import { useMemo } from 'react'
-import useStationRideCounts from '../../../hooks/useStationRideCounts.js'
-import { selectStations, getStationForCurrentTime, getMaxUsage, getMaxDelta} from '../selectors/stationUsage.js'
+import useStationRideCounts from './useStationRideCounts.js'
+import {
+    selectStations,
+    getStationForCurrentTime,
+    getMaxUsage,
+    getMaxDelta,
+} from '../utils/selectors/stationUsage.js'
 import { LIMIT_STATIONS } from '../../../config.jsx'
 
 /**

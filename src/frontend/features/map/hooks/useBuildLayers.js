@@ -1,18 +1,19 @@
 // Base Layer
-import { createBaseTileLayer } from './layers/baseTileLayer.js'
+import { createBaseTileLayer } from '../utils/layers/baseTileLayer.js'
 // Station Usage Layer
-import { createStationUsageLayer } from './layers/stationUsageLayer.jsx'
-import { useStationUsageLayer } from './states/useStationUsageLayer.jsx'
+import { createStationUsageLayer } from '../utils/layers/stationUsageLayer.jsx'
+import { useStationUsageLayer } from './useStationUsageLayer.js'
 // Trip Flow Layer
-import { createTripFlowLayer } from './layers/tripFlowLayer.jsx'
-import { useTripFlowLayer } from './states/useTripFlowLayer.jsx'
+import { createTripFlowLayer } from '../utils/layers/tripFlowLayer.jsx'
+import { useTripFlowLayer } from './useTripFlowLayer.js'
 // Station Availability Layer
-import { createStationAvailabilityLayer } from './layers/stationAvailabilityLayer.jsx'
-import { createBikeRoutesLayer } from './layers/bikeRoutesLayer.jsx'
-import { useInfrastructureLayer } from './states/useInfrastructureLayer.jsx'
+import { createStationAvailabilityLayer } from '../utils/layers/stationAvailabilityLayer.jsx'
+import { createBikeRoutesLayer } from '../utils/layers/bikeRoutesLayer.jsx'
+import { useInfrastructureLayer } from './useInfrastructureLayer.js'
 
 import { useMemo, useState } from 'react'
-import { MAP_STYLES } from '../../pages/MapPage.jsx'
+
+const BASE_TILE_URL = 'https://a.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png'
 
 /**
  * Function to build the layers for the map based on the active layer and the provided data. 
@@ -21,7 +22,7 @@ import { MAP_STYLES } from '../../pages/MapPage.jsx'
  * @param {string} activeLayer - The currently active map layer to determine which layers to build.
  * @returns {Object} The built layers and their status.
  */
-export function buildLayers({ filters, currentTime, activeLayer, showBikeRoutes }) {
+export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes }) {
     // Fetch and process data
     const { frameStations, maxUsage, maxDelta,loading: stationLoading, error: stationError } = useStationUsageLayer({ filters: filters, currentTime })
     const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters: filters })
@@ -43,7 +44,7 @@ export function buildLayers({ filters, currentTime, activeLayer, showBikeRoutes 
     // Build layers based on active layer and data
     const layers = useMemo(() => {
         // Base tile layer is always included
-        const base = [createBaseTileLayer(MAP_STYLES.light)]
+        const base = [createBaseTileLayer(BASE_TILE_URL)]
         // Push the appropriate layer based on the active layer and data loading/error states
         if (activeLayer === 'station_usage') {
             if (!stationLoading && !stationError)

@@ -1,5 +1,5 @@
-import { fetchStationRideCounts } from '../api-data/statsApi.js'
-import useApiQueryWithFilters from './baseApiQuery.js'
+import { fetchStationRideCounts } from '../../../api-data/statsApi.js'
+import useApiQueryWithFilters from '../../../hooks/baseApiQuery.js'
 
 /**
  * Hook to fetch station ride counts with optional filters.

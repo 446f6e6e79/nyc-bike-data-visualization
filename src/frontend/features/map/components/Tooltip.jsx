@@ -1,7 +1,7 @@
-import { stationUsageTooltip } from '../layers/stationUsageLayer.jsx'
-import { tripFlowTooltip } from '../layers/tripFlowLayer.jsx'
-import { bikeRouteTooltip } from '../layers/bikeRoutesLayer.jsx'
-import { stationAvailabilityTooltip } from '../layers/stationAvailabilityLayer.jsx'
+import { stationUsageTooltip } from '../utils/layers/stationUsageLayer.jsx'
+import { tripFlowTooltip } from '../utils/layers/tripFlowLayer.jsx'
+import { bikeRouteTooltip } from '../utils/layers/bikeRoutesLayer.jsx'
+import { stationAvailabilityTooltip } from '../utils/layers/stationAvailabilityLayer.jsx'
 
 /**
  * Renders a tooltip based on the active layer and the provided object.

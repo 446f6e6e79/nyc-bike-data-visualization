@@ -1,6 +1,9 @@
 import { useMemo } from 'react'
-import { selectTrips, selectMaxFlow } from '../selectors/tripFlow.js'
-import useTripCounts from '../../../hooks/useTripCounts.js'
+import {
+    selectTrips,
+    selectMaxFlow,
+} from '../utils/selectors/tripFlow.js'
+import useTripCounts from './useTripCounts.js'
 import { LIMIT_TRIPS } from '../../../config.jsx'
 
 /**
