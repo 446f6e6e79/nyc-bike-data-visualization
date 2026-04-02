@@ -1,4 +1,4 @@
-import { LAYER_OPTIONS } from "../../pages/MapPage.jsx"
+import { LAYER_OPTIONS } from "../../../pages/MapPage.jsx"
 import { stationAvailabilityLegend } from "../layers/stationAvailabilityLayer.jsx"
 import { stationUsageLegend } from "../layers/stationUsageLayer.jsx"
 import { tripFlowLegend } from "../layers/tripFlowLayer.jsx"

@@ -12,8 +12,6 @@ def get_filtered_rides(
     bike_type: RideableType | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
-    day_of_week: int | list[int] | None = None,
-    start_hour: int | None = None,
     start_station_id: str | None = None,
     end_station_id: str | None = None,
     join_weather: bool = False,
@@ -26,8 +24,6 @@ def get_filtered_rides(
     - ride_id: Filter by specific ride ID
     - user_type: Filter by user type (member or casual)
     - start_date, end_date: Filter by ride start date range
-    - day_of_week: Filter by day of the week (0=Monday, 6=Sunday) or list of days
-    - start_hour: Filter by start hour
     - start_station_id, end_station_id: Filter by station IDs
     - end_date: Filter by ride end date range
     - end_station_id: Filter by end station ID
@@ -53,16 +49,6 @@ def get_filtered_rides(
             filter_expr &= date_col >= start_date
         if end_date is not None:
             filter_expr &= date_col <= end_date
-    
-    if day_of_week is not None:
-        # If a single integer is provided, convert it to a list for uniform processing
-        if isinstance(day_of_week, int):
-            day_of_week = [day_of_week]
-        # NOTE: Polars datetime weekday returns 1=Monday, 7=Sunday, so we adjust by subtracting 1 to match the 0=Monday, 6=Sunday convention 
-        filter_expr &= (pl.col("started_at").dt.weekday() - 1).is_in(day_of_week)
-    
-    if start_hour is not None:
-        filter_expr &= pl.col("started_at").dt.hour() == start_hour
     
     if start_station_id is not None:
         filter_expr &= pl.col("start_station_id") == start_station_id
@@ -94,15 +80,21 @@ def add_trip_duration(rides: pl.LazyFrame) -> pl.LazyFrame:
     )
 
 def _enrich_rides_with_weather(rides: pl.LazyFrame, weather: pl.LazyFrame) -> pl.LazyFrame:
-    """
-    Enrich rides with nearest hourly weather record based on started_at.
-    Returns rides with a nested `weather` struct column.
-    """
-    weather_cols = [c for c in weather.columns if c != "time"]
+    # Normalize weather column names to match the Pydantic response model up front
+    weather = weather.rename({
+        "datetime": "time",
+        "temperature_2m": "temperature",
+        "wind_speed_10m": "wind_speed",
+        "weather_code": "weather_code",
+        "precipitation": "precipitation",
+    })
+    weather_cols = [c for c in weather.collect_schema().names() if c != "time"]
+
     return (
         rides
+        .sort("started_at")
         .join_asof(
-            weather,
+            weather.sort("time"),
             left_on="started_at",
             right_on="time",
             strategy="nearest",

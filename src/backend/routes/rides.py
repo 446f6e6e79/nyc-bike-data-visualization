@@ -16,8 +16,8 @@ def _collect_if_lazy(df: RideFrame) -> pl.DataFrame:
 def get_rides(    
     user_type: MemberCasual | None = Query(default=None),
     bike_type: RideableType | None = Query(default=None),
-    start_date: date | None = Query(default=None),
-    end_date: date | None = Query(default=None),
+    start_date: date = Query(...),
+    end_date: date = Query(...),
     start_station_id: str | None = Query(default=None),
     end_station_id: str | None = Query(default=None),
     join_weather: bool = Query(default=False),

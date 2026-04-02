@@ -11,9 +11,9 @@ _weather_df: WeatherFrame | None = None
 def _normalize_weather_types(df: WeatherFrame) -> WeatherFrame:
     """Normalize test weather column types to be consistent with production schema."""
     return df.with_columns(
-        pl.col("time").cast(pl.Datetime, strict=False),
-        pl.col("temperature").cast(pl.Float64, strict=False),
-        pl.col("wind_speed").cast(pl.Float64, strict=False),
+        pl.col("datetime").cast(pl.Datetime, strict=False),
+        pl.col("temperature_2m").cast(pl.Float64, strict=False),
+        pl.col("wind_speed_10m").cast(pl.Float64, strict=False),
         pl.col("precipitation").cast(pl.Float64, strict=False),
         pl.col("weather_code").cast(pl.Int64, strict=False),
     )

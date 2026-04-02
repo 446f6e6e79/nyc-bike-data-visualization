@@ -22,7 +22,8 @@ from src.backend.config import (
     DOWNLOAD_JC,
     BIKE_ROUTES_DATA_DIR,
 )
-
+# TODO: should we remove the dataset outside the specified range?
+#Right now, there might be problems if we install different ranges of data at different times
 def validate_yyyymm(date_value: str, arg_name: str) -> None:
     """
     Validate that the provided date value is in the format YYYYMM and represents a valid month.
@@ -88,7 +89,7 @@ def main():
     compute_and_save_station_distances(force_download=args.force_download)
 
     # Download hourly weather data for the requested date range
-    download_weather_data(args.start_date, args.end_date, force_download=args.force_download)
+    download_weather_data(args.start_date, args.end_date)
 
     # Download and preprocess bike route data
     download_bike_routes(force_download=args.force_download)

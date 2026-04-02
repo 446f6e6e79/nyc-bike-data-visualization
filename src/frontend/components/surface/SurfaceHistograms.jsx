@@ -1,39 +1,41 @@
-import { METRIC_LABELS, METRIC_GETTERS, METRIC_FORMATS } from "../../pages/SurfacePage.jsx"
-import { DAY_LABELS, HOUR_LABELS, normalizeDay } from "../../config.jsx"
+import { METRIC_LABELS, METRIC_GETTERS, METRIC_FORMATS, METRIC_UNITS } from "../../pages/SurfacePage.jsx"
+import { DAY_LABELS, HOUR_LABELS } from "../../config.jsx"
 import BarChart from "../BarChart.jsx"
-
-// Helper function to build the day and hour projections for the histograms based on the selected metric. 
-function buildProjections(data, metric) {
-    const getter = METRIC_GETTERS[metric]
-    const dayAcc = Array(7).fill(0)
-    const hourAcc = Array(24).fill(0)
-    data.forEach(d => {
-        dayAcc[normalizeDay(d.day_of_week)] += getter(d)
-        hourAcc[d.hour] += getter(d)
-    })
-    return { dayData: dayAcc, hourData: hourAcc }
-}
 
 /**
  * Component for displaying the histograms that accompany the surface graph
- * @param {Object} data - The day-hour statistics data used to build the histograms.
+ * @param {Object} hourData - The data for the hour of day histogram, used to display the distribution of the selected metric across different hours of the day.
+ * @param {Object} dayData - The data for the day of week histogram, used to display the distribution of the selected metric across different days of the week.
  * @param {string} activeMetric - The currently selected metric key, used to determine which metric's data to display in the histograms.
  * @param {Object} coordinates - The coordinates of the currently hovered point on the surface graph, used to highlight the corresponding bars in the histograms. 
  * @returns 
  */
-export default function SurfaceHistograms({ data, activeMetric, coordinates }) {
-    // Builds the projections
-    const { dayData, hourData } = buildProjections(data, activeMetric)
+export default function SurfaceHistograms({ dayData, hourData, activeMetric, coordinates }) {
+    // Extracts the metric values for the selected metric from the day and hour data using the corresponding metric getter function, preparing the data for the histograms. The highlight variable is used to determine which bar to highlight based on the hovered coordinates from the surface graph.
+    const metricDayData = dayData?.map(METRIC_GETTERS[activeMetric])
+    const metricHourData = hourData?.map(METRIC_GETTERS[activeMetric])
     // Configuration for the two histogram cards, one for day of week and one for hour of day, including the data, labels, and which value to highlight based on the hovered coordinates from the surface graph
     const cards = [
-        { label: "by day of week", data: dayData, labels: DAY_LABELS, highlight: coordinates?.day },
-        { label: "by hour of day", data: hourData, labels: HOUR_LABELS, highlight: coordinates?.hour },
+        {
+            label: "by day of week",
+            data: metricDayData,
+            labels: DAY_LABELS,
+            highlight: coordinates?.day,
+            xAxisTitle: "Day of Week",
+        },
+        {
+            label: "by hour of day",
+            data: metricHourData,
+            labels: HOUR_LABELS,
+            highlight: coordinates?.hour,
+            xAxisTitle: "Hour of Day",
+        },
     ]
 
     return (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
             {/*Iterate over the histogram cards and render each one */}
-            {cards.map(({ label, data, labels, highlight }) => (
+            {cards.map(({ label, data, labels, highlight, xAxisTitle }) => (
                 <div
                     key={label}
                     style={{
@@ -54,7 +56,15 @@ export default function SurfaceHistograms({ data, activeMetric, coordinates }) {
                     </p>
 
                     <div style={{ height: 220 }}>
-                        <BarChart data={data} labels={labels} format={METRIC_FORMATS[activeMetric]} highlight={highlight} />
+                        <BarChart
+                            data={data}
+                            labels={labels}
+                            format={METRIC_FORMATS[activeMetric]}
+                            highlight={highlight}
+                            xAxisTitle={xAxisTitle}
+                            yAxisTitle={METRIC_LABELS[activeMetric]}
+                            unit={METRIC_UNITS[activeMetric]}
+                        />
                     </div>
                 </div>
             ))}

@@ -18,7 +18,8 @@ export function selectStations(stationRideCounts) {
                 station.groups.forEach((group) => {
                     // Extract hour and rides count
                     const hour = Number(group.hour)
-                    const daysCount = Number(group.days_count)
+                    // Convert hours_count to days_count for daily average calculation
+                    const daysCount = Number(group.hours_count) / HOURS_IN_DAY 
                     const totalRides = Number(group.total_rides)
                     // Add the average rides for this hour to the corresponding index in the hourly usage array
                     hourlyUsage[hour] += totalRides / daysCount

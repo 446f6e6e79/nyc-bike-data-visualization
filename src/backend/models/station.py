@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 
-
 class StationInfo(BaseModel):
     """Model representing a bike station."""
     id: str                   # Id of the station, using short_name from GBFS for consistency with historical data
