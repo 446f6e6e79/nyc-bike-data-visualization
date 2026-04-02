@@ -3,10 +3,10 @@ import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { createQueryWrapper } from './testQueryClient.jsx'
 
-import AppHeader from '../components/AppHeader'
-import MapPage from '../pages/MapPage'
-import SurfacePage from '../pages/SurfacePage'
-import WeatherPage from '../pages/WeatherPage'
+import AppHeader from '../features/header/AppHeader.jsx'
+import MapPage from '../features/map/MapPage.jsx'
+import SurfacePage from '../features/temporal/TemporalPage.jsx'
+import WeatherPage from '../features/weather/WeatherPage.jsx'
 import App from '../App.jsx'
 
 // Stub axios via apiClient — all hooks use apiClient.get()
