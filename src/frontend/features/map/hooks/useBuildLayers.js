@@ -4,8 +4,9 @@ import { createBaseTileLayer } from '../layers/base_layer/baseTileLayer.js'
 import { createStationUsageLayer } from '../layers/station_usage_layer/stationUsageLayer.jsx'
 import { useStationUsageLayer } from '../layers/station_usage_layer/useStationUsageHook.js'
 // Trip Flow Layer
-import { createTripFlowLayer } from '../layers/trip_flow_layer/tripFlowLayer.jsx'
+import { createTripFlowLayers } from '../layers/trip_flow_layer/tripFlowLayer.jsx'
 import { useTripFlowLayer } from '../layers/trip_flow_layer/useTripFlowHook.js'
+// Infrastructure Layer
 // Station Availability Layer
 import { createStationAvailabilityLayer } from '../layers/infrastructure_layer/stations/stationAvailabilityLayer.jsx'
 import { createBikeRoutesLayer } from '../layers/infrastructure_layer/bike_routes/bikeRoutesLayer.jsx'
@@ -24,8 +25,8 @@ const BASE_TILE_URL = 'https://a.basemaps.cartocdn.com/rastertiles/voyager_label
  */
 export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes }) {
     // Fetch and process data
-    const { frameStations, maxUsage, maxDelta,loading: stationLoading, error: stationError } = useStationUsageLayer({ filters: filters, currentTime })
-    const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters: filters })
+    const { frameStations, maxUsage, maxDelta, loading: stationLoading, error: stationError } = useStationUsageLayer({ filters: filters, currentTime })
+    const { trips, maxTripFlow, stations: tripStations, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters })
     const { stations, bikeRoutes, loading: availabilityLoading, error: availabilityError } = useInfrastructureLayer({ showBikeRoutes })
     // State for hovered bike route segment
     const [hoveredrouteID, setHoveredrouteID] = useState(null)
@@ -51,8 +52,9 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
                 base.push(createStationUsageLayer({ frameStations, maxUsage, maxDelta }))
         } 
         if (activeLayer === 'trip_flow') {
-            if (!tripLoading && !tripError)
-                base.push(createTripFlowLayer({ trips, maxTripCount: maxTripFlow }))
+            if (!tripLoading && !tripError) {
+                base.push(createTripFlowLayers({ trips, maxTripFlow, stations: tripStations }))
+            }
         }
         if (activeLayer === 'infrastructure') {
             if (!availabilityLoading && !availabilityError)

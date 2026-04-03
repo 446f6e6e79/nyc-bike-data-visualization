@@ -2,7 +2,7 @@ import useDayHourStats from '../features/temporal/hooks/useDayHourStats';
 import useHourlyStats from '../features/temporal/hooks/useHourlyStats';
 import useWeeklyStats from '../features/temporal/hooks/useWeeklyStats';
 import useWeatherStats from '../features/weather/hooks/useWeatherStats';
-import useTripCounts from '../features/map/layers/trip_flow_layer/useTripCounts';
+import useTripCounts from '../features/map/layers/trip_flow_layer/trips/useTripCounts';
 import useStationRideCounts from '../features/map/layers/station_usage_layer/useStationRideCounts';
 
 import { LIMIT_STATIONS, LIMIT_TRIPS } from './config';
