@@ -1,4 +1,4 @@
-import useStationAvailability from "../infrastructure_layer/stations/useStationAvailability";
+import { useInfrastructureLayer } from "../infrastructure_layer/useInfrastructureHook.js";
 import { useTripArcsLayer } from "./trips/useTripArcsHook";
 
 /**
@@ -7,10 +7,10 @@ import { useTripArcsLayer } from "./trips/useTripArcsHook";
  * @param {Object} filters - Optional filters for fetching trip counts, such as date range or user-selected filters.
  * @returns 
  */
-export function useTripFlowLayer({ filters }) {
+export function useTripFlowLayer({ filters, selectedStationIds }) {
     // Data fetching for station availability and trip arcs
-    const { stationData, loading: stationLoading, error: stationError } = useStationAvailability()
-    const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripArcsLayer({ filters })
+    const { stations: stationData, loading: stationLoading, error: stationError } = useInfrastructureLayer({ showBikeRoutes: false })
+    const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripArcsLayer({ filters, selectedStationIds })
     // Combine loading and error states for easier handling in the component
     const loading = stationLoading || tripLoading
     const error = stationError || tripError

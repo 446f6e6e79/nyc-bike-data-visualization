@@ -27,8 +27,8 @@ const BASE_TILE_URL = 'https://a.basemaps.cartocdn.com/rastertiles/voyager_label
 export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes }) {
     // Fetch and process data
     const { frameStations, maxUsage, maxDelta, loading: stationLoading, error: stationError } = useStationUsageLayer({ filters: filters, currentTime })
-    const { trips, maxTripFlow, stations: tripStations, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters })
     const { selectedStationIds, onStationPick } = useTripStationSelection() // Manage station selection state for trip flow layer
+    const { trips, maxTripFlow, stations: tripStations, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters, selectedStationIds })
     const { stations, bikeRoutes, loading: availabilityLoading, error: availabilityError } = useInfrastructureLayer({ showBikeRoutes })
     // State for hovered bike route segment
     const [hoveredrouteID, setHoveredrouteID] = useState(null)

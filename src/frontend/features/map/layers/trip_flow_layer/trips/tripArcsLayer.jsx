@@ -7,6 +7,7 @@ const BASE_WIDTH = 1
 const MAX_WIDTH_RANGE = 7
 const SOURCE_COLOR = [14, 116, 144]
 const TARGET_COLOR = [2, 132, 199]
+const SELECTED_LINK_COLOR = [34, 197, 94]
 
 /**
  * Normalizes trip usage to a 0–1 range
@@ -44,19 +45,35 @@ function getArcColor(baseColor, normalizedUsage) {
  * @param {number} maxTripCount - Maximum trip count for scaling widths and colors
  * @returns {ArcLayer}
  */
-export function createTripsArcLayer({ trips, maxTripCount }) {
+export function createTripsArcLayer({ trips, maxTripCount, selectedStationIds = [] }) {
+    const selectedStationIdSet = new Set(selectedStationIds)
+
+    const isArcBetweenSelectedStations = (trip) =>
+        selectedStationIdSet.has(trip.start_station_id) &&
+        selectedStationIdSet.has(trip.end_station_id)
+
     return new ArcLayer({
         id: 'frequent-trips-layer',
         data: trips,
         getSourcePosition: (trip) => [trip.start_station_lon, trip.start_station_lat],
         getTargetPosition: (trip) => [trip.end_station_lon, trip.end_station_lat],
         getWidth: (trip) => getArcWidth(normalizeTripUsage(trip, maxTripCount)),
-        getSourceColor: (trip) => getArcColor(SOURCE_COLOR, normalizeTripUsage(trip, maxTripCount)),
-        getTargetColor: (trip) => getArcColor(TARGET_COLOR, normalizeTripUsage(trip, maxTripCount)),
+        getSourceColor: (trip) => {
+            if (isArcBetweenSelectedStations(trip)) {
+                return getArcColor(SELECTED_LINK_COLOR, normalizeTripUsage(trip, maxTripCount))
+            }
+            return getArcColor(SOURCE_COLOR, normalizeTripUsage(trip, maxTripCount))
+        },
+        getTargetColor: (trip) => {
+            if (isArcBetweenSelectedStations(trip)) {
+                return getArcColor(SELECTED_LINK_COLOR, normalizeTripUsage(trip, maxTripCount))
+            }
+            return getArcColor(TARGET_COLOR, normalizeTripUsage(trip, maxTripCount))
+        },
         updateTriggers: {
             getWidth: [maxTripCount],
-            getSourceColor: [maxTripCount],
-            getTargetColor: [maxTripCount],
+            getSourceColor: [maxTripCount, selectedStationIds],
+            getTargetColor: [maxTripCount, selectedStationIds],
         },
         pickable: true,
         opacity: 0.75,
@@ -80,6 +97,6 @@ export function tripArcsTooltip(object) {
     const rides = Math.round(Number(object.total_daily_flow) || 0)
     const from = object.start_station_name
     const to = object.end_station_name
-    return `Trip: ${from} → ${to}\nRides: ${rides}`
+    return `Trip: ${from} → ${to}\n Daily Rides: ${rides}`
 }
 

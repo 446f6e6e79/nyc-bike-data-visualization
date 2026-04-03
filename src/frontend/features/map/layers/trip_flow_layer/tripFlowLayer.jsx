@@ -12,7 +12,7 @@ import { createTripsArcLayer } from "./trips/tripArcsLayer";
  */
 export function createTripFlowLayers({ trips, maxTripCount, stations, selectedStationIds = [], onStationPick }) {
     const layers = []
-    layers.push(createTripsArcLayer({ trips, maxTripCount }))
+    layers.push(createTripsArcLayer({ trips, maxTripCount, selectedStationIds }))
     layers.push(createTripStationsLayer({ stations, selectedStationIds, onStationPick }))
     return layers
 }

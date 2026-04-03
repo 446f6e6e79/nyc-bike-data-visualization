@@ -13,7 +13,7 @@ export function createTripStationsLayer({ stations, selectedStationIds = [], onS
     return new ScatterplotLayer({
         id: 'trip-flow-stations-layer',
         data: stations,
-        getPosition: (d) => [d.lon, d.lat],
+        getPosition: (d) => [d.longitude, d.latitude],
         getRadius: (d) => 6, // Fixed radius for all stations
         getFillColor: (d) => {
             const stationKey = d.id
