@@ -6,8 +6,9 @@ import { useStationUsageLayer } from '../layers/station_usage_layer/useStationUs
 // Trip Flow Layer
 import { createTripFlowLayers } from '../layers/trip_flow_layer/tripFlowLayer.jsx'
 import { useTripFlowLayer } from '../layers/trip_flow_layer/useTripFlowHook.js'
-// Infrastructure Layer
-// Station Availability Layer
+import { useTripStationSelection } from '../layers/trip_flow_layer/stations/useTripStationSelection.js'
+// Infrastructure Layerimport { createStationAvailabilityLayer } from '../layers/infrastructure_layer/stations/stationAvailabilityLayer.jsx'
+
 import { createStationAvailabilityLayer } from '../layers/infrastructure_layer/stations/stationAvailabilityLayer.jsx'
 import { createBikeRoutesLayer } from '../layers/infrastructure_layer/bike_routes/bikeRoutesLayer.jsx'
 import { useInfrastructureLayer } from '../layers/infrastructure_layer/useInfrastructureHook.js'
@@ -27,6 +28,7 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
     // Fetch and process data
     const { frameStations, maxUsage, maxDelta, loading: stationLoading, error: stationError } = useStationUsageLayer({ filters: filters, currentTime })
     const { trips, maxTripFlow, stations: tripStations, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters })
+    const { selectedStationIds, onStationPick } = useTripStationSelection() // Manage station selection state for trip flow layer
     const { stations, bikeRoutes, loading: availabilityLoading, error: availabilityError } = useInfrastructureLayer({ showBikeRoutes })
     // State for hovered bike route segment
     const [hoveredrouteID, setHoveredrouteID] = useState(null)
@@ -53,7 +55,13 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
         } 
         if (activeLayer === 'trip_flow') {
             if (!tripLoading && !tripError) {
-                base.push(createTripFlowLayers({ trips, maxTripFlow, stations: tripStations }))
+                base.push(createTripFlowLayers({
+                    trips,
+                    maxTripCount: maxTripFlow,
+                    stations: tripStations,
+                    selectedStationIds,
+                    onStationPick,
+                }))
             }
         }
         if (activeLayer === 'infrastructure') {
@@ -65,7 +73,7 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
         }
 
         return base
-    }, [frameStations, maxUsage, trips, maxTripFlow, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes, hoveredrouteID])
+    }, [frameStations, maxUsage, maxDelta, trips, maxTripFlow, tripStations, selectedStationIds, onStationPick, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes, hoveredrouteID])
 
     // Consider the loading and error states of only the active layer for the overall status
     const loading = stateLayers.find(layer => layer.layer === activeLayer)?.loading || false

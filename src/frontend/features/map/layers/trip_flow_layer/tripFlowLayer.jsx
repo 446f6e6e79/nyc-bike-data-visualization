@@ -5,13 +5,15 @@ import { createTripsArcLayer } from "./trips/tripArcsLayer";
  * Creates the layers for visualizing trip flows between stations, including arcs for trips and points for stations.
  * @param {Array} trips - Array of trip objects with source and target positions and daily flow
  * @param {number} maxTripCount - Maximum trip count for scaling arc widths and colors
- * @param {Array} stations - Array of station objects with latitude and longitude for displaying station points 
+ * @param {Array} stations - Array of station objects with latitude and longitude for displaying station points
+ * @param {string[]} selectedStationIds - Selected station identifier list.
+ * @param {Function} onStationPick - Click handler to toggle station selection.
  * @returns 
  */
-export function createTripFlowLayers({ trips, maxTripCount, stations }) {
+export function createTripFlowLayers({ trips, maxTripCount, stations, selectedStationIds = [], onStationPick }) {
     const layers = []
     layers.push(createTripsArcLayer({ trips, maxTripCount }))
-    layers.push(createTripStationsLayer({ stations }))
+    layers.push(createTripStationsLayer({ stations, selectedStationIds, onStationPick }))
     return layers
 }
 
