@@ -1,5 +1,3 @@
-const RIDES_FILTER = 2 // Minimum total rides to include a trip in the visualization
-//#TODO: Move this constant to a more central location if it's used across multiple files
 /**
  * Selector to process raw trip count data into a format suitable for visualization.
  * @param {*} tripCounts 
@@ -43,8 +41,7 @@ export function selectTrips(tripCounts) {
                 Number.isFinite(trip.start_station_lon) &&
                 Number.isFinite(trip.end_station_lat) &&
                 Number.isFinite(trip.end_station_lon) &&
-                Number.isFinite(trip.total_daily_flow) &&
-                trip.total_daily_flow > RIDES_FILTER        // Filter out trips that don't meet the minimum rides threshold
+                Number.isFinite(trip.total_daily_flow)
         );
 }
 

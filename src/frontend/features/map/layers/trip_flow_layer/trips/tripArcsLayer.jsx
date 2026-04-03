@@ -3,8 +3,8 @@ import { ArcLayer } from '@deck.gl/layers'
 // Constants for arc styling based on trip usage
 const BASE_ALPHA = 80
 const MAX_ALPHA_RANGE = 175
-const BASE_WIDTH = 1
-const MAX_WIDTH_RANGE = 7
+const BASE_WIDTH = 3
+const MAX_WIDTH_RANGE = 20
 const SOURCE_COLOR = [14, 116, 144]
 const TARGET_COLOR = [2, 132, 199]
 const SELECTED_LINK_COLOR = [34, 197, 94]

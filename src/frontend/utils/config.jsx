@@ -8,4 +8,4 @@ export const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'
 export const normalizeDay = d => (d === 0 ? 6 : d - 1)
 // Limit the number of stations to fetch for performance reasons
 export const LIMIT_STATIONS = 3000
-export const LIMIT_TRIPS = 1000
+export const LIMIT_TRIPS = 10 // Limit per station
