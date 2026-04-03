@@ -27,7 +27,7 @@ export function useTripFlowLayer({ filters }) {
 
     // Process trip data to get the trips and calculate the maximum flow for scaling
     const trips = useMemo(() => selectTrips(tripCount), [tripCount])
-    const maxTripFlow = useMemo(() => selectMaxFlow(tripCount), [tripCount])
+    const maxTripFlow = useMemo(() => selectMaxFlow(trips), [trips])
 
     return { trips, maxTripFlow, loading, error}
 }
