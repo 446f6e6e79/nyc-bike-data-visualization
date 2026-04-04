@@ -1,5 +1,8 @@
 import { ScatterplotLayer } from '@deck.gl/layers'
 
+const STATION_COLOR_DEFAULT = [59, 130, 246]
+const STATION_COLOR_SELECTED = [34, 197, 94]
+
 /**
  * Creates a scatterplot layer for displaying all available stations as blue dots in trip flow view.
  * @param {Array} stations - Array of station objects with latitude, longitude, and optional capacity
@@ -9,39 +12,28 @@ import { ScatterplotLayer } from '@deck.gl/layers'
  */
 export function createTripStationsLayer({ stations, selectedStationIds = [], onStationPick }) {
     const selectedStationIdSet = new Set(selectedStationIds)
-    //#TODO: Fix graphically the visibility of the dots
+
     return new ScatterplotLayer({
-        id: 'trip-flow-stations-layer',
-        data: stations,
-        getPosition: (d) => [d.longitude, d.latitude],
-        getRadius: (d) => 6, // Fixed radius for all stations
-        getFillColor: (d) => {
-            const stationKey = d.id
-            return stationKey && selectedStationIdSet.has(stationKey)
-                ? [34, 197, 94]
-                : [59, 130, 246]
-        },
-        getLineColor: [255, 255, 255],
-        lineWidthMinPixels: 1,
-        stroked: true,
-        filled: true,
-        radiusUnits: 'pixels',
-        radiusMinPixels: 2,
-        radiusMaxPixels: 5,
-        pickable: true,
-        onClick: onStationPick,
-        updateTriggers: {
-            getFillColor: [selectedStationIds],
-        },
-    })
+    id: 'trip-flow-stations-layer',
+    data: stations,
+    getPosition: (d) => [d.longitude, d.latitude],
+    getRadius: 20,    // Radius in meters
+    getFillColor: (d) => selectedStationIdSet.has(d.id) ? STATION_COLOR_SELECTED : STATION_COLOR_DEFAULT,
+    getLineColor: [255, 255, 255],
+    lineWidthMinPixels: 1,
+    stroked: true,
+    filled: true,
+    radiusUnits: 'meters',      // Use meters to keep consistency across zoom levels
+    radiusMinPixels: 4,         // Minimum radius in pixels to ensure visibility at low zoom levels
+    radiusMaxPixels: 80,        // Maximum radius in pixels to prevent excessive size at high zoom levels
+    pickable: true,
+    onClick: onStationPick,
+    updateTriggers: {
+        getFillColor: [selectedStationIds],
+    },
+})
 }
 
-/**
- * Generates a tooltip for trip station data, showing the station name.
- * @param {Object} object - The trip station data object.
- * @returns {string} The tooltip content.
- */
 export function tripStationTooltip(object) {
-    const stationName = object.name || 'Unknown Station'
-    return stationName
+    return object.name ?? 'Unknown Station'
 }
