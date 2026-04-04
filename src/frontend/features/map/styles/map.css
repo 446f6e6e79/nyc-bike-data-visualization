@@ -35,6 +35,42 @@
     @apply text-[11px] text-gray-600;
   }
 
+  .map-reset-button {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-white rounded-md border border-sky-700/70;
+    background: linear-gradient(135deg, rgb(14 116 144) 0%, rgb(2 132 199) 55%, rgb(56 189 248) 100%);
+    box-shadow: 0 8px 20px -12px rgba(3, 105, 161, 0.9);
+    transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease;
+  }
+
+  .map-reset-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 24px -16px rgba(3, 105, 161, 0.95);
+    filter: brightness(1.03);
+  }
+
+  .map-reset-button:active {
+    transform: translateY(0);
+    box-shadow: 0 8px 18px -14px rgba(3, 105, 161, 0.9);
+    filter: brightness(0.98);
+  }
+
+  .map-reset-button:focus-visible {
+    outline: 2px solid rgb(125 211 252);
+    outline-offset: 2px;
+  }
+
+  .map-reset-button-icon {
+    @apply inline-flex items-center justify-center;
+    width: 14px;
+    height: 14px;
+    font-size: 12px;
+    transform: rotate(-10deg);
+  }
+
+  .map-reset-button-text {
+    letter-spacing: 0.01em;
+  }
+
   .map-legend-title {
     @apply text-sm font-semibold text-white;
   }

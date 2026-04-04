@@ -24,8 +24,13 @@ export function useTripStationSelection() {
     }, [])
     // Convert the Set of selected station keys to an array for easier use in components
     const selectedStationIds = useMemo(() => Array.from(selectedStationIdSet), [selectedStationIdSet])
+    // Function to reset the selection of stations by clearing the Set of selected station keys
+    const resetSelectedStationIds = useCallback(() => {
+        setSelectedStationIdSet(new Set())
+    }, [])
     // Return the selected station IDs and the click handler for station selection
     return {
+        resetSelectedStationIds,
         selectedStationIds,
         onStationPick,
     }
