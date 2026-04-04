@@ -8,19 +8,18 @@ import { useCallback, useMemo, useState } from 'react'
 export function useTripStationSelection() {
     // Store selected station keys in a Set for efficient add/remove operations
     const [selectedStationIdSet, setSelectedStationIdSet] = useState(() => new Set())
-
+    // Callback function to handle station selection when a station is picked on the map. It toggles the selection state of the station based on its ID.
     const onStationPick = useCallback((info) => {
         const stationKey = info?.object?.id
         if (!stationKey) return
         // Toggle station selection behaviour
         setSelectedStationIdSet((previousSet) => {
-            const nextSet = new Set(previousSet)
-            if (nextSet.has(stationKey)) {
-                nextSet.delete(stationKey)
-            } else {
-                nextSet.add(stationKey)
+            if (previousSet.has(stationKey)) {
+                // If the station is already selected, create a new Set without the station to deselect it
+                return new Set([...previousSet].filter((selectedStationId) => selectedStationId !== stationKey))
             }
-            return nextSet
+            // If the station is not selected, create a new Set with the station added to select it
+            return new Set(previousSet).add(stationKey)
         })
     }, [])
     // Convert the Set of selected station keys to an array for easier use in components
