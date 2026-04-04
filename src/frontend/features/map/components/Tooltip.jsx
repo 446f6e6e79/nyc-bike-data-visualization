@@ -1,5 +1,6 @@
 import { stationUsageTooltip } from '../layers/station_usage_layer/stationUsageLayer.jsx'
-import { tripFlowTooltip } from '../layers/trip_flow_layer/tripFlowLayer.jsx'
+import { tripArcsTooltip } from '../layers/trip_flow_layer/trips/tripArcsLayer.jsx'
+import { tripStationTooltip } from '../layers/trip_flow_layer/stations/tripStationsLayer.jsx'
 import { bikeRouteTooltip } from '../layers/infrastructure_layer/bike_routes/bikeRoutesLayer.jsx'
 import { stationAvailabilityTooltip } from '../layers/infrastructure_layer/stations/stationAvailabilityLayer.jsx'
 
@@ -7,7 +8,7 @@ import { stationAvailabilityTooltip } from '../layers/infrastructure_layer/stati
  * Renders a tooltip based on the active layer and the provided object.
  * @param {Object} object - The data object associated with the hovered element on the map.
  * @param {string} activeLayer - The currently active map layer to determine tooltip content. 
- * @returns 
+ * @returns {string} The tooltip content.
  */
 export default function Tooltip({ object, activeLayer }) {
     // To avoid errors when hovering over empty areas of the map
@@ -16,7 +17,11 @@ export default function Tooltip({ object, activeLayer }) {
         case 'station_usage':
             return stationUsageTooltip(object)
         case 'trip_flow':
-            return tripFlowTooltip(object)
+            // Distinguish between trip arcs and trip stations
+            if (object.start_station_name) {
+                return tripArcsTooltip(object)
+            }
+            return tripStationTooltip(object)
         case 'infrastructure':
             // Distinguish between station availability points and bike route segments
             if (object.geometry !== undefined) {
