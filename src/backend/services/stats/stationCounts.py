@@ -53,6 +53,7 @@ def get_station_ride_counts_stats(
     outgoing_group_keys: list[str | pl.Expr] = [*group_exprs, "start_station_id"]
     incoming_group_keys: list[str | pl.Expr] = [*group_exprs, "end_station_id"]
 
+    # Get the count of outgoing and incoming rides grouped by the specified keys
     outgoing = (
         rides.group_by(outgoing_group_keys)
         .agg([
@@ -63,7 +64,7 @@ def get_station_ride_counts_stats(
         ])
         .rename({"start_station_id": "station_id"})
     )
-
+    # Get the count of incoming rides grouped by the specified keys
     incoming = (
         rides.group_by(incoming_group_keys)
         .agg([
@@ -75,8 +76,10 @@ def get_station_ride_counts_stats(
         .rename({"end_station_id": "station_id"})
     )
 
+    # Define the keys to join on (grouping columns + station_id)
     join_keys = [*group_cols, "station_id"] if group_cols else ["station_id"]
 
+    # Perform a full outer join of outgoing and incoming counts on the defined keys
     station_counts = outgoing.join(
         incoming,
         on=join_keys,
@@ -95,22 +98,24 @@ def get_station_ride_counts_stats(
         pl.col("incoming").fill_null(0),
     ])
 
+    # Compute total rides as the sum of outgoing and incoming rides
     station_counts = station_counts.with_columns(
         (pl.col("outgoing") + pl.col("incoming")).alias("total_rides")
     )
 
+    # Join with a time dimension table ensuring that all time groups are represented
     time_base = build_time_dimension(start_date, end_date, base_for_group_by=group_by)
     if group_cols:
         station_counts = (
             time_base.lazy()
-            .join(station_counts, on=group_cols, how="left")
+            .join(station_counts.lazy(), on=group_cols, how="left")
             .with_columns([
                 pl.col("outgoing").fill_null(0),
                 pl.col("incoming").fill_null(0),
                 pl.col("total_rides").fill_null(0),
             ])
         )
-
+    # If we are grouping by time, we need to calculate the count of hours in each group
     if group_cols:
         station_counts = attach_hours_count(
             station_counts,
@@ -119,6 +124,7 @@ def get_station_ride_counts_stats(
             end_date,
             group_by,
         )
+    # If not grouping by time, calculate the total hours in the date range and add as a column for each station to allow for average rides per hour calculations on the frontend
     else:
         hours_count = int(
             hours_count_from_time_dimension(start_date, end_date, RideCountGroupBy.NONE)
@@ -126,13 +132,13 @@ def get_station_ride_counts_stats(
         )
         station_counts = station_counts.with_columns(pl.lit(hours_count).cast(pl.Int64).alias("hours_count"))
 
+    # Collect the results into memory
     station_counts = station_counts.collect() if isinstance(station_counts, pl.LazyFrame) else station_counts
 
     if station_counts.is_empty():
         return []
 
     grouped_by_station: dict[str, dict] = {}
-
     for row in station_counts.iter_rows(named=True):
         station_key = row["station_id"]
 
@@ -161,6 +167,7 @@ def get_station_ride_counts_stats(
             )
         )
 
+    # Sort station counts by total rides
     sorted_stations = sorted(
         grouped_by_station.values(),
         key=lambda station: station["station_total_rides"],

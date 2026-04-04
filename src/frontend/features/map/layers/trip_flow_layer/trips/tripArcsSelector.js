@@ -19,7 +19,7 @@ export function selectTrips(tripCounts) {
                 station_b_lon: end_station_lon,
                 groups: [{ total_rides, hours_count, a_to_b_count, b_to_a_count }],
             } = trip;
-
+            const daysCount = Number(hours_count) / 24; // Convert hours count to days count for average daily flow calculation
             return {
                 start_station_id,
                 start_station_name,
@@ -29,9 +29,10 @@ export function selectTrips(tripCounts) {
                 end_station_name,
                 end_station_lat,
                 end_station_lon,
-                total_daily_flow: total_rides / (hours_count / 24), // Convert hours_count to days_count for daily flow calculation
-                a_to_b_flow: a_to_b_count / (hours_count / 24), // Assuming all flow is from A to B for simplicity
-                b_to_a_flow: b_to_a_count / (hours_count / 24), // Assuming all flow is from B to A for simplicity
+                total_rides: Number(total_rides) || 0,
+                total_daily_flow: daysCount > 0 ? total_rides / daysCount : 0, // Convert to average daily rides
+                a_to_b_flow: daysCount > 0 ? a_to_b_count / daysCount : 0,
+                b_to_a_flow: daysCount > 0 ? b_to_a_count / daysCount : 0,
             };
         })
         .filter(

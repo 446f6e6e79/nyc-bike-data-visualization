@@ -4,9 +4,11 @@ import { createBaseTileLayer } from '../layers/base_layer/baseTileLayer.js'
 import { createStationUsageLayer } from '../layers/station_usage_layer/stationUsageLayer.jsx'
 import { useStationUsageLayer } from '../layers/station_usage_layer/useStationUsageHook.js'
 // Trip Flow Layer
-import { createTripFlowLayer } from '../layers/trip_flow_layer/tripFlowLayer.jsx'
+import { createTripFlowLayers } from '../layers/trip_flow_layer/tripFlowLayer.jsx'
 import { useTripFlowLayer } from '../layers/trip_flow_layer/useTripFlowHook.js'
-// Station Availability Layer
+import { useTripStationSelection } from '../layers/trip_flow_layer/stations/useTripStationSelection.js'
+// Infrastructure Layerimport { createStationAvailabilityLayer } from '../layers/infrastructure_layer/stations/stationAvailabilityLayer.jsx'
+
 import { createStationAvailabilityLayer } from '../layers/infrastructure_layer/stations/stationAvailabilityLayer.jsx'
 import { createBikeRoutesLayer } from '../layers/infrastructure_layer/bike_routes/bikeRoutesLayer.jsx'
 import { useInfrastructureLayer } from '../layers/infrastructure_layer/useInfrastructureHook.js'
@@ -24,8 +26,9 @@ const BASE_TILE_URL = 'https://a.basemaps.cartocdn.com/rastertiles/voyager_label
  */
 export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes }) {
     // Fetch and process data
-    const { frameStations, maxUsage, maxDelta,loading: stationLoading, error: stationError } = useStationUsageLayer({ filters: filters, currentTime })
-    const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters: filters })
+    const { frameStations, maxUsage, maxDelta, loading: stationLoading, error: stationError } = useStationUsageLayer({ filters: filters, currentTime })
+    const { selectedStationIds, onStationPick, resetSelectedStationIds } = useTripStationSelection() // Manage station selection state for trip flow layer
+    const { trips, maxTripFlow, stations: tripStations, loading: tripLoading, error: tripError } = useTripFlowLayer({ filters, selectedStationIds })
     const { stations, bikeRoutes, loading: availabilityLoading, error: availabilityError } = useInfrastructureLayer({ showBikeRoutes })
     // State for hovered bike route segment
     const [hoveredrouteID, setHoveredrouteID] = useState(null)
@@ -51,8 +54,15 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
                 base.push(createStationUsageLayer({ frameStations, maxUsage, maxDelta }))
         } 
         if (activeLayer === 'trip_flow') {
-            if (!tripLoading && !tripError)
-                base.push(createTripFlowLayer({ trips, maxTripCount: maxTripFlow }))
+            if (!tripLoading && !tripError) {
+                base.push(createTripFlowLayers({
+                    trips,
+                    maxTripCount: maxTripFlow,
+                    stations: tripStations,
+                    selectedStationIds,
+                    onStationPick,
+                }))
+            }
         }
         if (activeLayer === 'infrastructure') {
             if (!availabilityLoading && !availabilityError)
@@ -63,7 +73,7 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
         }
 
         return base
-    }, [frameStations, maxUsage, trips, maxTripFlow, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes, hoveredrouteID])
+    }, [frameStations, maxUsage, maxDelta, trips, maxTripFlow, tripStations, selectedStationIds, onStationPick, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes, hoveredrouteID])
 
     // Consider the loading and error states of only the active layer for the overall status
     const loading = stateLayers.find(layer => layer.layer === activeLayer)?.loading || false
@@ -72,5 +82,6 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
         layers,
         loading: loading,
         error: error,
+        resetSelectedStationIds,
     }
 }

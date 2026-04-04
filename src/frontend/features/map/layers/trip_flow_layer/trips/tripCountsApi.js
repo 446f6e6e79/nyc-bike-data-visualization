@@ -1,5 +1,5 @@
-import apiClient from '../../../../clients/apiClient.js'
-import { ENDPOINTS } from '../../../../clients/apiConstants.js'
+import apiClient from '../../../../../clients/apiClient.js'
+import { ENDPOINTS } from '../../../../../clients/apiConstants.js'
 /**
  * Fetches most frequent trips between station pairs, with optional filters
  * @param {*} filters

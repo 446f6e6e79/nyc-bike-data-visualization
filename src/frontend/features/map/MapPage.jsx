@@ -45,12 +45,12 @@ function MapPage({ filters }) {
         viewState,
     } = useMapHandler()
     // Build the layers to be rendered based on the active layer and fetched data
-    const { layers, loading, error } = useBuildLayers({
-        filters,
-        currentTime,
-        activeLayer,
-        showBikeRoutes,
-    })
+    const { 
+        layers,
+        loading, 
+        error, 
+        resetSelectedStationIds
+    } = useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes})
 
     // If there's an error or data is still loading in the active layer, show the status message instead of the map
     if (error || loading) {
@@ -74,6 +74,7 @@ function MapPage({ filters }) {
                     hasAnimation={hasAnimation}
                     showBikeRoutes={showBikeRoutes}
                     setShowBikeRoutes={setShowBikeRoutes}
+                    resetSelectedStationIds={resetSelectedStationIds}
                 />
                 <MapLegend
                     activeLayer={activeLayer}

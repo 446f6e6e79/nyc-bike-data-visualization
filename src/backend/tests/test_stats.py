@@ -110,9 +110,9 @@ def test_get_stats_grouped_by_day_and_hour():
     assert friday_hour_15["total_rides"] == 1
 
 def test_get_trips_between_stations():
-    """Test that /stats/trips_between_stations returns expected fields."""
+    """Test that /stats/station_flow_counts returns expected fields."""
     response = requests.get(
-        f"{BASE_URL}/stats/trips_between_stations",
+        f"{BASE_URL}/stats/station_flow_counts",
         params=DATE_PARAMS,
         timeout=DEFAULT_TIMEOUT,
     )
@@ -147,9 +147,9 @@ def test_get_trips_between_stations():
         assert group["total_rides"] == group["a_to_b_count"] + group["b_to_a_count"]
 
 def test_get_trips_between_stations_with_invalid_station_id():
-    """Test that /stats/trips_between_stations returns empty for unknown station_id."""
+    """Test that /stats/station_flow_counts returns empty for unknown station_id."""
     response = requests.get(
-        f"{BASE_URL}/stats/trips_between_stations",
+        f"{BASE_URL}/stats/station_flow_counts",
         params={**DATE_PARAMS, "station_id": "invalid_station_id"},
         timeout=DEFAULT_TIMEOUT,
     )
@@ -158,8 +158,8 @@ def test_get_trips_between_stations_with_invalid_station_id():
     assert payload == []
 
 def test_get_station_counts():
-    """Test that /stats/station_ride_counts returns expected station counts."""
-    response = requests.get(f"{BASE_URL}/stats/station_ride_counts", params=DATE_PARAMS, timeout=DEFAULT_TIMEOUT)
+    """Test that /stats/station_usage_counts returns expected station counts."""
+    response = requests.get(f"{BASE_URL}/stats/station_usage_counts", params=DATE_PARAMS, timeout=DEFAULT_TIMEOUT)
     assert response.status_code == 200
     payload = response.json()
     assert len(payload) == 4
@@ -183,7 +183,7 @@ def test_get_station_counts():
 def test_get_station_counts_grouped_by_day_of_week():
     """Test that grouped station counts are returned in nested station-first shape."""
     response = requests.get(
-        f"{BASE_URL}/stats/station_ride_counts",
+        f"{BASE_URL}/stats/station_usage_counts",
         params={**DATE_PARAMS, "group_by": "day_of_week"},
         timeout=DEFAULT_TIMEOUT,
     )
@@ -214,9 +214,9 @@ def test_get_station_counts_grouped_by_day_of_week():
 
 
 def test_get_trips_between_stations_grouped_by_hour():
-    """Test that /stats/trips_between_stations supports group_by=hour."""
+    """Test that /stats/station_flow_counts supports group_by=hour."""
     response = requests.get(
-        f"{BASE_URL}/stats/trips_between_stations",
+        f"{BASE_URL}/stats/station_flow_counts",
         params={**DATE_PARAMS, "group_by": "hour"},
         timeout=DEFAULT_TIMEOUT,
     )
