@@ -18,7 +18,7 @@ export const ENDPOINTS = {
 
     // Stats
     stats: () => `${API_BASE_URL}/stats/`,
-    stationRideCounts: () => `${API_BASE_URL}/stats/station_ride_counts`,
-    tripsBetweenStations: () => `${API_BASE_URL}/stats/trips_between_stations`,
+    stationRideCounts: () => `${API_BASE_URL}/stats/station_usage_counts`,
+    tripsBetweenStations: () => `${API_BASE_URL}/stats/station_flow_counts`,
     dateRange: () => `${API_BASE_URL}/stats/date_range`,
 }

@@ -38,7 +38,7 @@ def get_stats(
         end_station_id=end_station_id,
     )
 
-@router.get("/station_ride_counts", response_model=list[StationRideCounts])
+@router.get("/station_usage_counts", response_model=list[StationRideCounts])
 def get_station_ride_counts(
     group_by: RideCountGroupBy = Query(default=RideCountGroupBy.NONE),
     user_type: MemberCasual | None = Query(default=None),
@@ -59,7 +59,7 @@ def get_station_ride_counts(
         limit=limit,
     )
 
-@router.get("/trips_between_stations", response_model=list[TripsCountBetweenStations])
+@router.get("/station_flow_counts", response_model=list[TripsCountBetweenStations])
 def get_trips_between_stations(
     group_by: RideCountGroupBy = Query(default=RideCountGroupBy.NONE),
     user_type: MemberCasual | None = Query(default=None),

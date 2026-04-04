@@ -77,7 +77,8 @@ def get_trips_between_stations_stats(
         .alias("pair_id"),
         (pl.col("start_station_id") <= pl.col("end_station_id")).alias("is_forward"),
     ])
-
+    
+    # Collect here to avoid having to do double scans of the rides data when we split into forward and reverse counts later
     directional_counts = directional_counts.collect()
 
     forward_counts = directional_counts.filter(pl.col("is_forward")).select([
