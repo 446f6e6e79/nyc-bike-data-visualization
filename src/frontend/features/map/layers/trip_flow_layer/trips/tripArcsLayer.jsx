@@ -98,6 +98,8 @@ export function tripArcsTooltip(object) {
     const from = object.start_station_name
     const to = object.end_station_name
     const totalRides = object.total_rides
-    return `Trip: ${from} → ${to}\n Daily Rides: ${rides}\n Total Rides: ${totalRides}`
+    const a_to_b = Math.round(object.a_to_b_flow || 0)
+    const b_to_a = Math.round(object.b_to_a_flow || 0)
+    return `Trip: ${from} → ${to}\n Daily Rides: ${rides}\n Total Rides: ${totalRides}\n Daily Flow A→B: ${a_to_b.toFixed(2)}\n Daily Flow B→A: ${b_to_a.toFixed(2)}`
 }
 
