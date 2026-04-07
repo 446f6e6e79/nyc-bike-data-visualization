@@ -13,6 +13,7 @@ class Stats(BaseModel):
     hours_count: int        # Number of hours that the stats are calculated over, used to calculate average hourly counts
     average_duration_seconds: float
     average_distance_km: float
+    average_speed_kmh: float
     total_duration_seconds: float
     total_distance_km: float
 

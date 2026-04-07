@@ -23,6 +23,7 @@ def _fill_null_exprs() -> list[pl.Expr]:
         pl.col("average_distance_km").fill_null(0.0),
         pl.col("total_duration_seconds").fill_null(0.0),
         pl.col("total_distance_km").fill_null(0.0),
+        pl.col("avg_speed_kmh").fill_null(0.0),
     ]
 
 def _compute_grouped_stats(
@@ -75,6 +76,15 @@ def _stats_aggregations() -> list[pl.Expr]:
         pl.col("distance_km").mean().alias("average_distance_km"),
         pl.col("trip_duration_seconds").sum().alias("total_duration_seconds"),
         pl.col("distance_km").sum().alias("total_distance_km"),
+        (
+            pl.when(pl.col("trip_duration_seconds").sum() > 0)
+            .then(
+                pl.col("distance_km").sum()
+                / (pl.col("trip_duration_seconds").sum() / 3600)
+            )
+            .otherwise(0.0)
+            .alias("avg_speed_kmh")
+        ),
     ]
 
 def get_stats_data(
@@ -136,7 +146,8 @@ def _get_overall_stats(
         average_duration_seconds=float(stats_row["average_duration_seconds"] or 0.0),
         average_distance_km=float(stats_row["average_distance_km"] or 0.0),
         total_duration_seconds=float(stats_row["total_duration_seconds"] or 0.0),
-        total_distance_km=float(stats_row["total_distance_km"] or 0.0)
+        total_distance_km=float(stats_row["total_distance_km"] or 0.0),
+        average_speed_kmh=float(stats_row["avg_speed_kmh"] or 0.0),
     )
 
 def _get_grouped_stats(
@@ -176,6 +187,7 @@ def _get_grouped_stats(
             average_distance_km=row["average_distance_km"],
             total_duration_seconds=row["total_duration_seconds"],
             total_distance_km=row["total_distance_km"],
+            average_speed_kmh=float(row.get("avg_speed_kmh") or 0.0),
         )
 
     # GROUP BY: day_of_week

@@ -73,6 +73,10 @@ def get_filtered_rides(
 
 def add_trip_duration(rides: pl.LazyFrame) -> pl.LazyFrame:
     """Add a trip_duration_seconds column to the rides"""
+    # Check if the column already exists to avoid redundant calculations
+    if "trip_duration_seconds" in rides.collect_schema().names():
+        return rides
+    
     return rides.with_columns(
         (pl.col("ended_at") - pl.col("started_at"))
         .dt.total_seconds() # convert to seconds
@@ -124,9 +128,18 @@ def _enrich_rides_with_distances(rides: pl.LazyFrame, distances: pl.LazyFrame) -
         pl.col("station_id_b").alias("_station_max"),
         "distance_km"
     ])
+
+    # Enrich the rides with time duration
+    rides_norm = add_trip_duration(rides_norm)
+
     # Simple join on the normalized station ID pairs to get the distance, then drop the normalized columns
     return (
         rides_norm
         .join(distances_select, on=["_station_min", "_station_max"], how="left")
+        .with_columns(
+            # convert seconds -> hours, then compute speed
+            (pl.col("distance_km") / (pl.col("trip_duration_seconds") / 3600))
+            .alias("average_ride_speed_kmh")
+        )
         .drop(["_station_min", "_station_max"])
     )
