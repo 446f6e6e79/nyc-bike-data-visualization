@@ -11,6 +11,10 @@ import { getMetricConfig } from "../utils/metric_formatter.jsx"
  */
 export default function useSurfaceGraph({ data, activeMetric, setCoordinates }) {
     const metric = getMetricConfig(activeMetric)
+    const hoverTemplate =
+        "<b>%{y}</b><br>" +
+        "Hour: %{x}<br>" +
+        `${metric.label}: <b>%{z}</b><extra></extra>`
 
     // Build the 7x24 matrix used by Plotly surface z-values.
     const Z = useMemo(() => {
@@ -19,17 +23,13 @@ export default function useSurfaceGraph({ data, activeMetric, setCoordinates }) 
         for (let i = 0; i < data.length; i++) {
             const row = data[i]
             const day = normalizeDay(row.day_of_week)
-            grid[day][row.hour] = metric.get(row)
+            const value = Number(metric.get(row))
+            grid[day][row.hour] = Number.isFinite(value) ? value : 0
         }
 
         return grid
     }, [data, metric])
 
-    // Precompute the hover text for each point on the surface graph based on the Z values and the metric's formatting function, ensuring that the hover text updates efficiently when either the Z matrix or the active metric changes.
-    const hoverText = useMemo(
-        () => Z.map(row => row.map(value => metric.format(value))),
-        [Z, metric]
-    )
     // Handler for when a user clicks on a point on the surface graph, which updates the coordinates state in the parent component with the corresponding day, hour, and metric value of the clicked point. This allows the histograms to highlight the relevant bars based on the user's interaction with the surface graph.
     const handleSurfaceClick = useCallback((eventData) => {
         const point = eventData.points[0]
@@ -43,7 +43,7 @@ export default function useSurfaceGraph({ data, activeMetric, setCoordinates }) 
     return {
         metric,
         Z,
-        hoverText,
+        hoverTemplate,
         handleSurfaceClick,
     }
 }

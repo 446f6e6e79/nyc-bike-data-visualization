@@ -1,9 +1,6 @@
 import { WMO_WEATHER_CODES, getWeatherGroup } from "./wmo_code_handler.jsx"
 import { getMetricValue } from "../../temporal/utils/metric_formatter.jsx"
 
-// Function to determine the radius of each point in the scatter plot based on the total number of rides
-export const pointRadius = rides => Math.max(4, Math.min(12, Math.sqrt(rides) / 5 + 3))
-
 /**
  * Formats the weather data for use in the scatter plot
  * @param {Array} data - The raw weather data
@@ -18,8 +15,10 @@ export function formatData(data) {
         const totalRides = getMetricValue("total_rides", d)
         return {
             totalRides,
+            hoursCount,
             avgDistanceKm: getMetricValue("average_distance", d),
             avgDurationMin: getMetricValue("average_duration_minutes", d),
+            avgSpeed: getMetricValue("average_speed_kmh", d),
             ridesPerHour: totalRides / hoursCount,
             weatherGroup,
             weatherLabel,

@@ -23,7 +23,7 @@ const BLUE_COLORSCALE = [
 function SurfaceGraph({ data, activeMetric, setCoordinates }) {
     // If no data is available, return null to avoid rendering the graph
     if (!data || data.length === 0) return null
-    const { metric, Z, hoverText, handleSurfaceClick } = useSurfaceGraph({
+    const { metric, Z, hoverTemplate, handleSurfaceClick } = useSurfaceGraph({
         data,
         activeMetric,
         setCoordinates,
@@ -36,13 +36,9 @@ function SurfaceGraph({ data, activeMetric, setCoordinates }) {
                 z: Z,
                 x: HOUR_LABELS,
                 y: DAY_LABELS,
-                text: hoverText,
                 colorscale: BLUE_COLORSCALE,
                 showscale: false,
-                hovertemplate:
-                    "<b>%{y}</b><br>" +
-                    "Hour: %{x}<br>" +
-                    `${metric.label}: <b>%{text}</b><extra></extra>`,
+                hovertemplate: hoverTemplate,
             }]}
             layout={{
                 paper_bgcolor: "#ffffff",

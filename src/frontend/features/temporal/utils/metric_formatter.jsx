@@ -5,6 +5,7 @@ export const METRIC_FORMATTERS = {
     average_duration_minutes: value => value.toFixed(1) + " min",
     total_distance: value => value.toFixed(1) + " km",
     average_distance: value => value.toFixed(1) + " km",
+    average_speed_kmh: value => value.toFixed(1) + " km/h",
 }
 // Configuration object that defines the available metrics
 export const METRICS = {
@@ -25,6 +26,12 @@ export const METRICS = {
         unit: "min",
         get: row => row.average_duration_seconds / 60,
         format: METRIC_FORMATTERS.average_duration_minutes,
+    },
+    average_speed_kmh: {
+        label: "Avg Speed (km/h)",
+        unit: "km/h",
+        get: row => row.average_speed_kmh,
+        format: METRIC_FORMATTERS.average_speed_kmh,
     },
     total_distance: {
         label: "Total Distance (km)",

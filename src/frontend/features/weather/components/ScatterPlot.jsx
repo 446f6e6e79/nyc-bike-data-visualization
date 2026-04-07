@@ -2,7 +2,7 @@
 import { useEffect, useRef, useMemo } from "react"
 import { Chart } from "chart.js/auto"
 import { GROUPED_WEATHER_CODES } from "../utils/wmo_code_handler.jsx"
-import { formatData, pointRadius } from "../utils/scatterplot.jsx"
+import { formatData } from "../utils/scatterplot.jsx"
 
 /**
  * Component for rendering a scatter plot of weather data
@@ -27,12 +27,12 @@ export default function ScatterPlot({ data }) {
             data: {
                 datasets: formattedData.map(point => ({
                     label: point.weatherGroup,
-                    // x = rides per hour, y = average duration, point size = total rides, color = weather group
-                    data: [{ x: point.avgDurationMin, y: point.ridesPerHour, ...point }],
+                    // y = rides per hour, x = average speed, point size = total rides, color = weather group
+                    data: [{ x: point.avgSpeed, y: point.ridesPerHour, ...point }],
                     backgroundColor: GROUPED_WEATHER_CODES[point.weatherGroup]?.[1],
                     borderColor: "rgba(0, 0, 0, 0.5)",
                     borderWidth: 1,
-                    pointRadius: pointRadius(point.totalRides),
+                    pointRadius: 10,
                 })),
             },
             options: {
@@ -59,8 +59,11 @@ export default function ScatterPlot({ data }) {
                                 const point = ctx.raw
                                 return [
                                     `Total rides: ${point.totalRides.toLocaleString()}`,
+                                    `Hour count: ${point.hoursCount}`,
+                                    `Rides per hour: ${point.ridesPerHour.toFixed(0)}`,
                                     `Avg duration: ${point.avgDurationMin.toFixed(2)} min`,
                                     `Avg distance: ${point.avgDistanceKm.toFixed(2)} km`,
+                                    `Avg speed: ${point.avgSpeed.toFixed(2)} km/h`,
                                 ]
                             },
                         },
@@ -68,7 +71,7 @@ export default function ScatterPlot({ data }) {
                 },
                 scales: {   // Configure x and y axes with titles and grid lines
                     x: {
-                        title: { display: true, text: "Average Ride Duration (minutes)" },
+                        title: { display: true, text: "Average Speed (km/h)" },
                         grid: { color: "rgba(0, 0, 0, 0.06)" },
                         border: { display: false },
                     },
