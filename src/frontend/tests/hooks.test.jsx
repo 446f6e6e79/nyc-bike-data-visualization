@@ -6,7 +6,7 @@ import { useDatasetDateRange } from '../features/header/hooks/useDatasetDateRang
 import useDayHourStats from '../features/temporal/hooks/useDayHourStats.js'
 import useStationRideCounts from '../features/map/layers/station_usage_layer/useStationRideCounts.js'
 import useStationAvailability from '../features/map/layers/infrastructure_layer/stations/useStationAvailability.js'
-import useTripCounts from '../features/map/layers/trip_flow_layer/useTripCounts.js'
+import useTripCounts from '../features/map/layers/trip_flow_layer/trips/useTripCounts.js'
 import useHourlyStats from '../features/temporal/hooks/useHourlyStats.js'
 import useWeeklyStats from '../features/temporal/hooks/useWeeklyStats.js'
 import useWeatherStats from '../features/weather/hooks/useWeatherStats.js'
