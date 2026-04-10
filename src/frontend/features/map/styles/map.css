@@ -1,42 +1,60 @@
 @layer components {
   .map-shell {
-    @apply relative w-full h-[70vh] overflow-hidden rounded-lg border border-gray-200 bg-white;
+    @apply relative w-full h-[70vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-100;
   }
 
   .map-overlay {
-    @apply absolute top-3 left-3 px-3 py-2 text-sm text-gray-800 bg-white/90 rounded border border-gray-200;
+    @apply absolute top-3 left-3 px-3 py-2 text-sm text-slate-800
+           bg-white/85 backdrop-blur-sm rounded-lg border border-slate-200
+           shadow-[0_4px_18px_-8px_rgba(15,23,42,0.25)];
   }
 
   .map-legend {
-    @apply absolute right-3 bottom-3 px-3 py-2 text-xs text-white/90 bg-slate-900/85 rounded border border-slate-700;
+    @apply absolute right-3 bottom-3 px-3 py-2 text-xs text-white/90
+           bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-700/80
+           shadow-[0_6px_22px_-10px_rgba(15,23,42,0.55)];
   }
 
   .map-controls {
-    @apply absolute top-3 right-3 px-3 py-2 text-xs text-gray-800 bg-white/95 rounded border border-gray-200 flex items-center gap-2;
+    @apply absolute top-3 right-3 px-3 py-2 text-xs text-slate-800
+           bg-white/90 backdrop-blur-sm rounded-lg border border-slate-200
+           shadow-[0_6px_22px_-12px_rgba(15,23,42,0.35)]
+           flex items-center gap-3 flex-wrap max-w-[calc(100%-1.5rem)];
   }
 
   .map-controls-button {
-    @apply px-2 py-1 text-xs font-medium rounded border border-gray-300 bg-white hover:bg-gray-50;
+    @apply px-2 py-1 text-xs font-medium rounded-md border border-slate-300 bg-white
+           hover:bg-slate-50 hover:border-slate-400
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500
+           transition-colors duration-150;
   }
 
   .map-controls-label {
-    @apply text-xs text-gray-700;
+    @apply text-xs text-slate-700;
+  }
+
+  .map-controls-toggle {
+    @apply inline-flex items-center gap-1.5 cursor-pointer select-none;
   }
 
   .map-controls-select {
-    @apply px-2 py-1 text-xs rounded border border-gray-300 bg-white;
+    @apply px-2 py-1 text-xs rounded-md border border-slate-300 bg-white
+           hover:border-slate-400
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500
+           transition-colors duration-150;
   }
 
   .map-controls-hour {
-    @apply text-xs font-semibold text-gray-900;
+    @apply text-xs font-semibold text-slate-900;
   }
 
   .map-controls-hint {
-    @apply text-[11px] text-gray-600;
+    @apply text-[11px] text-slate-500;
   }
 
   .map-reset-button {
-    @apply inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-white rounded-md border border-sky-700/70;
+    @apply inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-white rounded-md border border-sky-700/70
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300;
     background: linear-gradient(135deg, rgb(14 116 144) 0%, rgb(2 132 199) 55%, rgb(56 189 248) 100%);
     box-shadow: 0 8px 20px -12px rgba(3, 105, 161, 0.9);
     transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease;
@@ -52,11 +70,6 @@
     transform: translateY(0);
     box-shadow: 0 8px 18px -14px rgba(3, 105, 161, 0.9);
     filter: brightness(0.98);
-  }
-
-  .map-reset-button:focus-visible {
-    outline: 2px solid rgb(125 211 252);
-    outline-offset: 2px;
   }
 
   .map-reset-button-icon {
@@ -81,6 +94,14 @@
 
   .map-legend-scale {
     @apply flex items-center gap-2 mt-2;
+  }
+
+  .map-legend__section {
+    @apply mt-2.5;
+  }
+
+  .map-legend__section-label {
+    @apply opacity-60 uppercase tracking-wider text-[11px];
   }
 
   .map-dot {

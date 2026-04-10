@@ -1,36 +1,5 @@
 @layer components {
-  .daily-chart-panel {
-    @apply bg-white rounded-[10px] p-4
-           shadow-[0_2px_8px_rgba(0,0,0,0.08)];
+  .scatter-plot-frame {
+    @apply relative w-full h-[520px];
   }
-
-  .daily-chart-svg {
-    @apply w-full h-auto block;
-  }
-}
-
-/* SVG presentation attributes can't use @apply — plain CSS only */
-.chart-axis {
-  stroke: #888;
-  stroke-width: 1;
-}
-
-.daily-bar {
-  fill: #1a73e8;
-}
-
-.chart-tick {
-  fill: #666;
-  font-size: 0.8rem;
-}
-
-.chart-value {
-  fill: #333;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.chart-y-label {
-  fill: #666;
-  font-size: 0.8rem;
 }

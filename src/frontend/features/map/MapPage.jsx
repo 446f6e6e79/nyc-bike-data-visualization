@@ -30,7 +30,7 @@ export const MAX_ZOOM = 15
 export const MIN_PITCH = 0
 export const MAX_PITCH = 60
 
-function MapPage({ filters }) {    
+function MapPage({ filters }) {
     // Map handler manages view state, active layer, animation time, and related logic
     const {
         activeLayer,
@@ -45,43 +45,54 @@ function MapPage({ filters }) {
         viewState,
     } = useMapHandler()
     // Build the layers to be rendered based on the active layer and fetched data
-    const { 
+    const {
         layers,
-        loading, 
-        error, 
+        loading,
+        error,
         resetSelectedStationIds
-    } = useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes})
+    } = useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes })
 
-    // If there's an error or data is still loading in the active layer, show the status message instead of the map
-    if (error || loading) {
-        return <StatusMessage loading={loading} error={error} />
-    }
     return (
-        <div className="map-shell">
-            <DeckGL
-                viewState={viewState}
-                onViewStateChange={handleViewStateChange}
-                controller={controller}
-                layers={layers}
-                getTooltip={({ object }) => Tooltip({ object, activeLayer })}
-            />
-            <>
-                <MapController
-                    activeLayer={activeLayer}
-                    setActiveLayer={setActiveLayer}
-                    currentTime={currentTime}
-                    setCurrentTime={setCurrentTime}
-                    hasAnimation={hasAnimation}
-                    showBikeRoutes={showBikeRoutes}
-                    setShowBikeRoutes={setShowBikeRoutes}
-                    resetSelectedStationIds={resetSelectedStationIds}
-                />
-                <MapLegend
-                    activeLayer={activeLayer}
-                    showBikeRoutes={showBikeRoutes}
-                />
-            </>
-        </div>
+        <section className="page-card">
+            <header className="page-card__header">
+                <div className="page-card__heading">
+                    <span className="page-card__eyebrow">Explore</span>
+                    <h2 className="page-card__title">NYC Citi Bike Map</h2>
+                    <p className="page-card__subtitle">
+                        Interactive view of station usage, trip flows, and infrastructure.
+                    </p>
+                </div>
+            </header>
+            <div className="page-card__body">
+                {(error || loading) ? (
+                    <StatusMessage loading={loading} error={error} />
+                ) : (
+                    <div className="map-shell">
+                        <DeckGL
+                            viewState={viewState}
+                            onViewStateChange={handleViewStateChange}
+                            controller={controller}
+                            layers={layers}
+                            getTooltip={({ object }) => Tooltip({ object, activeLayer })}
+                        />
+                        <MapController
+                            activeLayer={activeLayer}
+                            setActiveLayer={setActiveLayer}
+                            currentTime={currentTime}
+                            setCurrentTime={setCurrentTime}
+                            hasAnimation={hasAnimation}
+                            showBikeRoutes={showBikeRoutes}
+                            setShowBikeRoutes={setShowBikeRoutes}
+                            resetSelectedStationIds={resetSelectedStationIds}
+                        />
+                        <MapLegend
+                            activeLayer={activeLayer}
+                            showBikeRoutes={showBikeRoutes}
+                        />
+                    </div>
+                )}
+            </div>
+        </section>
     )
 }
 

@@ -62,12 +62,10 @@ export default function MapController({
 
             {/* Add speed controller iff current layer has animation enabled */}
             {hasAnimation && (
-                <div>
-                    <SpeedController
+                <SpeedController
                     setCurrentTime={setCurrentTime}
                     currentTime={currentTime}
-                    /> 
-                </div>
+                />
             )}
         </div>
     )

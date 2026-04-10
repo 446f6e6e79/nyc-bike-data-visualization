@@ -19,14 +19,16 @@ function App() {
         <BrowserRouter>
             <div className="app-shell">
                 <AppHeader filters={filters} onFiltersChange={setFilters} />
-                <div className="app-content">
-                    <Routes>
-                        <Route path="/" element={<Navigate to="/map" replace />} />
-                        <Route path="/map" element={<MapPage filters={filters} />} />
-                        <Route path="/temporal" element={<TemporalPage filters={filters} />} />
-                        <Route path="/weather" element={<WeatherPage filters={filters} />} />
-                    </Routes>
-                </div>
+                <main className="app-content">
+                    <div className="page-shell">
+                        <Routes>
+                            <Route path="/" element={<Navigate to="/map" replace />} />
+                            <Route path="/map" element={<MapPage filters={filters} />} />
+                            <Route path="/temporal" element={<TemporalPage filters={filters} />} />
+                            <Route path="/weather" element={<WeatherPage filters={filters} />} />
+                        </Routes>
+                    </div>
+                </main>
             </div>
         </BrowserRouter>
     )

@@ -30,71 +30,73 @@ function SurfaceGraph({ data, activeMetric, setCoordinates }) {
     })
 
     return (
-        <Plot
-            data={[{
-                type: "surface",
-                z: Z,
-                x: HOUR_LABELS,
-                y: DAY_LABELS,
-                colorscale: BLUE_COLORSCALE,
-                showscale: false,
-                hovertemplate: hoverTemplate,
-            }]}
-            layout={{
-                paper_bgcolor: "#ffffff",
-                plot_bgcolor: "#ffffff",
-                scene: {
-                    // Disables user interactions like zooming and rotating the 3D surface to maintain a consistent view
-                    dragmode: false,
-                    // Camera position
-                    camera: {
-                        eye: { x: 1.6, y: -1.6, z: 0.9 },
-                        center: { x: 0, y: 0, z: -0.1 },
-                        up: { x: 0, y: 0, z: 1 },
-                        projection: { type: "perspective" },
+        <div className="surface-plot-3d">
+            <Plot
+                data={[{
+                    type: "surface",
+                    z: Z,
+                    x: HOUR_LABELS,
+                    y: DAY_LABELS,
+                    colorscale: BLUE_COLORSCALE,
+                    showscale: false,
+                    hovertemplate: hoverTemplate,
+                }]}
+                layout={{
+                    paper_bgcolor: "#ffffff",
+                    plot_bgcolor: "#ffffff",
+                    scene: {
+                        // Disables user interactions like zooming and rotating the 3D surface to maintain a consistent view
+                        dragmode: false,
+                        // Camera position
+                        camera: {
+                            eye: { x: 1.6, y: -1.6, z: 0.9 },
+                            center: { x: 0, y: 0, z: -0.1 },
+                            up: { x: 0, y: 0, z: 1 },
+                            projection: { type: "perspective" },
+                        },
+                        xaxis: {
+                            title: { text: "Hour of Day", font: { color: "#000000", size: 16 } },
+                            tickfont: { color: "#000000", size: 12 },
+                            gridcolor: "#c0d8ef",
+                            backgroundcolor: "#eaf3fb",
+                            showbackground: true,
+                            zerolinecolor: "#99c4e8",
+                        },
+                        yaxis: {
+                            title: { text: "Day of Week", font: { color: "#000000", size: 16 } },
+                            tickfont: { color: "#000000", size: 12 },
+                            gridcolor: "#c0d8ef",
+                            backgroundcolor: "#eaf3fb",
+                            showbackground: true,
+                            zerolinecolor: "#99c4e8",
+                        },
+                        zaxis: {
+                            title: { text: metric.label, font: { color: "#000000", size: 16 } },
+                            tickfont: { color: "#000000", size: 12 },
+                            gridcolor: "#c0d8ef",
+                            backgroundcolor: "#f4f9fd",
+                            showbackground: true,
+                            zerolinecolor: "#99c4e8",
+                        },
+                        bgcolor: "#ffffff",
+                        aspectmode: "manual",
+                        aspectratio: { x: 1.8, y: 1, z: 0.7 },
                     },
-                    xaxis: {
-                        title: { text: "Hour of Day", font: { color: "#000000", size: 16 } },
-                        tickfont: { color: "#000000", size: 12 },
-                        gridcolor: "#c0d8ef",
-                        backgroundcolor: "#eaf3fb",
-                        showbackground: true,
-                        zerolinecolor: "#99c4e8",
-                    },
-                    yaxis: {
-                        title: { text: "Day of Week", font: { color: "#000000", size: 16 } },
-                        tickfont: { color: "#000000", size: 12 },
-                        gridcolor: "#c0d8ef",
-                        backgroundcolor: "#eaf3fb",
-                        showbackground: true,
-                        zerolinecolor: "#99c4e8",
-                    },
-                    zaxis: {
-                        title: { text: metric.label, font: { color: "#000000", size: 16 } },
-                        tickfont: { color: "#000000", size: 12 },
-                        gridcolor: "#c0d8ef",
-                        backgroundcolor: "#f4f9fd",
-                        showbackground: true,
-                        zerolinecolor: "#99c4e8",
-                    },
-                    bgcolor: "#ffffff",
-                    aspectmode: "manual",
-                    aspectratio: { x: 1.8, y: 1, z: 0.7 },
-                },
-                margin: { l: 0, r: 0, b: 0, t: 20 },
-                font: { family: "'DM Mono', monospace", color: "#000000" },
-            }}
-            // Event handler for when the user clicks over a point
-            onClick={handleSurfaceClick}
-            // Disables the mode bar and other interactive features to maintain a clean and static visualization
-            config={{
-                displayModeBar: false,
-                scrollZoom: false,
-                staticPlot: false,
-            }}
-            // Sets the style of the plot
-            style={{ width: "100%", height: "600px" }}
-        />
+                    margin: { l: 0, r: 0, b: 0, t: 20 },
+                    font: { family: "'DM Mono', monospace", color: "#000000" },
+                }}
+                // Event handler for when the user clicks over a point
+                onClick={handleSurfaceClick}
+                // Disables the mode bar and other interactive features to maintain a clean and static visualization
+                config={{
+                    displayModeBar: false,
+                    scrollZoom: false,
+                    staticPlot: false,
+                }}
+                useResizeHandler
+                className="w-full h-full"
+            />
+        </div>
     )
 }
 

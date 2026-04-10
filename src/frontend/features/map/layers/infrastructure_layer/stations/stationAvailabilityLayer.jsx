@@ -70,8 +70,8 @@ export function stationAvailabilityLegend({ showBikeRoutes = false } = {}) {
                 </small>
             </div>
             {showBikeRoutes && (
-                <div style={{ marginTop: 10 }}>
-                    <small style={{ opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div className="map-legend__section">
+                    <small className="map-legend__section-label">
                         Bike Routes
                     </small>
                     {bikeRoutesLegend()}
@@ -79,4 +79,4 @@ export function stationAvailabilityLegend({ showBikeRoutes = false } = {}) {
             )}
         </div>
     )
-}    
+}

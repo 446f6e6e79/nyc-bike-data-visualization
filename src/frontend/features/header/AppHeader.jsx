@@ -11,7 +11,7 @@ const PAGES = [
 
 /**
  * Header component for the application, containing the title, navigation links, and the date range filter.
- * @returns 
+ * @returns
  */
 function AppHeader({ onFiltersChange }) {
     const {
@@ -23,22 +23,24 @@ function AppHeader({ onFiltersChange }) {
 
     return (
         <header className="app-header">
-            <h1 className="app-title">Citi Bike Analytics</h1>
-            <nav>
-                {PAGES.map(({ to, label }) => (
-                    <NavLink
-                        key={to}
-                        to={to}
-                        className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-                    >
-                        {label}
-                    </NavLink>
-                ))}
-            </nav>
-            <div className="date-filter">
-                <DateRangeFilter value={dateRange} onCommit={handleDateRangeCommit} />
+            <div className="app-header__topbar">
+                <div className="app-header__brand">
+                    <h1 className="app-title">Citi Bike Analytics</h1>
+                </div>
+                <nav className="app-header__nav">
+                    {PAGES.map(({ to, label }) => (
+                        <NavLink
+                            key={to}
+                            to={to}
+                            className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+                        >
+                            {label}
+                        </NavLink>
+                    ))}
+                </nav>
             </div>
-            <div className="user-filter-header">
+            <div className="app-header__filters">
+                <DateRangeFilter value={dateRange} onCommit={handleDateRangeCommit} />
                 <RiderBikeFilter value={currentUserFilters} onChange={handleUserFilterChange} />
             </div>
         </header>

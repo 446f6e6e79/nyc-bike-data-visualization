@@ -1,6 +1,6 @@
-@layer user_filter {
+@layer components {
     .user-filter {
-        @apply flex items-center gap-3 flex-wrap;
+        @apply flex items-center gap-4 flex-wrap;
     }
 
     .user-filter-group {
@@ -8,7 +8,7 @@
     }
 
     .user-filter-label {
-        @apply text-xs font-medium text-gray-600 whitespace-nowrap;
+        @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70 whitespace-nowrap;
     }
 
     .user-filter-select-wrapper {
@@ -16,10 +16,14 @@
     }
 
     .user-filter-select {
-        @apply appearance-none pl-3 pr-7 py-1.5 text-xs font-medium text-gray-800 bg-white rounded border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors duration-150;
+        @apply appearance-none pl-3 pr-8 py-1.5 text-xs font-medium
+               text-slate-800 bg-white/95 rounded-md border border-white/40
+               hover:bg-white hover:border-white/60
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300
+               cursor-pointer transition-colors duration-150;
     }
 
     .user-filter-chevron {
-        @apply pointer-events-none absolute right-2 text-gray-500;
+        @apply pointer-events-none absolute right-2 text-slate-500;
     }
 }

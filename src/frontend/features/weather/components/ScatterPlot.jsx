@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useMemo } from "react"
 import { Chart } from "chart.js/auto"
 import { GROUPED_WEATHER_CODES } from "../utils/wmo_code_handler.jsx"
@@ -9,7 +8,6 @@ import { formatData } from "../utils/scatterplot.jsx"
  * @param {{ Array }} data - The props for the component
  * @returns {JSX.Element} The rendered scatter plot
  */
-//#TODO: Fix this style to move it to a hook if remains like this
 export default function ScatterPlot({ data }) {
     // Refs to store the canvas element and the Chart.js instance
     const canvasRef = useRef(null)
@@ -89,7 +87,7 @@ export default function ScatterPlot({ data }) {
     }, [formattedData])
     // Render a canvas element wrapped in a div with fixed height to contain the scatter plot
     return (
-        <div style={{ width: "100%", height: "520px" }}>
+        <div className="scatter-plot-frame">
             <canvas ref={canvasRef} />
         </div>
     )
