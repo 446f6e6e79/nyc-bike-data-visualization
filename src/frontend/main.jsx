@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import App from './App.jsx'
 import './styles/index.css'
 import { queryClient } from './clients/queryClient.js'
-import { applyEditorialChartDefaults } from './utils/chartTheme.js'
+import { applyEditorialChartDefaults } from './utils/styling'
 
 applyEditorialChartDefaults()
 

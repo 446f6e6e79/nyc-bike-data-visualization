@@ -9,7 +9,7 @@ import {
     FONT_DISPLAY,
     FONT_MONO,
 } from "../../../utils/editorialTokens.js"
-import { SCATTER_BORDER_COLOR, SCATTER_BORDER_WIDTH, SCATTER_POINT_RADIUS } from "../../../utils/styling.tsx"
+import { SCATTER_BORDER_COLOR, SCATTER_BORDER_WIDTH, SCATTER_POINT_RADIUS } from "../../../utils/styling"
 
 /**
  * Component for rendering a scatter plot of weather data

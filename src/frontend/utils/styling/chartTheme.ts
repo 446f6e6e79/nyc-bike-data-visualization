@@ -5,7 +5,7 @@ import {
     ACCENT,
     FONT_SANS,
     FONT_MONO,
-} from './editorialTokens.js'
+} from '../editorialTokens.js'
 
 let applied = false
 

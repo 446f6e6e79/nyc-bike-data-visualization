@@ -80,36 +80,53 @@
     @apply inline-flex items-center gap-1.5 cursor-pointer select-none;
   }
 
+  .map-controls-hint {
+    @apply font-sans text-[11px] text-ink-muted;
+  }
+
+  /* Speed controller */
+
   .map-speed-controls {
     @apply flex items-center gap-2;
   }
 
-  .map-speed-controls .map-controls-label {
-    @apply ml-2;
-  }
-
-  .map-controls-select {
-    @apply appearance-none px-2 py-1 font-sans text-xs text-ink bg-paper
-           border border-rule hover:border-rule-strong
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-           transition-colors duration-150;
-  }
-
-  .map-controls-button {
-    @apply px-2 py-1 font-mono text-[11px] uppercase tracking-eyebrow
+  .map-speed-play-btn {
+    @apply inline-flex items-center justify-center w-7 h-7
            text-ink bg-paper border border-rule
-           hover:border-rule-strong
+           hover:border-rule-strong hover:bg-paper-raised
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-           transition-colors duration-150;
+           transition-colors duration-150 shrink-0;
   }
 
-  .map-controls-hour {
-    @apply font-mono text-[11px] font-semibold text-ink tabular-nums;
+  .map-speed-clock {
+    @apply inline-flex items-center gap-1.5
+           font-mono text-[12px] font-semibold text-ink tabular-nums;
   }
 
-  .map-controls-hint {
-    @apply font-sans text-[11px] text-ink-muted;
+  .map-speed-divider {
+    @apply w-px h-4 bg-rule shrink-0;
   }
+
+  .map-speed-rate {
+    @apply flex gap-px border border-rule p-px bg-rule;
+  }
+
+  .map-speed-rate-btn {
+    @apply font-mono text-[10px] uppercase tracking-eyebrow px-2 py-1
+           text-ink-muted bg-paper transition-colors duration-150
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+           cursor-pointer;
+  }
+
+  .map-speed-rate-btn:hover {
+    @apply text-ink;
+  }
+
+  .map-speed-rate-btn.active {
+    @apply bg-ink text-white;
+  }
+
+  /* Reset button */
 
   .map-reset-button {
     @apply inline-flex items-center gap-2 px-3 py-1.5 font-mono text-[11px]

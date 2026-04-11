@@ -1,40 +1,8 @@
 import Plot from "react-plotly.js"
 import { HOUR_LABELS, DAY_LABELS } from "../../../utils/config.jsx"
 import useSurfaceGraph from "../hooks/useSurfaceGraph"
-import {
-    INK,
-    INK_MUTED,
-    PAPER,
-    PAPER_RAISED,
-    ACCENT,
-    ACCENT_INK,
-    RULE,
-    RULE_STRONG,
-    FONT_SANS,
-    FONT_DISPLAY,
-    FONT_MONO,
-} from "../../../utils/editorialTokens.js"
-
-// Sequential editorial ramp: paper (min) → accent-ink (max).
-// Five stops map the full z range cleanly without muddying the midrange.
-const EDITORIAL_COLORSCALE = [
-    [0.00, PAPER],
-    [0.25, "#b8c9ec"],
-    [0.50, "#6387e5"],
-    [0.75, ACCENT],
-    [1.00, ACCENT_INK],
-]
-
-// Shared axis factory — every axis uses the same typography and rule tones,
-// so x/y/z stay visually parallel even when their labels differ.
-const editorialAxis = (title) => ({
-    title: { text: title, font: { family: FONT_DISPLAY, color: INK, size: 14 } },
-    tickfont: { family: FONT_MONO, color: INK_MUTED, size: 11 },
-    gridcolor: RULE,
-    backgroundcolor: PAPER_RAISED,
-    showbackground: true,
-    zerolinecolor: RULE_STRONG,
-})
+import { PAPER_RAISED, FONT_SANS, INK } from "../../../utils/editorialTokens.js"
+import { EDITORIAL_COLORSCALE, editorialAxis } from "../../../utils/styling"
 
 /**
  * Component for rendering the 3D surface graph that visualizes the selected metric across days of the week and hours of the day.

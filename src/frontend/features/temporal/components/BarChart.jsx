@@ -8,7 +8,7 @@ import {
     FONT_DISPLAY,
     FONT_MONO,
 } from "../../../utils/editorialTokens.js"
-import { BAR_SOLID, BAR_MUTED } from "../../../utils/styling.tsx"
+import { BAR_SOLID, BAR_MUTED } from "../../../utils/styling"
 
 
 /**
