@@ -7,8 +7,8 @@ export const queryClient = new QueryClient({
             retry: 1,
             refetchOnWindowFocus: false,  // Don't refetch on window tabs back
             refetchOnMount: false,        // Don't refetch when component mounts if data is fresh
-            staleTime: 15 * 60 * 1000,    // Data is considered fresh for 15 minutes
-            gcTime: 30 * 60 * 1000,       // Data is garbage collected after 30 minutes
+            staleTime: 15 * 60 * 1000,    // Default data freshness: 15 minutes
+            gcTime: 30 * 60 * 1000,       // Default cache garbage collection: 30 minutes
         },
     },
 })
