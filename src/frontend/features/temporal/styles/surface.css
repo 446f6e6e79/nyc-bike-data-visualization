@@ -1,87 +1,28 @@
 @layer components {
-
-    .surface-card {
-        @apply flex flex-col gap-4 w-full rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-6 shadow-sm;
-    }
-
-    .surface-header {
-        @apply flex items-start justify-between flex-wrap gap-4;
-    }
-
-    .surface-header__meta {
-        @apply flex flex-col gap-0.5;
-    }
-
-    .surface-header__eyebrow {
-        @apply text-xs font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-500;
-    }
-
-    .surface-header__title {
-        @apply text-lg font-semibold text-zinc-800 dark:text-zinc-100 leading-tight;
-    }
-
     .surface-metric-selector {
-        @apply flex flex-wrap gap-2;
+        @apply flex flex-wrap gap-1 border border-rule p-1 bg-paper;
     }
 
     .surface-metric-btn {
-        @apply text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors duration-150 bg-transparent text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200;
+        @apply font-mono text-[11px] uppercase tracking-eyebrow px-3 py-1.5
+               text-ink-muted transition-colors duration-150
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+    }
+
+    .surface-metric-btn:hover {
+        @apply text-ink;
     }
 
     .surface-metric-btn.active {
-        @apply bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100;
+        @apply bg-ink text-white;
     }
 
     .surface-divider {
-        @apply w-full h-px bg-zinc-100 dark:bg-zinc-800;
-    }
-
-    .surface-plot-area {
-        @apply relative w-full h-[480px];
-    }
-
-    .surface-plot {
-        @apply w-full h-full;
-    }
-
-    .surface-loader {
-        @apply absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-sm;
-    }
-
-    .surface-loader__inner {
-        @apply flex flex-col items-center gap-3;
-    }
-
-    .surface-loader__spinner {
-        @apply w-6 h-6 rounded-full border-2 border-zinc-300 dark:border-zinc-600 border-t-zinc-800 dark:border-t-zinc-200 animate-spin;
-    }
-
-    .surface-loader__label {
-        @apply text-xs text-zinc-400 dark:text-zinc-500 tracking-wide;
-    }
-
-    .surface-empty {
-        @apply absolute inset-0 flex items-center justify-center;
-    }
-
-    .surface-empty__text {
-        @apply text-sm text-zinc-400 dark:text-zinc-500;
-    }
-
-    .surface-footer {
-        @apply flex items-center justify-between flex-wrap gap-2 pt-1;
-    }
-
-    .surface-footer__hint {
-        @apply text-xs text-zinc-400 dark:text-zinc-500;
-    }
-
-    .surface-footer__badge {
-        @apply text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-100 dark:border-zinc-700;
+        @apply w-full h-px bg-rule;
     }
 
     .surface-plot-3d {
-        @apply relative w-full h-[600px];
+        @apply relative w-full h-[560px] bg-paper-raised border border-rule;
     }
 
     .surface-histograms-grid {
@@ -89,11 +30,12 @@
     }
 
     .surface-histogram-card {
-        @apply bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-5 shadow-sm;
+        @apply flex flex-col gap-2 bg-paper border-t border-ink
+               border-x border-b border-rule p-5;
     }
 
     .surface-histogram-card__eyebrow {
-        @apply text-[11px] font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mt-0 mb-1;
+        @apply font-mono text-[11px] uppercase tracking-eyebrow text-ink-muted m-0;
     }
 
     .surface-histogram-chart {

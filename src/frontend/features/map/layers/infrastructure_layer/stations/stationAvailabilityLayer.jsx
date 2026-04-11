@@ -1,5 +1,10 @@
 import { ScatterplotLayer } from '@deck.gl/layers'
-import { bikeRoutesLegend } from '../bike_routes/bikeRoutesLayer.jsx'
+import {
+    HEALTHY_RGB,
+    WARNING_RGB,
+    DANGER_RGB,
+    UNKNOWN_RGB,
+} from '../../../../../utils/editorialTokens.js'
 
 /**
  * Creates a scatterplot layer for displaying station availability information.
@@ -8,7 +13,7 @@ import { bikeRoutesLegend } from '../bike_routes/bikeRoutesLayer.jsx'
  *   - longitude: number
  *   - capacity: number (total docks)
  *   - station_health: number (0 to 1, where 1 is fully healthy)
- * @returns 
+ * @returns
  */
 export function createStationAvailabilityLayer({ stations }) {
     return new ScatterplotLayer({
@@ -28,21 +33,22 @@ export function createStationAvailabilityLayer({ stations }) {
 }
 
 /**
- * Maps station_health [0, 1] to a color gradient:
- * 0.0 → red   (no bikes, no docks — broken/disabled)
- * 0.5 → amber (heavily skewed toward full or empty)
- * 1.0 → green (healthy balance of bikes and docks)
+ * Maps station_health [0, 1] to an editorial color:
+ * 0.0 → danger (no bikes, no docks — broken/disabled)
+ * 0.5 → warning (heavily skewed toward full or empty)
+ * 1.0 → healthy (balanced bikes and docks)
+ * null → unknown (ink-muted)
  */
 function getStationColor(health) {
-    if (health === null || health === undefined) return [150, 150, 150] // unknown → grey
-    if (health >= 0.7) return [34, 197, 94]   // green
-    if (health >= 0.4) return [234, 179, 8]   // amber
-    return [239, 68, 68]                      // red
+    if (health == null) return UNKNOWN_RGB
+    if (health >= 0.7) return HEALTHY_RGB
+    if (health >= 0.4) return WARNING_RGB
+    return DANGER_RGB
 }
 
 
 /** * Generates tooltip content for a station availability point.
- * @param {Object} object - The station data object 
+ * @param {Object} object - The station data object
  * @returns {string} A formatted string with station information for the tooltip.
  */
 export function stationAvailabilityTooltip( object ) {
@@ -56,27 +62,17 @@ export function stationAvailabilityTooltip( object ) {
 }
 
 /**
- * Generates the legend for the station availability layer, with an optional section for bike routes if they are being displayed.
- * @param {boolean} showBikeRoutes
+ * Returns the legend entries for the station availability layer as plain data.
+ * `MapLegend` renders them uniformly alongside every other layer's entries.
+ * When `showBikeRoutes` is true the legend also surfaces the bike-routes section.
  */
 export function stationAvailabilityLegend({ showBikeRoutes = false } = {}) {
-    return (
-        <div className="map-legend">
-            <div className="map-legend-desc">
-                <small>
-                    <b>Green</b>: Healthy balance<br />
-                    <b>Amber</b>: Skewed (almost full/empty)<br />
-                    <b>Red</b>: Unhealthy (broken/disabled)
-                </small>
-            </div>
-            {showBikeRoutes && (
-                <div className="map-legend__section">
-                    <small className="map-legend__section-label">
-                        Bike Routes
-                    </small>
-                    {bikeRoutesLegend()}
-                </div>
-            )}
-        </div>
-    )
+    return {
+        entries: [
+            { swatch: 'rgb(47, 125, 79)', label: 'Healthy', hint: 'bikes and docks available' },
+            { swatch: 'rgb(200, 138, 26)', label: 'Skewed', hint: 'nearly full or empty' },
+            { swatch: 'rgb(163, 45, 45)', label: 'Unhealthy', hint: 'broken or disabled' },
+        ],
+        includeBikeRoutes: showBikeRoutes,
+    }
 }

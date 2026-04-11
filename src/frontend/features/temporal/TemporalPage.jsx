@@ -27,10 +27,11 @@ function TemporalPage({ filters }) {
         <section className="page-card">
             <header className="page-card__header">
                 <div className="page-card__heading">
-                    <span className="page-card__eyebrow">Patterns</span>
-                    <h2 className="page-card__title">Temporal distribution</h2>
+                    <span className="page-card__eyebrow">02 — Rhythms</span>
+                    <h2 className="page-card__title">The week, hour by hour.</h2>
                     <p className="page-card__subtitle">
-                        How ridership shifts across days of the week and hours of the day.
+                        How ridership swells and recedes across days of the week
+                        and hours of the day.
                     </p>
                 </div>
                 <div className="page-card__actions">

@@ -1,6 +1,6 @@
 @layer components {
     .user-filter {
-        @apply flex items-center gap-4 flex-wrap;
+        @apply flex items-center gap-5 flex-wrap;
     }
 
     .user-filter-group {
@@ -8,7 +8,7 @@
     }
 
     .user-filter-label {
-        @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70 whitespace-nowrap;
+        @apply font-mono text-[10px] uppercase tracking-eyebrow text-white/55 whitespace-nowrap;
     }
 
     .user-filter-select-wrapper {
@@ -16,14 +16,18 @@
     }
 
     .user-filter-select {
-        @apply appearance-none pl-3 pr-8 py-1.5 text-xs font-medium
-               text-slate-800 bg-white/95 rounded-md border border-white/40
-               hover:bg-white hover:border-white/60
-               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300
+        @apply appearance-none pl-3 pr-8 py-1.5 font-sans text-xs font-medium
+               text-white bg-transparent border border-rule-invert
+               hover:border-white/40
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60
                cursor-pointer transition-colors duration-150;
     }
 
+    .user-filter-select option {
+        @apply text-ink bg-paper-raised;
+    }
+
     .user-filter-chevron {
-        @apply pointer-events-none absolute right-2 text-slate-500;
+        @apply pointer-events-none absolute right-2 text-white/60;
     }
 }

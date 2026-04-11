@@ -1,5 +1,14 @@
 @layer base {
+  html {
+    @apply antialiased;
+  }
+
   body {
-    @apply font-sans bg-gray-100;
+    @apply font-sans bg-paper text-ink;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  ::selection {
+    @apply bg-accent text-white;
   }
 }

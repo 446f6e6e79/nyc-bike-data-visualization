@@ -1,33 +1,63 @@
 import { LAYER_OPTIONS } from "../MapPage.jsx"
 import { stationAvailabilityLegend } from "../layers/infrastructure_layer/stations/stationAvailabilityLayer.jsx"
+import { bikeRoutesLegend } from "../layers/infrastructure_layer/bike_routes/bikeRoutesLayer.jsx"
 import { stationUsageLegend } from "../layers/station_usage_layer/stationUsageLayer.jsx"
 import { tripFlowLegend } from "../layers/trip_flow_layer/tripFlowLayer.jsx"
 
 /**
- * Renders the map legend based on the currently active layer. 
- * @param {string} activeLayer - The currently active map layer to determine which legend to display. 
- * @returns The JSX for the map legend, which includes a title and specific legend content based on the active layer. The legend content is defined in separate functions for each layer type, allowing for easy extension in the future by adding new entries to the availableLegends object.
+ * Renders a single legend row: swatch + label + optional hint.
+ */
+function LegendRow({ swatch, label, hint }) {
+    return (
+        <li className="map-legend__row">
+            <span className="map-legend__swatch" style={{ background: swatch }} />
+            <span className="map-legend__label">{label}</span>
+            {hint && <span className="map-legend__hint">{hint}</span>}
+        </li>
+    )
+}
+
+/**
+ * Resolves the legend descriptor (entries + optional sub-sections) for the
+ * currently active layer. Each layer returns a plain `{ entries, ... }` object
+ * so MapLegend can render them uniformly.
+ */
+function legendFor(activeLayer, { showBikeRoutes }) {
+    switch (activeLayer) {
+        case 'station_usage':  return stationUsageLegend()
+        case 'trip_flow':      return tripFlowLegend()
+        case 'infrastructure': return stationAvailabilityLegend({ showBikeRoutes })
+        default:               return { entries: [] }
+    }
+}
+
+/**
+ * Map legend panel — renders the active layer's swatch rows on an ink card.
+ * @param {string} activeLayer
+ * @param {boolean} showBikeRoutes - when true, an extra bike-routes section is surfaced
  */
 export default function MapLegend({ activeLayer, showBikeRoutes }) {
-    // Get label of the active layer from the options
-    const activeLayerLabel = LAYER_OPTIONS.find((layer) => layer.value === activeLayer)?.label || 'Unknown layer'
-    // Define the available legends for each layer type, which can be easily extended in the future by adding new entries to this object.
-    const availableLegends = {
-        'station_usage': stationUsageLegend(),
-        'trip_flow': tripFlowLegend(),
-        'infrastructure': stationAvailabilityLegend({ showBikeRoutes }),
-    }
+    const activeLayerLabel = LAYER_OPTIONS.find((layer) => layer.value === activeLayer)?.label || 'Layer'
+    const legend = legendFor(activeLayer, { showBikeRoutes })
 
     return (
         <div className="map-legend">
-            {/* Display the title of the legend based on the active layer. */}
-            <p className="map-legend-title">
-                {activeLayerLabel}
-            </p>
-            {/* Render the legend content based on the active layer, using the pre-defined legend components for each layer type. */}
-            <>
-                {availableLegends[activeLayer]}
-            </>
+            <p className="map-legend-title">{activeLayerLabel}</p>
+            <ul className="map-legend__list">
+                {legend.entries.map((entry) => (
+                    <LegendRow key={entry.label} {...entry} />
+                ))}
+            </ul>
+            {legend.includeBikeRoutes && (
+                <div className="map-legend__section">
+                    <small className="map-legend__section-label">Bike routes</small>
+                    <ul className="map-legend__list">
+                        {bikeRoutesLegend().entries.map((entry) => (
+                            <LegendRow key={entry.label} {...entry} />
+                        ))}
+                    </ul>
+                </div>
+            )}
         </div>
     )
 }

@@ -1,36 +1,60 @@
 @layer components {
   .map-shell {
-    @apply relative w-full h-[70vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-100;
+    @apply relative w-full h-[70vh] overflow-hidden border border-rule bg-ink;
   }
 
   .map-overlay {
-    @apply absolute top-3 left-3 px-3 py-2 text-sm text-slate-800
-           bg-white/85 backdrop-blur-sm rounded-lg border border-slate-200
-           shadow-[0_4px_18px_-8px_rgba(15,23,42,0.25)];
+    @apply absolute top-4 left-4 px-3 py-2 font-mono text-[11px] uppercase
+           tracking-eyebrow text-ink bg-paper-raised/90 backdrop-blur-sm
+           border border-rule;
   }
 
   .map-legend {
-    @apply absolute right-3 bottom-3 px-3 py-2 text-xs text-white/90
-           bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-700/80
-           shadow-[0_6px_22px_-10px_rgba(15,23,42,0.55)];
+    @apply absolute right-4 bottom-4 px-4 py-3 text-xs text-white/90
+           bg-ink/85 backdrop-blur-sm border border-rule-invert
+           min-w-[180px];
+  }
+
+  .map-legend-title {
+    @apply font-mono text-[11px] uppercase tracking-eyebrow text-white m-0;
+  }
+
+  .map-legend__list {
+    @apply m-0 mt-2 flex flex-col gap-1.5 list-none p-0;
+  }
+
+  .map-legend__row {
+    @apply flex items-center gap-2 font-mono text-[11px] text-white/85;
+  }
+
+  .map-legend__swatch {
+    @apply inline-block w-3 h-3 border border-rule-invert shrink-0;
+  }
+
+  .map-legend__label {
+    @apply text-white/90 tracking-[0.02em];
+  }
+
+  .map-legend__hint {
+    @apply text-white/55 font-sans text-[11px] normal-case;
+  }
+
+  .map-legend__section {
+    @apply mt-3 pt-3 border-t border-rule-invert;
+  }
+
+  .map-legend__section-label {
+    @apply font-mono text-[10px] uppercase tracking-eyebrow text-white/55;
   }
 
   .map-controls {
-    @apply absolute top-3 right-3 px-3 py-2 text-xs text-slate-800
-           bg-white/90 backdrop-blur-sm rounded-lg border border-slate-200
-           shadow-[0_6px_22px_-12px_rgba(15,23,42,0.35)]
-           flex items-center gap-3 flex-wrap max-w-[calc(100%-1.5rem)];
-  }
-
-  .map-controls-button {
-    @apply px-2 py-1 text-xs font-medium rounded-md border border-slate-300 bg-white
-           hover:bg-slate-50 hover:border-slate-400
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500
-           transition-colors duration-150;
+    @apply absolute top-4 right-4 px-3 py-2 text-xs text-ink
+           bg-paper-raised/95 backdrop-blur-sm border border-rule
+           flex items-center gap-3 flex-wrap max-w-[calc(100%-2rem)];
   }
 
   .map-controls-label {
-    @apply text-xs text-slate-700;
+    @apply font-mono text-[11px] uppercase tracking-eyebrow text-ink-muted;
   }
 
   .map-controls-toggle {
@@ -38,91 +62,44 @@
   }
 
   .map-controls-select {
-    @apply px-2 py-1 text-xs rounded-md border border-slate-300 bg-white
-           hover:border-slate-400
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500
+    @apply appearance-none px-2 py-1 font-sans text-xs text-ink bg-paper
+           border border-rule hover:border-rule-strong
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+           transition-colors duration-150;
+  }
+
+  .map-controls-button {
+    @apply px-2 py-1 font-mono text-[11px] uppercase tracking-eyebrow
+           text-ink bg-paper border border-rule
+           hover:border-rule-strong
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
            transition-colors duration-150;
   }
 
   .map-controls-hour {
-    @apply text-xs font-semibold text-slate-900;
+    @apply font-mono text-[11px] font-semibold text-ink tabular-nums;
   }
 
   .map-controls-hint {
-    @apply text-[11px] text-slate-500;
+    @apply font-sans text-[11px] text-ink-muted;
   }
 
   .map-reset-button {
-    @apply inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-white rounded-md border border-sky-700/70
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300;
-    background: linear-gradient(135deg, rgb(14 116 144) 0%, rgb(2 132 199) 55%, rgb(56 189 248) 100%);
-    box-shadow: 0 8px 20px -12px rgba(3, 105, 161, 0.9);
-    transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease;
-  }
-
-  .map-reset-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 14px 24px -16px rgba(3, 105, 161, 0.95);
-    filter: brightness(1.03);
-  }
-
-  .map-reset-button:active {
-    transform: translateY(0);
-    box-shadow: 0 8px 18px -14px rgba(3, 105, 161, 0.9);
-    filter: brightness(0.98);
+    @apply inline-flex items-center gap-2 px-3 py-1.5 font-mono text-[11px]
+           uppercase tracking-eyebrow text-white bg-ink border border-ink
+           hover:bg-ink-raised transition-colors duration-150
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
   }
 
   .map-reset-button-icon {
-    @apply inline-flex items-center justify-center;
-    width: 14px;
-    height: 14px;
-    font-size: 12px;
-    transform: rotate(-10deg);
+    @apply inline-flex items-center justify-center w-[14px] h-[14px] text-xs;
   }
 
   .map-reset-button-text {
-    letter-spacing: 0.01em;
-  }
-
-  .map-legend-title {
-    @apply text-sm font-semibold text-white;
-  }
-
-  .map-legend-text {
-    @apply mt-1;
-  }
-
-  .map-legend-scale {
-    @apply flex items-center gap-2 mt-2;
-  }
-
-  .map-legend__section {
-    @apply mt-2.5;
-  }
-
-  .map-legend__section-label {
-    @apply opacity-60 uppercase tracking-wider text-[11px];
-  }
-
-  .map-dot {
-    @apply inline-block rounded-full;
-    width: 10px;
-    height: 10px;
-  }
-
-  .map-dot-low {
-    background-color: rgba(96, 165, 250, 0.95);
-  }
-
-  .map-dot-mid {
-    background-color: rgba(37, 99, 235, 0.95);
-  }
-
-  .map-dot-high {
-    background-color: rgba(30, 64, 175, 0.95);
+    letter-spacing: 0.08em;
   }
 
   .map-error {
-    @apply px-4 py-3 text-sm text-red-700 bg-red-50 rounded border border-red-200;
+    @apply px-4 py-3 font-sans text-sm text-error bg-error-bg border border-error-border;
   }
 }

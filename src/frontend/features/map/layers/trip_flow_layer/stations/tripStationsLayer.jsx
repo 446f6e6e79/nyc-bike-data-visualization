@@ -1,7 +1,14 @@
 import { ScatterplotLayer } from '@deck.gl/layers'
+import {
+    INK_MUTED_RGB,
+    WARM_HIGHLIGHT_RGB,
+} from '../../../../../utils/editorialTokens.js'
 
-const STATION_COLOR_DEFAULT = [59, 130, 246]
-const STATION_COLOR_SELECTED = [34, 197, 94]
+// Default stations recede to quiet ink-muted dots so the colored arcs carry
+// the narrative; selected stations share the warm highlight of their arcs
+// so the click target and its connections read as one visual group.
+const STATION_COLOR_DEFAULT = INK_MUTED_RGB       // [110, 106, 98]
+const STATION_COLOR_SELECTED = WARM_HIGHLIGHT_RGB // [229, 140, 43]
 
 /**
  * Creates a scatterplot layer for displaying all available stations as blue dots in trip flow view.

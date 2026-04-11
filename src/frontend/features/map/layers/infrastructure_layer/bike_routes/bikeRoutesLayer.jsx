@@ -1,13 +1,15 @@
 import { GeoJsonLayer } from '@deck.gl/layers'
 
 /**
- * Color map for bike facility classes. *
-*/
+ * Color map for bike facility classes — editorial palette.
+ * Three clearly distinct hues, each carrying implicit meaning:
+ * forest = segregated/safe, accent = primary network, amber = shared/caution.
+ */
 export const FACILITY_COLORS = {
-    I:   [16,  185, 129, 255],   // emerald green
-    II:  [37,   99, 235, 255],   // royal blue
-    III: [245, 158,  11, 255],   // amber
-    _default: [120, 120, 120, 255], // gray for unknown classes
+    I:   [ 47, 125,  79, 255],   // forest — off-street path
+    II:  [ 25,  83, 216, 255],   // accent — dedicated lane
+    III: [200, 138,  26, 255],   // amber  — signed shared
+    _default: [110, 106, 98, 255], // ink-muted — unknown
 }
 
 /**
@@ -25,10 +27,10 @@ export const FACILITY_LABELS = {
  * React legend component only (no deck.gl involvement).
 */
 export const FACILITY_CSS_COLORS = {
-    I:   'rgb(16,185,129)',
-    II:  'rgb(37,99,235)',
-    III: 'rgb(245,158,11)',
-    _default: 'rgb(120,120,120)',
+    I:   'rgb(47, 125, 79)',
+    II:  'rgb(25, 83, 216)',
+    III: 'rgb(200, 138, 26)',
+    _default: 'rgb(110, 106, 98)',
 }
 
 /** Line widths (pixels) per class, for deck.gl getLineWidth. */
@@ -100,12 +102,15 @@ export function bikeRouteTooltip(object) {
 }
 
 /**
- * Legend panel — place this in the top-right corner of your map container.
-*/
+ * Returns the legend entries for the bike-routes layer as plain data.
+ * `MapLegend` renders them uniformly alongside every other layer's entries.
+ */
 export function bikeRoutesLegend() {
-    return (
-        <div>
-            <h4>Temporary Bike Routes Legend</h4>
-        </div>
-    )
+    return {
+        entries: [
+            { swatch: FACILITY_CSS_COLORS.I,   label: FACILITY_LABELS.I },
+            { swatch: FACILITY_CSS_COLORS.II,  label: FACILITY_LABELS.II },
+            { swatch: FACILITY_CSS_COLORS.III, label: FACILITY_LABELS.III },
+        ],
+    }
 }

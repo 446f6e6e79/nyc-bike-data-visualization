@@ -25,7 +25,8 @@ function AppHeader({ onFiltersChange }) {
         <header className="app-header">
             <div className="app-header__topbar">
                 <div className="app-header__brand">
-                    <h1 className="app-title">Citi Bike Analytics</h1>
+                    <span className="app-header__kicker">NYC / 2013–2024</span>
+                    <h1 className="app-title">Citi Bike, in motion.</h1>
                 </div>
                 <nav className="app-header__nav">
                     {PAGES.map(({ to, label }) => (

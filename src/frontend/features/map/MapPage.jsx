@@ -56,10 +56,11 @@ function MapPage({ filters }) {
         <section className="page-card">
             <header className="page-card__header">
                 <div className="page-card__heading">
-                    <span className="page-card__eyebrow">Explore</span>
-                    <h2 className="page-card__title">NYC Citi Bike Map</h2>
+                    <span className="page-card__eyebrow">01 — Atlas</span>
+                    <h2 className="page-card__title">The city, one ride at a time.</h2>
                     <p className="page-card__subtitle">
-                        Interactive view of station usage, trip flows, and infrastructure.
+                        An interactive read of station usage, trip flows, and cycling
+                        infrastructure across the five boroughs.
                     </p>
                 </div>
             </header>

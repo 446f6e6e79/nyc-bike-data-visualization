@@ -1,13 +1,15 @@
 import { HexagonLayer } from '@deck.gl/aggregation-layers'
 
-// Diverging color range: blue (below mean) → neutral grey → orange (above mean)
+// Diverging editorial ramp anchored at mean:
+// rust (far below) → paper rail (at mean) → accent ink (far above).
 const COLOR_RANGE = [
-    [10, 60, 180],    // deep blue
-    [50, 120, 220],   // medium blue
-    [140, 190, 245],  // light blue
-    [160, 230, 175],  // light green
-    [40, 170, 80],    // green
-    [10, 110, 40],    // deep green
+    [194,  80,  26],  // deep rust  — far below mean
+    [217, 128,  82],  // rust       — below mean
+    [236, 230, 218],  // paper rail — at mean
+    [184, 201, 236],  // accent soft
+    [ 99, 135, 229],  // accent mid
+    [ 25,  83, 216],  // accent
+    [ 10,  42, 122],  // accent ink — far above mean
 ]
 
 const LAYER_CONFIG = {
@@ -68,17 +70,15 @@ export function stationUsageTooltip(object) {
 }
 
 /**
-* Creates the legend for the station usage layer.
-* @returns JSX element representing the legend for station usage.
-*/
+ * Returns the legend entries for the station usage layer as plain data.
+ * `MapLegend` renders them uniformly alongside every other layer's entries.
+ */
 export function stationUsageLegend() {
-    return (
-        <div className="map-legend">
-            <div className="map-legend-scale" aria-hidden>
-                <span className="map-dot map-dot-low" />
-                <span className="map-dot map-dot-mid" />
-                <span className="map-dot map-dot-high" />
-            </div>
-        </div>
-    )
+    return {
+        entries: [
+            { swatch: 'rgb(194, 80, 26)', label: 'Well below mean' },
+            { swatch: 'rgb(236, 230, 218)', label: 'At mean' },
+            { swatch: 'rgb(10, 42, 122)', label: 'Well above mean' },
+        ],
+    }
 }

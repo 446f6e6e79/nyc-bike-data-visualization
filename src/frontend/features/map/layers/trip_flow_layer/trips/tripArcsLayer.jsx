@@ -1,13 +1,18 @@
 import { ArcLayer } from '@deck.gl/layers'
+import {
+    ACCENT_RGB,
+    ACCENT_INK_RGB,
+    WARM_HIGHLIGHT_RGB,
+} from '../../../../../utils/editorialTokens.js'
 
-// Constants for arc styling based on trip usage
+// Arc styling — alpha and width ramps stay; palette is editorial.
 const BASE_ALPHA = 80
 const MAX_ALPHA_RANGE = 175
 const BASE_WIDTH = 3
 const MAX_WIDTH_RANGE = 20
-const SOURCE_COLOR = [14, 116, 144]
-const TARGET_COLOR = [2, 132, 199]
-const SELECTED_LINK_COLOR = [34, 197, 94]
+const SOURCE_COLOR = ACCENT_RGB            // [25, 83, 216]
+const TARGET_COLOR = ACCENT_INK_RGB        // [10, 42, 122]
+const SELECTED_LINK_COLOR = WARM_HIGHLIGHT_RGB // [229, 140, 43] — pops against blue field
 
 /**
  * Normalizes trip usage to a 0–1 range

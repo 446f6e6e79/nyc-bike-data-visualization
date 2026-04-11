@@ -15,7 +15,9 @@ import { useInfrastructureLayer } from '../layers/infrastructure_layer/useInfras
 
 import { useMemo, useState } from 'react'
 
-const BASE_TILE_URL = 'https://a.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png'
+// CartoDB Positron — subdued paper/grey basemap that lets the data layers carry
+// the color weight. Same provider as Voyager, no API key required.
+const BASE_TILE_URL = 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
 
 /**
  * Function to build the layers for the map based on the active layer and the provided data. 
