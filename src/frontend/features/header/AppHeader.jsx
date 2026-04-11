@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import DateRangeFilter from './components/DateRangeFilter.jsx'
 import useHeaderFilters from './hooks/useHeaderFilters.js'
 import RiderBikeFilter from './components/RiderBikeFilter.jsx'
+import { useDatasetDateRange } from './hooks/useDatasetDateRange.js'
 
 const PAGES = [
     { to: '/map', label: 'Map' },
@@ -20,12 +21,16 @@ function AppHeader({ onFiltersChange }) {
         handleDateRangeCommit,
         handleUserFilterChange,
     } = useHeaderFilters(onFiltersChange)
+    const { dateRange: datasetRange } = useDatasetDateRange()
+    const kicker = datasetRange?.min_date && datasetRange?.max_date
+        ? `NYC / ${datasetRange.min_date.slice(0, 4)}–${datasetRange.max_date.slice(0, 4)}`
+        : 'NYC'
 
     return (
         <header className="app-header">
             <div className="app-header__topbar">
                 <div className="app-header__brand">
-                    <span className="app-header__kicker">NYC / 2013–2024</span>
+                    <span className="app-header__kicker">{kicker}</span>
                     <h1 className="app-title">Citi Bike, in motion.</h1>
                 </div>
                 <nav className="app-header__nav">

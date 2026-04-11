@@ -1,33 +1,32 @@
 @layer components {
-    .user-filter {
-        @apply flex items-center gap-5 flex-wrap;
+    .rider-filter {
+        @apply flex flex-col items-start gap-5;
     }
 
-    .user-filter-group {
+    .rider-filter-group {
         @apply flex items-center gap-2;
     }
 
-    .user-filter-label {
+    .rider-filter-label {
         @apply font-mono text-[10px] uppercase tracking-eyebrow text-white/55 whitespace-nowrap;
     }
 
-    .user-filter-select-wrapper {
-        @apply relative flex items-center;
+    .rider-filter-selector {
+        @apply flex flex-wrap gap-px border border-rule-invert p-px bg-rule-invert;
     }
 
-    .user-filter-select {
-        @apply appearance-none pl-3 pr-8 py-1.5 font-sans text-xs font-medium
-               text-white bg-transparent border border-rule-invert
-               hover:border-white/40
+    .rider-filter-btn {
+        @apply font-mono text-[10px] uppercase tracking-eyebrow px-2.5 py-1
+               text-white/60 bg-transparent transition-colors duration-150
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60
-               cursor-pointer transition-colors duration-150;
+               cursor-pointer;
     }
 
-    .user-filter-select option {
-        @apply text-ink bg-paper-raised;
+    .rider-filter-btn:hover {
+        @apply text-white;
     }
 
-    .user-filter-chevron {
-        @apply pointer-events-none absolute right-2 text-white/60;
+    .rider-filter-btn.active {
+        @apply bg-white/15 text-white;
     }
 }

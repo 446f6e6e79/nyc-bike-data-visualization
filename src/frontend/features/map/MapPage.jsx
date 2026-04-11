@@ -3,6 +3,7 @@ import { useMapHandler } from './hooks/useMapHandler.js'
 import { useBuildLayers } from './hooks/useBuildLayers.js'
 import MapController from './components/MapController.jsx'
 import MapLegend from './components/MapLegend.jsx'
+import LayerSelector from './components/LayerSelector.jsx'
 import StatusMessage from '../../components/StatusMessage.jsx'
 import Tooltip from './components/Tooltip.jsx'
 
@@ -63,6 +64,9 @@ function MapPage({ filters }) {
                         infrastructure across the five boroughs.
                     </p>
                 </div>
+                <div className="page-card__actions">
+                    <LayerSelector activeLayer={activeLayer} setActiveLayer={setActiveLayer} />
+                </div>
             </header>
             <div className="page-card__body">
                 {(error || loading) ? (
@@ -78,7 +82,6 @@ function MapPage({ filters }) {
                         />
                         <MapController
                             activeLayer={activeLayer}
-                            setActiveLayer={setActiveLayer}
                             currentTime={currentTime}
                             setCurrentTime={setCurrentTime}
                             hasAnimation={hasAnimation}

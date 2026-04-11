@@ -14,7 +14,7 @@
   }
 
   .app-header__topbar {
-    @apply mx-auto w-full max-w-[1200px] px-6 pt-7 pb-5
+    @apply mx-auto w-full max-w-[90%] px-6 pt-7 pb-5
            flex items-end justify-between gap-6 flex-wrap;
   }
 
@@ -51,14 +51,14 @@
   }
 
   .app-header__filters {
-    @apply mx-auto w-full max-w-[1200px] px-6 py-4
+    @apply mx-auto w-full max-w-[90%] px-6 py-4
            flex flex-col md:flex-row md:items-center md:justify-between
            gap-4 border-t border-rule-invert;
   }
 
   /* ---------- Shared page surface primitives ---------- */
   .page-shell {
-    @apply mx-auto w-full max-w-[1200px] flex flex-col gap-10 px-6 py-10
+    @apply mx-auto w-full max-w-[90%] flex flex-col gap-10 px-6 py-10
            animate-fade-up;
   }
 

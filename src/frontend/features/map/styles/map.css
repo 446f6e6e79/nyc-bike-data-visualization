@@ -1,4 +1,23 @@
 @layer components {
+  .layer-selector {
+    @apply flex flex-wrap gap-px border border-rule p-px bg-rule;
+  }
+
+  .layer-selector-btn {
+    @apply font-mono text-[11px] uppercase tracking-eyebrow px-3 py-1.5
+           text-ink-muted transition-colors duration-150
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+           cursor-pointer;
+  }
+
+  .layer-selector-btn:hover {
+    @apply text-ink;
+  }
+
+  .layer-selector-btn.active {
+    @apply bg-ink text-white;
+  }
+
   .map-shell {
     @apply relative w-full h-[70vh] overflow-hidden border border-rule bg-ink;
   }
@@ -50,7 +69,7 @@
   .map-controls {
     @apply absolute top-4 right-4 px-3 py-2 text-xs text-ink
            bg-paper-raised/95 backdrop-blur-sm border border-rule
-           flex items-center gap-3 flex-wrap max-w-[calc(100%-2rem)];
+           flex items-center gap-2 flex-wrap max-w-[calc(100%-2rem)];
   }
 
   .map-controls-label {
@@ -59,6 +78,14 @@
 
   .map-controls-toggle {
     @apply inline-flex items-center gap-1.5 cursor-pointer select-none;
+  }
+
+  .map-speed-controls {
+    @apply flex items-center gap-2;
+  }
+
+  .map-speed-controls .map-controls-label {
+    @apply ml-2;
   }
 
   .map-controls-select {

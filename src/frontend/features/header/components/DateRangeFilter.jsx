@@ -4,7 +4,7 @@ import useDateRangePresentation from '../hooks/useDatePresentation.js'
 import useSliderHandler from '../hooks/useSliderHandler.js'
 import SliderHandle from './SliderHandle.jsx'
 import { MONTH_LABELS } from '../../../utils/config.jsx'
-import { cx } from '../../../utils/styling.jsx'
+import { cx } from '../../../utils/styling.tsx'
 
 /**
  * Placeholder card shown while the dataset date range is loading or when it

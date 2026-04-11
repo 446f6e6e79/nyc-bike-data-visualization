@@ -31,7 +31,7 @@ export default function SpeedController({ setCurrentTime, currentTime}) {
 
     // Render the play/pause button, speed selector, and current time display
     return (
-        <div>
+        <div className="map-speed-controls">
             {/* Button to toggle play/pause state of the animation */}
             <button
                 type="button"

@@ -9,6 +9,7 @@ import {
     FONT_DISPLAY,
     FONT_MONO,
 } from "../../../utils/editorialTokens.js"
+import { SCATTER_BORDER_COLOR, SCATTER_BORDER_WIDTH, SCATTER_POINT_RADIUS } from "../../../utils/styling.tsx"
 
 /**
  * Component for rendering a scatter plot of weather data
@@ -32,9 +33,9 @@ export default function ScatterPlot({ data }) {
                     // y = rides per hour, x = average speed, color = weather group
                     data: [{ x: point.avgSpeed, y: point.ridesPerHour, ...point }],
                     backgroundColor: GROUPED_WEATHER_CODES[point.weatherGroup]?.[1],
-                    borderColor: "rgba(11, 12, 14, 0.4)",
-                    borderWidth: 1,
-                    pointRadius: 10,
+                    borderColor: SCATTER_BORDER_COLOR,
+                    borderWidth: SCATTER_BORDER_WIDTH,
+                    pointRadius: SCATTER_POINT_RADIUS,
                 })),
             },
             options: {
@@ -54,6 +55,17 @@ export default function ScatterPlot({ data }) {
                                 const labels = chart.datasets.map(d => d.label)
                                 return labels.indexOf(item.text) === item.datasetIndex
                             },
+                        },
+                        onClick: (e, item, legend) => {
+                            const chart = legend.chart
+                            const targetLabel = item.text
+                            chart.data.datasets.forEach((ds, i) => {
+                                if (ds.label === targetLabel) {
+                                    const meta = chart.getDatasetMeta(i)
+                                    meta.hidden = !meta.hidden
+                                }
+                            })
+                            chart.update()
                         },
                     },
                     tooltip: {

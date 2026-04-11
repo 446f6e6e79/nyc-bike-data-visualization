@@ -4,14 +4,12 @@ import { formatTooltipLabel, formatYAxisTick } from "../utils/barchart.tsx"
 import {
     INK,
     INK_MUTED,
-    ACCENT,
     RULE,
     FONT_DISPLAY,
     FONT_MONO,
 } from "../../../utils/editorialTokens.js"
+import { BAR_SOLID, BAR_MUTED } from "../../../utils/styling.tsx"
 
-const BAR_SOLID = ACCENT                      // Highlighted bar — full accent
-const BAR_MUTED = "rgba(25, 83, 216, 0.18)"   // Muted background bars at 18% accent
 
 /**
  * Component for rendering a bar chart using Chart.js, with support for highlighting a specific bar based on the provided highlight value.
@@ -49,6 +47,7 @@ export default function BarChart({
                 }]
             },
             options: {
+                animation: false,
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
