@@ -7,8 +7,8 @@ import BarChart from "./BarChart.jsx"
  * @param {Object} hourData - The data for the hour of day histogram, used to display the distribution of the selected metric across different hours of the day.
  * @param {Object} dayData - The data for the day of week histogram, used to display the distribution of the selected metric across different days of the week.
  * @param {string} activeMetric - The currently selected metric key, used to determine which metric's data to display in the histograms.
- * @param {Object} coordinates - The coordinates of the currently hovered point on the surface graph, used to highlight the corresponding bars in the histograms. 
- * @returns 
+ * @param {Object} coordinates - The coordinates of the currently hovered point on the surface graph, used to highlight the corresponding bars in the histograms.
+ * @returns
  */
 export default function SurfaceHistograms({ dayData, hourData, activeMetric, coordinates }) {
     const metric = getMetricConfig(activeMetric)
@@ -34,29 +34,15 @@ export default function SurfaceHistograms({ dayData, hourData, activeMetric, coo
     ]
 
     return (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        <div className="surface-histograms-grid">
             {/*Iterate over the histogram cards and render each one */}
             {cards.map(({ label, data, labels, highlight, xAxisTitle }) => (
-                <div
-                    key={label}
-                    style={{
-                        background: "var(--color-background-primary)",
-                        border: "0.5px solid var(--color-border-tertiary)",
-                        borderRadius: "var(--border-radius-lg)",
-                        padding: "1rem 1.25rem",
-                    }}
-                >
-                    <p style={{
-                        fontSize: 11,
-                        color: "var(--color-text-tertiary)",
-                        letterSpacing: ".06em",
-                        textTransform: "uppercase",
-                        margin: "0 0 4px"
-                    }}>
+                <div key={label} className="surface-histogram-card">
+                    <p className="surface-histogram-card__eyebrow">
                         {metric.label} {label}
                     </p>
 
-                    <div style={{ height: 220 }}>
+                    <div className="surface-histogram-chart">
                         <BarChart
                             data={data}
                             labels={labels}

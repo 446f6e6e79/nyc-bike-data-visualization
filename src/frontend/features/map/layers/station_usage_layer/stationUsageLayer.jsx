@@ -1,14 +1,5 @@
 import { HexagonLayer } from '@deck.gl/aggregation-layers'
-
-// Diverging color range: blue (below mean) → neutral grey → orange (above mean)
-const COLOR_RANGE = [
-    [10, 60, 180],    // deep blue
-    [50, 120, 220],   // medium blue
-    [140, 190, 245],  // light blue
-    [160, 230, 175],  // light green
-    [40, 170, 80],    // green
-    [10, 110, 40],    // deep green
-]
+import { STATION_USAGE_COLOR_RANGE } from '../../../../utils/styling/map.ts'
 
 const LAYER_CONFIG = {
     radius: 150,
@@ -41,7 +32,7 @@ export function createStationUsageLayer({ frameStations, maxUsage, maxDelta }) {
         id: 'station-usage-layer',
         data: frameStations,
         ...LAYER_CONFIG,
-        colorRange: COLOR_RANGE,
+        colorRange: STATION_USAGE_COLOR_RANGE,
         getPosition: (station) => [station.lon, station.lat],
         // Color weight is the delta from this station's own mean
         getColorWeight: (station) => station.usage - station.meanUsage,
@@ -68,17 +59,15 @@ export function stationUsageTooltip(object) {
 }
 
 /**
-* Creates the legend for the station usage layer.
-* @returns JSX element representing the legend for station usage.
-*/
+ * Returns the legend entries for the station usage layer as plain data.
+ * `MapLegend` renders them uniformly alongside every other layer's entries.
+ */
 export function stationUsageLegend() {
-    return (
-        <div className="map-legend">
-            <div className="map-legend-scale" aria-hidden>
-                <span className="map-dot map-dot-low" />
-                <span className="map-dot map-dot-mid" />
-                <span className="map-dot map-dot-high" />
-            </div>
-        </div>
-    )
+    return {
+        entries: [
+            { swatch: 'rgb(194, 80, 26)', label: 'Well below mean' },
+            { swatch: 'rgb(236, 230, 218)', label: 'At mean' },
+            { swatch: 'rgb(10, 42, 122)', label: 'Well above mean' },
+        ],
+    }
 }

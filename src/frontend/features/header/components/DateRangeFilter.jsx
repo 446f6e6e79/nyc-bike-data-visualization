@@ -4,6 +4,22 @@ import useDateRangePresentation from '../hooks/useDatePresentation.js'
 import useSliderHandler from '../hooks/useSliderHandler.js'
 import SliderHandle from './SliderHandle.jsx'
 import { MONTH_LABELS } from '../../../utils/config.jsx'
+import { cx } from '../../../utils/styling'
+
+/**
+ * Placeholder card shown while the dataset date range is loading or when it
+ * cannot be resolved. Keeps the header footprint stable across states.
+ */
+function PlaceholderState({ label }) {
+    return (
+        <div className="date-range-filter">
+            <div className="date-range-filter__header">
+                <span className="date-range-filter__eyebrow">Date Window</span>
+                <span className="date-range-filter__value">{label}</span>
+            </div>
+        </div>
+    )
+}
 
 /**
  * DateRangeFilter component provides an interactive slider for selecting a date range based on the dataset's coverage.
@@ -28,7 +44,7 @@ export default function DateRangeFilter({ value, onCommit }) {
         resizeStart,
         resizeEnd,
         beginPointerAction
-    } = useSliderHandler({totalMonths, maxWindowSize, minDate, defaultRange})
+    } = useSliderHandler({ totalMonths, maxWindowSize, minDate, defaultRange })
     // Presentation hook to derive UI-facing labels
     const {
         dateLabel,
@@ -36,43 +52,16 @@ export default function DateRangeFilter({ value, onCommit }) {
         yearLabels,
         isLoadingView,
         isUnavailableView,
-    } = useDateRangePresentation({selection: selectionView, minDate, totalMonths, loading, error, bounds})
+    } = useDateRangePresentation({ selection: selectionView, minDate, totalMonths, loading, error, bounds })
     // Commit hook to manage the commit payload derivation, auto-commit behavior, and apply action state for the currently selected date range on the slider
     const {
         isCommitting,
         hasPendingChanges,
         handleApply,
-    } = useDateRangeCommit({selection: selectionView, value, onCommit, defaultRange})
+    } = useDateRangeCommit({ selection: selectionView, value, onCommit, defaultRange })
 
-    if (isLoadingView) {
-        return (
-            <div className="date-range-filter">
-                <div className="date-range-filter__header">
-                    <span className="date-range-filter__eyebrow">
-                        Date Window
-                    </span>
-                    <span className="date-range-filter__value">
-                        Loading date range...
-                    </span>
-                </div>
-            </div>
-        )
-    }
-
-    if (isUnavailableView) {
-        return (
-            <div className="date-range-filter">
-                <div className="date-range-filter__header">
-                    <span className="date-range-filter__eyebrow">
-                        Date Window
-                    </span>
-                    <span className="date-range-filter__value">
-                        Date range unavailable
-                    </span>
-                </div>
-            </div>
-        )
-    }
+    if (isLoadingView) return <PlaceholderState label="Loading date range..." />
+    if (isUnavailableView) return <PlaceholderState label="Date range unavailable" />
 
     return (
         <div className="date-range-filter">
@@ -119,12 +108,19 @@ export default function DateRangeFilter({ value, onCommit }) {
                             )}
 
                             <div
-                                className={`date-range-filter__tick${marker.isSelected ? ' date-range-filter__tick--selected' : ''}${marker.isYearStart ? ' date-range-filter__tick--year-start' : ''}`}
+                                className={cx(
+                                    'date-range-filter__tick',
+                                    marker.isSelected && 'date-range-filter__tick--selected',
+                                    marker.isYearStart && 'date-range-filter__tick--year-start',
+                                )}
                             />
 
                             {marker.label && (
                                 <span
-                                    className={`date-range-filter__month-label${marker.isSelected ? ' date-range-filter__month-label--selected' : ''}`}
+                                    className={cx(
+                                        'date-range-filter__month-label',
+                                        marker.isSelected && 'date-range-filter__month-label--selected',
+                                    )}
                                 >
                                     {marker.label}
                                 </span>
@@ -174,7 +170,10 @@ export default function DateRangeFilter({ value, onCommit }) {
                     type="button"
                     onClick={handleApply}
                     disabled={!hasPendingChanges || isCommitting || !onCommit}
-                    className={`date-range-filter__button${isCommitting ? ' date-range-filter__button--committing' : ''}`}
+                    className={cx(
+                        'date-range-filter__button',
+                        isCommitting && 'date-range-filter__button--committing',
+                    )}
                 >
                     {isCommitting ? 'Loading...' : 'Apply'}
                 </button>

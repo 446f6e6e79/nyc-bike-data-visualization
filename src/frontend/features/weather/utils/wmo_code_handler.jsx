@@ -35,14 +35,14 @@ export const WMO_WEATHER_CODES = {
  * Groups weather codes into broader categories, assigning a label and color to each group
  */
 export const GROUPED_WEATHER_CODES = {
-  Clear:        [[0, 1], "#1f77b4"],
-  Cloudy:       [[2, 3], "#4f6d7a"],
-  Foggy:        [[45, 48], "#7f8c8d"],
-  Drizzle:      [[51, 53, 55, 56, 57], "#2a9d8f"],
-  Rain:         [[61, 63, 65, 66, 67], "#0a9396"],
-  Snow:         [[71, 73, 75, 77, 85, 86], "#9b5de5"],
-  Showers:      [[80, 81, 82], "#3a86ff"],
-  Thunderstorm: [[95, 96, 99], "#d62828"]
+  Clear:        [[0, 1], "#d59b2a"],                       // warm sun
+  Cloudy:       [[2, 3], "#8b95a5"],                       // muted slate
+  Foggy:        [[45, 48], "#c0bfb9"],                     // pale neutral
+  Drizzle:      [[51, 53, 55, 56, 57], "#6aaad8"],         // light blue
+  Rain:         [[61, 63, 65, 66, 67], "#1953d8"],         // accent — primary rain
+  Snow:         [[71, 73, 75, 77, 85, 86], "#e6edfc"],     // paper-light (dark border in chart)
+  Showers:      [[80, 81, 82], "#0a2a7a"],                 // accent-ink — heavy rain
+  Thunderstorm: [[95, 96, 99], "#a32d2d"]                  // error — danger
 }
 
 /**

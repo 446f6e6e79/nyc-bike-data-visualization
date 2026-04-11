@@ -10,7 +10,10 @@ export default function useStationAvailability() {
         queryKey: 'station-availability',
         fetcher: fetchStationAvailability,
         // Always enable this query since it doesn't depend on user-provided filters
-        enabledWhen: () => true,            
+        enabledWhen: () => true, 
+        // Set a lower staleTime and gcTime since station availability are updated live
+        staleTime: 5 * 60 * 1000,  // 5 minutes
+        gcTime: 10 * 60 * 1000,    // 10 minutes
     })
 
     return {

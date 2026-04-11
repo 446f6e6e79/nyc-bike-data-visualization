@@ -1,49 +1,39 @@
 @layer components {
   .date-range-filter {
-    @apply flex select-none flex-col gap-2.5 text-white;
-    font-family: 'DM Sans', 'SF Pro Display', -apple-system, sans-serif;
-    border-radius: 16px;
-    background: linear-gradient(160deg, rgba(255,255,255,0.18) 0%, rgba(220,232,255,0.13) 100%);
-    padding: 14px 18px 20px;
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(255,255,255,0.28);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.45);
+    @apply flex select-none flex-col gap-3 text-white font-sans;
     width: min(100%, 36rem);
+    padding: 10px 0 0;
   }
 
   .date-range-filter__header {
-    @apply mb-5 flex items-baseline gap-3;
+    @apply mb-1 flex items-baseline gap-3;
   }
 
   .date-range-filter__eyebrow {
-    @apply text-[9px] font-semibold uppercase;
-    letter-spacing: 0.18em;
-    color: rgba(255,255,255,0.5);
+    @apply font-mono text-[10px] uppercase tracking-eyebrow text-white/55;
   }
 
   .date-range-filter__value {
-    @apply text-sm font-semibold;
-    color: rgba(255,255,255,0.95);
-    letter-spacing: -0.01em;
+    @apply font-mono text-[12px] font-medium text-white tabular-nums;
+    letter-spacing: 0.02em;
   }
 
   .date-range-filter__track {
-    @apply relative overflow-visible rounded-[10px];
+    @apply relative overflow-visible;
     --date-range-filter-month-count: 1;
     --date-range-filter-selection-start: 0;
     --date-range-filter-selection-span: 1;
-    height: 52px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(0,0,0,0.18);
+    height: 48px;
+    border-top: 1px solid rgba(255,255,255,0.24);
+    border-bottom: 1px solid rgba(255,255,255,0.24);
   }
 
   .date-range-filter__year-label {
-    @apply pointer-events-none absolute whitespace-nowrap text-[9px] font-bold uppercase;
+    @apply pointer-events-none absolute whitespace-nowrap font-mono text-[9px] font-semibold uppercase text-white/50;
     bottom: calc(100% + 5px);
     left: var(--date-range-filter-year-left);
     transform: translateX(-50%);
-    letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.12em;
   }
 
   .date-range-filter__markers {
@@ -56,18 +46,18 @@
 
   .date-range-filter__year-divider {
     @apply absolute top-0 bottom-0 left-0 z-[1] w-px;
-    background: rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.22);
   }
 
   .date-range-filter__tick {
-    @apply mt-[9px] h-[6px] w-px shrink-0 rounded-[1px];
+    @apply mt-[9px] h-[6px] w-px shrink-0;
     background: rgba(255,255,255,0.2);
     transition: height 0.15s ease, margin-top 0.15s ease, background 0.15s ease, width 0.15s ease;
   }
 
   .date-range-filter__tick--selected {
     @apply mt-1.5 h-3;
-    background: rgba(255,255,255,0.95);
+    background: rgba(255,255,255,0.92);
   }
 
   .date-range-filter__tick--year-start {
@@ -75,24 +65,22 @@
   }
 
   .date-range-filter__month-label {
-    @apply absolute bottom-[7px] whitespace-nowrap text-[9px] font-normal;
+    @apply absolute bottom-[7px] whitespace-nowrap font-mono text-[9px] font-normal text-white/35;
     letter-spacing: 0.05em;
-    color: rgba(255,255,255,0.25);
     transition: color 0.15s ease, font-weight 0.15s ease;
   }
 
   .date-range-filter__month-label--selected {
-    @apply font-semibold;
-    color: rgba(255,255,255,0.9);
+    @apply font-semibold text-white/90;
   }
 
   .date-range-filter__selection {
-    @apply absolute top-0 bottom-0 z-20 rounded-lg;
+    @apply absolute top-0 bottom-0 z-20;
     left: calc((100% / var(--date-range-filter-month-count)) * var(--date-range-filter-selection-start));
     width: calc((100% / var(--date-range-filter-month-count)) * var(--date-range-filter-selection-span));
-    border: 1px solid rgba(255,255,255,0.38);
-    background: linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.08) 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+    border-left: 1px solid rgba(255,255,255,0.85);
+    border-right: 1px solid rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.08);
     cursor: grab;
   }
 
@@ -119,13 +107,8 @@
     cursor: ew-resize;
   }
 
-  .date-range-filter__handle--start {
-    left: -10px;
-  }
-
-  .date-range-filter__handle--end {
-    right: -10px;
-  }
+  .date-range-filter__handle--start { left: -10px; }
+  .date-range-filter__handle--end   { right: -10px; }
 
   .date-range-filter__handle:focus-visible {
     outline: 2px solid rgba(255,255,255,0.72);
@@ -134,34 +117,28 @@
 
   .date-range-filter__handle-line {
     width: 2px;
-    height: 18px;
-    border-radius: 2px;
-    background: rgba(255,255,255,0.7);
+    height: 20px;
+    background: rgba(255,255,255,0.85);
     pointer-events: none;
   }
 
   .date-range-filter__actions {
-    @apply mt-2 flex justify-end;
+    @apply mt-1 flex justify-end;
   }
 
   .date-range-filter__button {
-    @apply rounded-[10px] border px-3.5 py-2 text-xs font-semibold text-white transition-[background,opacity] duration-150;
-    letter-spacing: 0.04em;
-    border-color: rgba(255,255,255,0.24);
-    background: rgba(255,255,255,0.18);
-    cursor: pointer;
-  }
-
-  .date-range-filter__button:hover:not(:disabled) {
-    background: rgba(255,255,255,0.24);
+    @apply font-mono text-[11px] uppercase tracking-eyebrow text-white
+           px-4 py-1.5 border border-white/40 bg-transparent
+           transition-colors duration-150 cursor-pointer
+           hover:bg-white hover:text-ink
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70;
   }
 
   .date-range-filter__button--committing {
-    background: rgba(255,255,255,0.12);
+    @apply bg-white/10;
   }
 
   .date-range-filter__button:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
+    @apply cursor-not-allowed opacity-50;
   }
 }

@@ -1,4 +1,3 @@
-import { LAYER_OPTIONS } from "../MapPage.jsx"
 import SpeedController from "./SpeedController"
 import BikeRoutesToggle from "./BikeRoutesToggle"
 import ResetButton from "./ResetButton.jsx"
@@ -18,7 +17,6 @@ import ResetButton from "./ResetButton.jsx"
  */
 export default function MapController({
     activeLayer,
-    setActiveLayer,
     currentTime,
     setCurrentTime,
     hasAnimation,
@@ -28,21 +26,6 @@ export default function MapController({
 }) {
     return (
         <div className="map-controls">
-            {/* Dropdown to select the active map layer */}
-            <select
-                id="map-layer-select"
-                className="map-controls-select"
-                value={activeLayer}
-                onChange={(event) => setActiveLayer(event.target.value)}
-            >
-                {LAYER_OPTIONS.map((style) => (
-                    <option key={style.value} value={style.value}>
-                        {style.label}
-                    </option>
-                ))}
-            </select>
-            <p className="map-controls-hint">Shift + drag to rotate</p>
-
             {/* Bike routes toggle — only relevant on the availability layer */}
             {activeLayer === 'infrastructure' && (
                 <BikeRoutesToggle
@@ -62,12 +45,10 @@ export default function MapController({
 
             {/* Add speed controller iff current layer has animation enabled */}
             {hasAnimation && (
-                <div>
-                    <SpeedController
+                <SpeedController
                     setCurrentTime={setCurrentTime}
                     currentTime={currentTime}
-                    /> 
-                </div>
+                />
             )}
         </div>
     )

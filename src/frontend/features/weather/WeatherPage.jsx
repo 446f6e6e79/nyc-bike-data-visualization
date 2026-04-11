@@ -4,23 +4,32 @@ import ScatterPlot from "./components/ScatterPlot"
 
 /**
  *  Component for the weather impact on ride behaviour page
- * @param {Object} filters - The filters to apply to the data, such as date range or user-selected filters. 
+ * @param {Object} filters - The filters to apply to the data, such as date range or user-selected filters.
  */
 function WeatherPage({ filters = {} }) {
     // Fetch weather statistics using the custom hook
     const { weatherStats, loading, error } = useWeatherStats(filters)
-    // Display loading or error message if data is still loading or if there was an error
-    if (loading || error) {
-        return <StatusMessage loading={loading} error={error} />
-    }
 
     return (
-        <div className="daily-chart-panel">
-            <h2>Weather Impact on Ride Behaviour</h2>
-            <ScatterPlot
-                data={weatherStats}
-            />
-        </div>
+        <section className="page-card">
+            <header className="page-card__header">
+                <div className="page-card__heading">
+                    <span className="page-card__eyebrow">03 — Climate</span>
+                    <h2 className="page-card__title">When the sky decides.</h2>
+                    <p className="page-card__subtitle">
+                        How average speed and trip frequency respond to the weather
+                        over New York.
+                    </p>
+                </div>
+            </header>
+            <div className="page-card__body">
+                {(loading || error) ? (
+                    <StatusMessage loading={loading} error={error} />
+                ) : (
+                    <ScatterPlot data={weatherStats} />
+                )}
+            </div>
+        </section>
     )
 }
 

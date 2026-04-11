@@ -3,6 +3,7 @@ import { useMapHandler } from './hooks/useMapHandler.js'
 import { useBuildLayers } from './hooks/useBuildLayers.js'
 import MapController from './components/MapController.jsx'
 import MapLegend from './components/MapLegend.jsx'
+import LayerSelector from './components/LayerSelector.jsx'
 import StatusMessage from '../../components/StatusMessage.jsx'
 import Tooltip from './components/Tooltip.jsx'
 
@@ -30,7 +31,7 @@ export const MAX_ZOOM = 15
 export const MIN_PITCH = 0
 export const MAX_PITCH = 60
 
-function MapPage({ filters }) {    
+function MapPage({ filters }) {
     // Map handler manages view state, active layer, animation time, and related logic
     const {
         activeLayer,
@@ -45,43 +46,57 @@ function MapPage({ filters }) {
         viewState,
     } = useMapHandler()
     // Build the layers to be rendered based on the active layer and fetched data
-    const { 
+    const {
         layers,
-        loading, 
-        error, 
+        loading,
+        error,
         resetSelectedStationIds
-    } = useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes})
+    } = useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes })
 
-    // If there's an error or data is still loading in the active layer, show the status message instead of the map
-    if (error || loading) {
-        return <StatusMessage loading={loading} error={error} />
-    }
     return (
-        <div className="map-shell">
-            <DeckGL
-                viewState={viewState}
-                onViewStateChange={handleViewStateChange}
-                controller={controller}
-                layers={layers}
-                getTooltip={({ object }) => Tooltip({ object, activeLayer })}
-            />
-            <>
-                <MapController
-                    activeLayer={activeLayer}
-                    setActiveLayer={setActiveLayer}
-                    currentTime={currentTime}
-                    setCurrentTime={setCurrentTime}
-                    hasAnimation={hasAnimation}
-                    showBikeRoutes={showBikeRoutes}
-                    setShowBikeRoutes={setShowBikeRoutes}
-                    resetSelectedStationIds={resetSelectedStationIds}
-                />
-                <MapLegend
-                    activeLayer={activeLayer}
-                    showBikeRoutes={showBikeRoutes}
-                />
-            </>
-        </div>
+        <section className="page-card">
+            <header className="page-card__header">
+                <div className="page-card__heading">
+                    <span className="page-card__eyebrow">01 — Atlas</span>
+                    <h2 className="page-card__title">The city, one ride at a time.</h2>
+                    <p className="page-card__subtitle">
+                        An interactive read of station usage, trip flows, and cycling
+                        infrastructure across the five boroughs.
+                    </p>
+                </div>
+                <div className="page-card__actions">
+                    <LayerSelector activeLayer={activeLayer} setActiveLayer={setActiveLayer} />
+                </div>
+            </header>
+            <div className="page-card__body">
+                {(error || loading) ? (
+                    <StatusMessage loading={loading} error={error} />
+                ) : (
+                    <div className="map-shell">
+                        <DeckGL
+                            viewState={viewState}
+                            onViewStateChange={handleViewStateChange}
+                            controller={controller}
+                            layers={layers}
+                            getTooltip={({ object }) => Tooltip({ object, activeLayer })}
+                        />
+                        <MapController
+                            activeLayer={activeLayer}
+                            currentTime={currentTime}
+                            setCurrentTime={setCurrentTime}
+                            hasAnimation={hasAnimation}
+                            showBikeRoutes={showBikeRoutes}
+                            setShowBikeRoutes={setShowBikeRoutes}
+                            resetSelectedStationIds={resetSelectedStationIds}
+                        />
+                        <MapLegend
+                            activeLayer={activeLayer}
+                            showBikeRoutes={showBikeRoutes}
+                        />
+                    </div>
+                )}
+            </div>
+        </section>
     )
 }
 

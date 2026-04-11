@@ -18,13 +18,15 @@ export function createTripFlowLayers({ trips, maxTripCount, stations, selectedSt
 }
 
 /**
-* Creates a legend for the trip flow layer, indicating that the arcs represent frequent trips.
-* @returns {JSX.Element} The legend component for the trip flow layer.
-*/
+ * Returns the legend entries for the trip-flow layer as plain data.
+ * `MapLegend` renders them uniformly alongside every other layer's entries.
+ */
 export function tripFlowLegend() {
-    return (
-        <div className="map-legend">
-            <p className="map-legend-text">Frequent trips</p>
-        </div>
-    )
+    return {
+        entries: [
+            { swatch: 'rgb(25, 83, 216)', label: 'Trip source' },
+            { swatch: 'rgb(10, 42, 122)', label: 'Trip target' },
+            { swatch: 'rgb(229, 140, 43)', label: 'Selected link' },
+        ],
+    }
 }

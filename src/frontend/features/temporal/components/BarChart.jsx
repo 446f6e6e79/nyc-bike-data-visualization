@@ -1,19 +1,24 @@
 import { useRef, useEffect } from "react"
 import { Chart } from "chart.js/auto"
 import { formatTooltipLabel, formatYAxisTick } from "../utils/barchart.tsx"
+import {
+    INK,
+    INK_MUTED,
+    RULE,
+    FONT_DISPLAY,
+    FONT_MONO,
+} from "../../../utils/editorialTokens.js"
+import { BAR_SOLID, BAR_MUTED } from "../../../utils/styling"
 
-const BAR_SOLID = "#3266ad" // A solid blue color for the highlighted bar in the chart
-const BAR_MUTED = "rgba(50,102,173,0.2)" // A muted blue color with transparency for the non-highlighted bars in the chart, creating a visual contrast to emphasize the highlighted bar.
 
 /**
- * Component for rendering a bar chart using Chart.js, with support for highlighting a specific bar based on the provided highlight value. 
+ * Component for rendering a bar chart using Chart.js, with support for highlighting a specific bar based on the provided highlight value.
  * @param {Array} data - The array of values to be displayed as bars in the chart.
  * @param {Array} labels - The array of labels corresponding to each bar in the chart.
  * @param {Function} format - A function to format the tooltip values when hovering over the bars.
  * @param {string} highlight - The label of the bar that should be highlighted, used to determine which bar gets the solid color and which ones get the muted color.
  * @returns A canvas element where the Chart.js bar chart will be rendered.
  */
-
 export default function BarChart({
     data = [],
     labels = [],
@@ -23,13 +28,12 @@ export default function BarChart({
     yAxisTitle,
     unit,
 }) {
-    // Refs to store the canvas element and the Chart.js instance, allowing us to create and destroy the chart as needed when the data or highlight changes.
     const canvasRef = useRef(null)
     const chartRef = useRef(null)
     const colors = labels.map(label => (label === highlight ? BAR_SOLID : BAR_MUTED))
     const tooltipLabelCallback = formatTooltipLabel.bind(null, format)
     const yAxisTickCallback = formatYAxisTick.bind(null, unit)
-    // Effect hook to create the Chart.js bar chart when the component mounts or when the data, labels, format
+
     useEffect(() => {
         chartRef.current = new Chart(canvasRef.current, {
             type: "bar",
@@ -38,14 +42,14 @@ export default function BarChart({
                 datasets: [{
                     data,
                     backgroundColor: colors,
-                    borderRadius: 3,
+                    borderRadius: 0,
                     borderSkipped: false,
                 }]
             },
             options: {
-                responsive: true,   // Make the chart responsive to container size changes
-                maintainAspectRatio: false, // Allow the chart to fill the container without maintaining a fixed aspect ratio
-                // Configuration for the chart's appearance
+                animation: false,
+                responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -57,23 +61,34 @@ export default function BarChart({
                         title: {
                             display: Boolean(xAxisTitle),
                             text: xAxisTitle,
+                            font: { family: FONT_DISPLAY, size: 13, weight: "500" },
+                            color: INK,
                         },
-                        ticks: { maxRotation: 0, autoSkip: false },
+                        ticks: {
+                            maxRotation: 0,
+                            autoSkip: false,
+                            font: { family: FONT_MONO, size: 10 },
+                            color: INK_MUTED,
+                        },
                         grid: { display: false },
-                        border: { display: false }
+                        border: { display: false },
                     },
                     y: {
                         beginAtZero: true,
                         title: {
                             display: Boolean(yAxisTitle),
                             text: yAxisTitle,
+                            font: { family: FONT_DISPLAY, size: 13, weight: "500" },
+                            color: INK,
                         },
                         ticks: {
                             maxTicksLimit: 5,
                             callback: yAxisTickCallback,
+                            font: { family: FONT_MONO, size: 10 },
+                            color: INK_MUTED,
                         },
-                        grid: { color: "rgba(0,0,0,0.06)" },
-                        border: { display: false }
+                        grid: { color: RULE },
+                        border: { display: false },
                     }
                 }
             }
