@@ -4,6 +4,11 @@ from datetime import datetime
 from src.backend.loaders.bike_routes_loader import load_bike_routes_data, BikeRoutesFrame
 from src.backend.models.bike_route import BikeRoute, BikeSegmentGeometry, GeometryType
 
+# In-memory cache for bike routes to avoid repeated parsing on every request.
+# Since bike routes data is relatively static, we can cache it indefinitely after the first load.
+_cached_routes: list[BikeRoute] | None = None
+
+
 def _collect_if_lazy(df: BikeRoutesFrame) -> pl.DataFrame:
     """Helper to convert LazyFrame to DataFrame if needed."""
     return df.collect() if isinstance(df, pl.LazyFrame) else df
@@ -22,17 +27,16 @@ def _parse_wkt_linestring(wkt: str) -> list[list[float]]:
     coord_re = r"(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s+(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)"
     return [[float(lng), float(lat)] for lng, lat in re.findall(coord_re, wkt)]
 
-_cached_routes: list[BikeRoute] | None = None
-
 def load_bike_routes() -> list[BikeRoute]:
     """Fetch all bike route segments and return as BikeRoute objects."""
+    # Check if we have cached routes
     global _cached_routes
     if _cached_routes is not None:
         return _cached_routes
 
     df = _collect_if_lazy(load_bike_routes_data())
     routes = []
-
+    # Build BikeRoute objects from each row of the DataFrame
     for row in df.iter_rows(named=True):
         wkt: str = row["the_geom"]
         is_multi = wkt.strip().upper().startswith("MULTILINESTRING")
@@ -50,6 +54,6 @@ def load_bike_routes() -> list[BikeRoute]:
                 instDate=datetime.strptime(row["instdate"], "%m/%d/%Y").date()
             )
         )
-
+    # Save to cache for future requests
     _cached_routes = routes
     return _cached_routes
