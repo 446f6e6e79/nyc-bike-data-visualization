@@ -22,8 +22,14 @@ def _parse_wkt_linestring(wkt: str) -> list[list[float]]:
     coord_re = r"(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s+(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)"
     return [[float(lng), float(lat)] for lng, lat in re.findall(coord_re, wkt)]
 
+_cached_routes: list[BikeRoute] | None = None
+
 def load_bike_routes() -> list[BikeRoute]:
     """Fetch all bike route segments and return as BikeRoute objects."""
+    global _cached_routes
+    if _cached_routes is not None:
+        return _cached_routes
+
     df = _collect_if_lazy(load_bike_routes_data())
     routes = []
 
@@ -45,4 +51,5 @@ def load_bike_routes() -> list[BikeRoute]:
             )
         )
 
-    return routes
+    _cached_routes = routes
+    return _cached_routes

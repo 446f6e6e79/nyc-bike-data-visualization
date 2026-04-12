@@ -12,14 +12,16 @@ _cache: dict = {
     "timestamp": 0.0,
     "info": None,
     "status_map": None,
+    "info_map": None,
 }
 
-def _fetch_from_source() -> tuple[list, dict]:
+def _fetch_from_source() -> tuple[list, dict, dict]:
     """
     Fetch station information and status directly from the GBFS source API.
     Returns:
         info:       List of station information dicts.
         status_map: Dict mapping station_id to its status dict.
+        info_map:   Dict mapping short_name to station info dict.
     """
     # Fetch the raw station information and status data from the GBFS feed with a timeout to prevent hanging.
     info = requests.get(INFO_URL, timeout=(3, 10)).json()["data"]["stations"]
@@ -30,8 +32,8 @@ def _fetch_from_source() -> tuple[list, dict]:
     active_status = [
         s
         for s in status
-        if s.get("is_installed") == 1 
-        and s.get("is_renting") == 1 
+        if s.get("is_installed") == 1
+        and s.get("is_renting") == 1
         and s.get("is_returning") == 1
     ]
 
@@ -41,7 +43,10 @@ def _fetch_from_source() -> tuple[list, dict]:
     # Filter static station info to only include stations present in the active status map.
     filtered_info = [i for i in info if i.get("station_id") in status_map]
 
-    return filtered_info, status_map
+    # Map short_name -> station info dict for O(1) per-station lookups.
+    info_map = {s["short_name"]: s for s in filtered_info}
+
+    return filtered_info, status_map, info_map
 
 def fetch_station_data(force_refresh: bool = False) -> tuple[list, dict]:
     """
@@ -63,7 +68,7 @@ def fetch_station_data(force_refresh: bool = False) -> tuple[list, dict]:
             return _cache["info"], _cache["status_map"]
 
     try:
-        info, status_map = _fetch_from_source()
+        info, status_map, info_map = _fetch_from_source()
     except Exception as e:
         # Fall back to stale cache if available
         with _cache_lock:
@@ -78,10 +83,11 @@ def fetch_station_data(force_refresh: bool = False) -> tuple[list, dict]:
         _cache["timestamp"] = time.monotonic()
         _cache["info"] = info
         _cache["status_map"] = status_map
+        _cache["info_map"] = info_map
 
     return info, status_map
 
-def _build_station_info(station_data: dict) -> StationInfo:
+def build_station_info(station_data: dict) -> StationInfo:
     """Build a StationInfo response model with static station information only."""
     return StationInfo(
         id=str(station_data["short_name"]),
@@ -91,15 +97,17 @@ def _build_station_info(station_data: dict) -> StationInfo:
         capacity=station_data["capacity"],
     )
 
-def _find_station_by_id(station_data: list[dict], station_id: str) -> dict:
-    """Find a station by its public short_name identifier."""
-    for station in station_data:
-        if station["short_name"] == station_id:
-            return station
+def find_station_by_id(station_id: str) -> dict:
+    """Find a station by its public short_name identifier using O(1) dict lookup."""
+    fetch_station_data()  # ensure cache is populated
+    with _cache_lock:
+        info_map = _cache["info_map"]
+    station = info_map.get(station_id) if info_map else None
+    if station is None:
+        raise HTTPException(status_code=404, detail="Station not found")
+    return station
 
-    raise HTTPException(status_code=404, detail="Station not found")
-
-def _merge_station(station_data: dict, station_status_data: dict) -> Station:
+def merge_station(station_data: dict, station_status_data: dict) -> Station:
     """Build a Station response model from raw info + status data."""
     # Retrieve the status for this station, defaulting to empty dict if not found
     st = station_status_data.get(station_data["station_id"], {})
