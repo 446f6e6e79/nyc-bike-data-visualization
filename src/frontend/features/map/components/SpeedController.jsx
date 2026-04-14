@@ -6,7 +6,8 @@ const BASE_FRAME_MS = 1000
 const MINUTES_IN_HOUR = 60
 const MINUTES_IN_DAY = HOURS_IN_DAY * MINUTES_IN_HOUR
 const MAX_MINUTE_INDEX = MINUTES_IN_DAY - 1
-const DRAG_THRESHOLD_PX = 4
+const TIME_DRAG_THRESHOLD_PX = 4
+const SPEED_DRAG_THRESHOLD_PX = 4
 const MIN_SPEED = 0.5
 const MAX_SPEED = 4
 const SPEED_PIVOT = 2
@@ -88,6 +89,8 @@ export default function SpeedController({ setCurrentTime, currentTime }) {
     const activePointerIdRef = useRef(null)
     const speedPointerIdRef = useRef(null)
     const dragStartXRef = useRef(0)
+    const dragStartMinuteIndexRef = useRef(0)
+    const dragTrackWidthRef = useRef(0)
     const speedDragStartXRef = useRef(0)
     const hasDraggedRef = useRef(false)
     const speedHasDraggedRef = useRef(false)
@@ -155,6 +158,8 @@ export default function SpeedController({ setCurrentTime, currentTime }) {
         }
         activePointerIdRef.current = null
         dragStartXRef.current = 0
+        dragStartMinuteIndexRef.current = 0
+        dragTrackWidthRef.current = 0
         hasDraggedRef.current = false
         setIsDragging(false)
     }, [])
@@ -175,6 +180,8 @@ export default function SpeedController({ setCurrentTime, currentTime }) {
         track.setPointerCapture(event.pointerId)
         setIsDragging(true)
         dragStartXRef.current = event.clientX
+        dragStartMinuteIndexRef.current = currentMinuteIndex
+        dragTrackWidthRef.current = track.getBoundingClientRect().width
         hasDraggedRef.current = false
     }
 
@@ -185,14 +192,22 @@ export default function SpeedController({ setCurrentTime, currentTime }) {
 
         if (!hasDraggedRef.current) {
             const dragDelta = Math.abs(event.clientX - dragStartXRef.current)
-            if (dragDelta < DRAG_THRESHOLD_PX) {
+            if (dragDelta < TIME_DRAG_THRESHOLD_PX) {
                 return
             }
             hasDraggedRef.current = true
         }
 
         event.preventDefault()
-        updateCurrentTimeFromClientX(event.clientX)
+        const trackWidth = dragTrackWidthRef.current
+        if (trackWidth <= 0) {
+            return
+        }
+
+        const deltaX = event.clientX - dragStartXRef.current
+        const minuteDelta = Math.round((deltaX / trackWidth) * MAX_MINUTE_INDEX)
+        const nextMinuteIndex = clamp(dragStartMinuteIndexRef.current - minuteDelta, 0, MAX_MINUTE_INDEX)
+        setCurrentTime(nextMinuteIndex / MINUTES_IN_HOUR)
     }
 
     const handlePointerUp = (event) => {
@@ -263,7 +278,7 @@ export default function SpeedController({ setCurrentTime, currentTime }) {
 
         if (!speedHasDraggedRef.current) {
             const dragDelta = Math.abs(event.clientX - speedDragStartXRef.current)
-            if (dragDelta < DRAG_THRESHOLD_PX) {
+            if (dragDelta < SPEED_DRAG_THRESHOLD_PX) {
                 return
             }
             speedHasDraggedRef.current = true
