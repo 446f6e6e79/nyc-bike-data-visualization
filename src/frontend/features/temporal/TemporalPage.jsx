@@ -1,6 +1,5 @@
 import useTemporalState from "./hooks/useTemporalState"
 import MetricSelector from "./components/MetricSelector"
-import StatusMessage from "../../components/StatusMessage"
 import SurfaceGraph from "./components/SurfaceGraph"
 import SurfaceHistograms from "./components/SurfaceHistograms"
 
@@ -21,7 +20,9 @@ function TemporalPage({ filters }) {
         hourStats,
         loading,
         error,
+        refetch,
     } = useTemporalState(filters)
+    const isActionsDisabled = loading || error
 
     return (
         <section className="page-card">
@@ -34,19 +35,32 @@ function TemporalPage({ filters }) {
                         and hours of the day.
                     </p>
                 </div>
-                <div className="page-card__actions">
-                    <MetricSelector activeMetric={activeMetric} setActiveMetric={setActiveMetric} />
+                <div className={`page-card__actions${isActionsDisabled ? ' surface-actions--disabled' : ''}`} aria-disabled={isActionsDisabled}>
+                    <MetricSelector
+                        activeMetric={activeMetric}
+                        setActiveMetric={setActiveMetric}
+                        disabled={isActionsDisabled}
+                    />
                 </div>
             </header>
             <div className="page-card__body">
-                {(loading || error) ? (
-                    <StatusMessage loading={loading} error={error} />
-                ) : (
-                    <>
-                        <SurfaceGraph data={dayHourStats} activeMetric={activeMetric} setCoordinates={setCoordinates} />
-                        <SurfaceHistograms hourData={hourStats} dayData={dayStats} activeMetric={activeMetric} coordinates={coordinates} />
-                    </>
-                )}
+                <SurfaceGraph
+                    data={dayHourStats}
+                    activeMetric={activeMetric}
+                    setCoordinates={setCoordinates}
+                    loading={loading}
+                    error={error}
+                    onRefetch={refetch}
+                />
+                <SurfaceHistograms
+                    hourData={hourStats}
+                    dayData={dayStats}
+                    activeMetric={activeMetric}
+                    coordinates={coordinates}
+                    loading={loading}
+                    error={error}
+                    onRefetch={refetch}
+                />
             </div>
         </section>
     )

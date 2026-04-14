@@ -13,14 +13,31 @@ export default function useTemporalState(filters) {
     const [activeMetric, setActiveMetric] = useState('total_rides')
     // State to track the coordinates of the currently hovered point on the surface graph
     const [coordinates, setCoordinates] = useState(null)
+
     // Fetches the day-hour statistics based on the provided filters using a custom hook. The hook returns the data, loading state, and any error encountered during the fetch.
-    const { dayHourStats, loading: loadingDayHourStats, error: errorDayHourStats } = useDayHourStats(filters)
-    const { dayStats, loading: loadingDayStats, error: errorDayStats } = useWeeklyStats(filters)
-    const { hourStats, loading: loadingHourStats, error: errorHourStats } = useHourlyStats(filters)
+    const {
+        dayHourStats,
+        loading: loadingDayHourStats,
+        error: errorDayHourStats,
+        refetch: refetchDayHourStats,
+    } = useDayHourStats(filters)
+    const {
+        dayStats,
+        loading: loadingDayStats,
+        error: errorDayStats,
+        refetch: refetchDayStats,
+    } = useWeeklyStats(filters)
+    const {
+        hourStats,
+        loading: loadingHourStats,
+        error: errorHourStats,
+        refetch: refetchHourStats,
+    } = useHourlyStats(filters)
 
     // Aggregate states
     const loading = loadingDayHourStats || loadingDayStats || loadingHourStats
     const error = errorDayHourStats || errorDayStats || errorHourStats
+    const refetch = () => Promise.all([refetchDayHourStats(), refetchDayStats(), refetchHourStats()])
 
     return {
         activeMetric,
@@ -32,5 +49,6 @@ export default function useTemporalState(filters) {
         hourStats,
         loading,
         error,
+        refetch,
     }
 }

@@ -8,7 +8,7 @@ import ScatterPlot from "./components/ScatterPlot"
  */
 function WeatherPage({ filters = {} }) {
     // Fetch weather statistics using the custom hook
-    const { weatherStats, loading, error } = useWeatherStats(filters)
+    const { weatherStats, loading, error, refetch } = useWeatherStats(filters)
 
     return (
         <section className="page-card">
@@ -24,7 +24,7 @@ function WeatherPage({ filters = {} }) {
             </header>
             <div className="page-card__body">
                 {(loading || error) ? (
-                    <StatusMessage loading={loading} error={error} />
+                    <StatusMessage loading={loading} error={error} onRefetch={refetch} />
                 ) : (
                     <ScatterPlot data={weatherStats} />
                 )}

@@ -20,5 +20,6 @@ export default function useBikeRoutes() {
         bikeRoutes: query.data,
         loading: query.loading,
         error: query.error,
+        refetch: query.refetch,
     }
 }
