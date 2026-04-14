@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { LAYER_OPTIONS, MIN_PITCH, MAX_PITCH, MIN_ZOOM, MAX_ZOOM, INITIAL_VIEW_STATE } from '../MapPage'
+import { LAYER_OPTIONS, MIN_PITCH, MAX_PITCH, MIN_ZOOM, MAX_ZOOM, INITIAL_VIEW_STATE, MIN_LONGITUDE, MAX_LONGITUDE, MIN_LATITUDE, MAX_LATITUDE } from '../MapPage'
 
 // Utility function to clamp a value between a minimum and maximum
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
@@ -25,6 +25,8 @@ export function useMapHandler() {
     const handleViewStateChange = useCallback(({ viewState: nextViewState }) => {
         setViewState({
             ...nextViewState,
+            longitude: clamp(nextViewState.longitude, MIN_LONGITUDE, MAX_LONGITUDE),
+            latitude: clamp(nextViewState.latitude, MIN_LATITUDE, MAX_LATITUDE),
             zoom: clamp(nextViewState.zoom, MIN_ZOOM, MAX_ZOOM),
             pitch: clamp(nextViewState.pitch, MIN_PITCH, MAX_PITCH),
         })

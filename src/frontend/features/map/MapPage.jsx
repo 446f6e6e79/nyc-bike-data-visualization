@@ -25,11 +25,16 @@ export const INITIAL_VIEW_STATE = {
 }
 
 // Allowed zoom range for map interactions
-export const MIN_ZOOM = 9
+export const MIN_ZOOM = 10
 export const MAX_ZOOM = 15
 // Allowed pitch range for map interactions
 export const MIN_PITCH = 0
 export const MAX_PITCH = 60
+
+export const MIN_LONGITUDE = -73.98
+export const MAX_LONGITUDE = -73.96
+export const MIN_LATITUDE = 40.67
+export const MAX_LATITUDE = 40.84
 
 function MapPage({ filters }) {
     // Map handler manages view state, active layer, animation time, and related logic

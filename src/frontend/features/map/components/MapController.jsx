@@ -26,30 +26,30 @@ export default function MapController({
 }) {
     return (
         <div className="map-controls">
-            {/* Bike routes toggle — only relevant on the availability layer */}
-            {activeLayer === 'infrastructure' && (
-                <BikeRoutesToggle
-                    showBikeRoutes={showBikeRoutes}
-                    setShowBikeRoutes={setShowBikeRoutes}
-                />
-            )}
-
-            {/* Reset button for the trip flow layer to clear station selection and reset the view.*/}
-            {activeLayer === 'trip_flow' && (
-                <ResetButton
-                    onClick={() => {
-                        resetSelectedStationIds()
-                    }}
-                />
-            )}
-
-            {/* Add speed controller iff current layer has animation enabled */}
             {hasAnimation && (
                 <SpeedController
                     setCurrentTime={setCurrentTime}
                     currentTime={currentTime}
                 />
             )}
+
+            {activeLayer !== 'station_usage' && (
+            <div className="map-controls__secondary">
+                {activeLayer === 'infrastructure' && (
+                    <BikeRoutesToggle
+                        showBikeRoutes={showBikeRoutes}
+                        setShowBikeRoutes={setShowBikeRoutes}
+                    />
+                )}
+
+                {activeLayer === 'trip_flow' && (
+                    <ResetButton
+                        onClick={() => {
+                            resetSelectedStationIds()
+                        }}
+                    />
+                )}
+            </div>)}
         </div>
     )
 }
