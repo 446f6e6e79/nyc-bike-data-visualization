@@ -19,7 +19,7 @@
   }
 
   .map-shell {
-    @apply relative w-full h-[70vh] overflow-hidden border border-rule bg-ink;
+    @apply relative w-full h-[78vh] overflow-hidden border border-rule bg-ink;
   }
 
   .map-overlay {
@@ -66,10 +66,21 @@
     @apply font-mono text-[10px] uppercase tracking-eyebrow text-white/55;
   }
 
+  .deck-tooltip {
+    @apply font-mono text-[11px] leading-tight;
+  }
+
+  .deck-tooltip * {
+    font-family: inherit;
+  }
+
   .map-controls {
-    @apply absolute top-4 right-4 px-3 py-2 text-xs text-ink
-           bg-paper-raised/95 backdrop-blur-sm border border-rule
-           flex items-center gap-2 flex-wrap max-w-[calc(100%-2rem)];
+    @apply absolute inset-x-0 top-0 z-20 p-4 flex flex-col gap-3 pointer-events-none;
+  }
+
+  .map-controls__secondary {
+    @apply self-end flex items-center gap-2 flex-wrap max-w-full pointer-events-auto
+           px-3 py-2 text-xs text-ink bg-paper-raised/95 backdrop-blur-sm border border-rule;
   }
 
   .map-controls-label {
@@ -87,15 +98,20 @@
   /* Speed controller */
 
   .map-speed-controls {
-    @apply flex items-center gap-2;
+    @apply w-full px-4 py-3 text-xs text-ink pointer-events-auto
+           bg-paper-raised/40 backdrop-blur-sm border border-rule;
   }
 
-  .map-speed-play-btn {
-    @apply inline-flex items-center justify-center w-7 h-7
-           text-ink bg-paper border border-rule
-           hover:border-rule-strong hover:bg-paper-raised
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-           transition-colors duration-150 shrink-0;
+  .map-speed-controls__header {
+    @apply flex items-start justify-between gap-3 flex-wrap mb-3;
+  }
+
+  .map-speed-controls__meta {
+    @apply flex items-baseline gap-3 min-w-0;
+  }
+
+  .map-speed-controls__eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-eyebrow text-ink-muted shrink-0;
   }
 
   .map-speed-clock {
@@ -103,27 +119,184 @@
            font-mono text-[12px] font-semibold text-ink tabular-nums;
   }
 
-  .map-speed-divider {
-    @apply w-px h-4 bg-rule shrink-0;
+  .map-speed-controls__hint {
+    @apply m-0 font-mono text-[11px] text-ink-muted;
   }
 
-  .map-speed-rate {
-    @apply flex gap-px border border-rule p-px bg-rule;
+  .map-time-wheel-layout {
+    @apply mt-2 grid grid-cols-[auto_1fr_auto] items-stretch gap-3;
   }
 
-  .map-speed-rate-btn {
-    @apply font-mono text-[10px] uppercase tracking-eyebrow px-2 py-1
-           text-ink-muted bg-paper transition-colors duration-150
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-           cursor-pointer;
+  .map-speed-controls__play-btn {
+    @apply inline-flex h-full aspect-square self-stretch items-center justify-center text-white bg-ink border border-ink
+           hover:bg-ink-raised
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+    border-radius: 0;
+    transition-property: background-color;
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 
-  .map-speed-rate-btn:hover {
-    @apply text-ink;
+  .map-speed-controls__play-btn.is-playing {
+    border-radius: 0;
   }
 
-  .map-speed-rate-btn.active {
-    @apply bg-ink text-white;
+  .map-speed-controls__speed-cycle {
+    @apply relative inline-flex h-full w-[3rem] flex-col items-center justify-center overflow-hidden
+           border border-rule bg-paper py-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-ink
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+    justify-self: end;
+    transition-property: width, background-color, border-color;
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .map-speed-controls__speed-cycle:hover,
+  .map-speed-controls__speed-cycle:focus-within {
+    width: 200px;
+    border-color: rgba(11, 12, 14, 0.22);
+  }
+
+  .map-speed-controls__speed-value {
+    @apply text-center text-[12px] leading-none text-ink;
+    padding: 2px 6px;
+  }
+
+  .map-speed-controls__speed-summary {
+    @apply absolute left-1/2 top-1/2 z-[4] flex -translate-x-1/2 -translate-y-1/2 items-center justify-center text-center;
+    pointer-events: none;
+  }
+
+  .map-speed-controls__speed-wheel {
+    @apply absolute inset-0 w-full overflow-hidden;
+    opacity: 0;
+    transform: scaleY(0.92);
+    pointer-events: none;
+    transform-origin: center;
+    transition-property: opacity, transform;
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .map-speed-controls__speed-cycle:hover .map-speed-controls__speed-wheel,
+  .map-speed-controls__speed-cycle:focus-within .map-speed-controls__speed-wheel {
+    opacity: 1;
+    transform: scaleY(1);
+    pointer-events: auto;
+  }
+
+  .map-speed-controls__speed-wheel-rail {
+    @apply relative h-full w-full bg-paper overflow-hidden;
+  }
+
+  .map-speed-controls__speed-wheel-overlay {
+    @apply absolute inset-y-0 left-0 z-[2] bg-ink/10 pointer-events-none;
+  }
+
+  .map-speed-controls__speed-wheel-marks {
+    @apply absolute inset-y-0 left-2 right-2 z-[4];
+  }
+
+  .map-speed-controls__speed-wheel-guides {
+    @apply absolute inset-0 z-[3] pointer-events-none;
+  }
+
+  .map-speed-controls__speed-wheel-guide {
+    @apply absolute inset-y-0 w-px -translate-x-1/2 bg-ink/10;
+  }
+
+  .map-speed-controls__speed-wheel-mark {
+    @apply absolute inset-y-0 flex items-center -translate-x-1/2 pointer-events-none;
+  }
+
+  .map-speed-controls__speed-wheel-mark:first-child {
+    transform: translateX(0);
+  }
+
+  .map-speed-controls__speed-wheel-mark:last-child {
+    transform: translateX(-100%);
+  }
+
+  .map-speed-controls__speed-wheel-mark-label {
+    @apply inline-flex items-center font-mono text-[11px] leading-none text-ink/55;
+  }
+
+  .map-time-wheel {
+    @apply relative w-full min-w-0 cursor-grab select-none outline-none touch-none;
+  }
+
+  .map-time-wheel.is-dragging {
+    @apply cursor-grabbing;
+  }
+
+  .map-time-wheel__rail {
+    @apply relative h-10 border border-rule bg-paper overflow-hidden;
+  }
+
+  .map-time-wheel__moving-strip {
+    @apply absolute inset-0;
+  }
+
+  .map-time-wheel__ticks {
+    @apply absolute inset-0 w-full;
+  }
+
+  .map-time-wheel__pre-indicator-overlay {
+    @apply absolute inset-y-0 left-0 w-1/2 z-[5] bg-ink/15 pointer-events-none;
+  }
+
+  .map-time-wheel__center-indicator {
+    @apply absolute top-[24%] left-1/2 z-10 h-[1.4rem] w-[2px] -translate-x-1/2 -translate-y-1/2
+           bg-ink rounded-full;
+  }
+
+  .map-time-wheel__tick {
+    @apply absolute inset-y-0 flex flex-col items-center justify-between
+           -translate-x-1/2 pointer-events-none;
+  }
+
+  .map-time-wheel__tick-line {
+    @apply block w-[2px] flex-1 bg-ink/35;
+  }
+
+  .map-time-wheel__tick-label {
+    @apply inline-flex items-center pt-1 pb-1 font-mono text-[10px] leading-none text-ink/55;
+  }
+
+  .map-time-wheel__tick-next-day {
+    @apply inline-block ml-px -translate-y-[1px] text-[8px] leading-none font-semibold text-ink/35;
+  }
+
+  @media (max-width: 1024px) {
+    .map-time-wheel__tick:nth-child(odd):not(:last-child) {
+      opacity: 0.18;
+    }
+
+    .map-time-wheel__tick:nth-child(odd):not(:last-child) .map-time-wheel__tick-line {
+      @apply w-px;
+    }
+
+    .map-time-wheel__tick:nth-child(odd):not(:last-child) .map-time-wheel__tick-label {
+      @apply text-[9px];
+    }
+  }
+
+  @media (max-width: 640px) {
+    .map-time-wheel__tick:nth-child(odd):not(:last-child) {
+      opacity: 0;
+    }
+
+    .map-time-wheel__tick:nth-child(6n):not(:last-child) {
+      opacity: 0.22;
+    }
+
+    .map-time-wheel__tick:nth-child(6n):not(:last-child) .map-time-wheel__tick-line {
+      @apply w-px;
+    }
+
+    .map-time-wheel__tick:nth-child(6n):not(:last-child) .map-time-wheel__tick-label {
+      @apply text-[9px];
+    }
   }
 
   /* Reset button */
