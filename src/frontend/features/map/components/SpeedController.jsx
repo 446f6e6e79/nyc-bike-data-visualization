@@ -432,7 +432,7 @@ export default function SpeedController({ setCurrentTime, currentTime }) {
                     </div>
                 </div>
 
-                <div className="map-speed-controls__speed-cycle" role="group" aria-label="Playback speed">
+                <div className="map-speed-controls__speed-selector" role="group" aria-label="Playback speed">
                     <div className="map-speed-controls__speed-summary">
                         <span className="map-speed-controls__speed-value">{currentSpeedLabel}</span>
                     </div>

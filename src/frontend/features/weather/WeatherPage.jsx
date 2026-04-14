@@ -1,6 +1,7 @@
 import useWeatherStats from "./hooks/useWeatherStats"
 import StatusMessage from "../../components/StatusMessage"
 import ScatterPlot from "./components/ScatterPlot"
+import VisualizationGuide from "../../components/VisualizationGuide"
 
 /**
  *  Component for the weather impact on ride behaviour page
@@ -28,6 +29,25 @@ function WeatherPage({ filters = {} }) {
                 ) : (
                     <ScatterPlot data={weatherStats} />
                 )}
+
+                <VisualizationGuide
+                    title="How To Read Weather Impact"
+                    summary="Each point links weather conditions to mobility behavior. Use the chart to identify thresholds where weather starts changing trip speed or volume in a meaningful way."
+                    hints={[
+                        {
+                            title: 'Look for clusters',
+                            text: 'Tight clouds suggest stable behavior under similar weather, while spread-out clouds indicate more uncertainty in rider response.',
+                        },
+                        {
+                            title: 'Watch for breakpoints',
+                            text: 'Find where trends bend: a small weather change can trigger a strong drop or rise after a critical point.',
+                        },
+                        {
+                            title: 'Compare with other views',
+                            text: 'Use this page to explain why temporal peaks may differ across periods, especially during atypical weather days.',
+                        },
+                    ]}
+                />
             </div>
         </section>
     )

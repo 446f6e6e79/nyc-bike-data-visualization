@@ -149,9 +149,9 @@
     border-radius: 0;
   }
 
-  .map-speed-controls__speed-cycle {
+  .map-speed-controls__speed-selector {
     @apply relative inline-flex h-full w-[3rem] flex-col items-center justify-center overflow-hidden
-           border border-rule bg-paper py-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-ink
+           border border-rule bg-ink/5 py-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-ink
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
     justify-self: end;
     transition-property: width, background-color, border-color;
@@ -159,8 +159,8 @@
     transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 
-  .map-speed-controls__speed-cycle:hover,
-  .map-speed-controls__speed-cycle:focus-within {
+  .map-speed-controls__speed-selector:hover,
+  .map-speed-controls__speed-selector:focus-within {
     width: 150px;
     border-color: rgba(11, 12, 14, 0.22);
   }
@@ -186,15 +186,15 @@
     transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 
-  .map-speed-controls__speed-cycle:hover .map-speed-controls__speed-wheel,
-  .map-speed-controls__speed-cycle:focus-within .map-speed-controls__speed-wheel {
+  .map-speed-controls__speed-selector:hover .map-speed-controls__speed-wheel,
+  .map-speed-controls__speed-selector:focus-within .map-speed-controls__speed-wheel {
     opacity: 1;
     transform: scaleY(1);
     pointer-events: auto;
   }
 
   .map-speed-controls__speed-wheel-rail {
-    @apply relative h-full w-full bg-paper overflow-hidden;
+    @apply relative h-full w-full bg-white overflow-hidden;
   }
 
   .map-speed-controls__speed-wheel-overlay {
@@ -238,7 +238,7 @@
   }
 
   .map-time-wheel__rail {
-    @apply relative h-10 border border-rule bg-paper overflow-hidden;
+    @apply relative h-10 border border-rule bg-paper-raised overflow-hidden;
   }
 
   .map-time-wheel__moving-strip {
@@ -250,12 +250,12 @@
   }
 
   .map-time-wheel__pre-indicator-overlay {
-    @apply absolute inset-y-0 left-0 w-1/2 z-[5] bg-ink/15 pointer-events-none;
+    @apply absolute inset-y-0 left-0 w-1/2 z-[5] bg-ink/10 pointer-events-none;
   }
 
   .map-time-wheel__center-indicator {
     @apply absolute top-[24%] left-1/2 z-10 h-[1.4rem] w-[2px] -translate-x-1/2 -translate-y-1/2
-           bg-ink rounded-full;
+           bg-ink/70 rounded-full;
   }
 
   .map-time-wheel__tick {
@@ -268,11 +268,11 @@
   }
 
   .map-time-wheel__tick-label {
-    @apply inline-flex items-center pt-1 pb-1 font-mono text-[10px] leading-none text-ink/55;
+    @apply inline-flex items-center pt-1 pb-1 font-mono text-[10px] leading-none text-ink/70;
   }
 
   .map-time-wheel__tick-next-day {
-    @apply inline-block ml-px -translate-y-[1px] text-[8px] leading-none font-semibold text-ink/35;
+    @apply inline-block ml-px -translate-y-[1px] text-[8px] leading-none font-semibold text-ink/30;
   }
 
   @media (max-width: 1024px) {

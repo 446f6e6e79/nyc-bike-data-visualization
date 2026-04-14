@@ -113,4 +113,101 @@
   .page-card__body {
     @apply flex flex-col gap-8 px-6 md:px-8 py-6 md:py-8;
   }
+
+  .viz-guide {
+    @apply border border-rule bg-paper p-4 md:p-5 pb-6 md:pb-7 flex flex-col gap-8;
+    background-image: linear-gradient(180deg, rgba(25, 83, 216, 0.04) 0%, rgba(25, 83, 216, 0) 70%);
+  }
+
+  .viz-guide.is-collapsed {
+    @apply gap-0 py-4 md:py-5;
+  }
+
+  .viz-guide__top-row {
+    @apply flex items-start justify-between gap-3;
+  }
+
+  .viz-guide__header {
+    @apply relative;
+    min-height: 3.1rem;
+  }
+
+  .viz-guide__toggle-btn {
+    @apply shrink-0 px-2.5 py-1 border border-rule bg-paper-raised
+           font-mono text-[10px] uppercase tracking-eyebrow text-ink-muted
+           transition-colors duration-150
+           hover:text-ink hover:bg-paper
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+  }
+
+  .viz-guide__eyebrow {
+    @apply relative z-[2] inline-flex font-mono text-[10px] uppercase tracking-eyebrow text-accent;
+  }
+
+  .viz-guide__title {
+    @apply m-0 font-display text-[20px] leading-tight text-ink inline-flex items-center gap-3 flex-wrap;
+    position: absolute;
+    left: 0;
+    top: 2rem;
+    width: max-content;
+    transition:
+      top 300ms cubic-bezier(0.22, 0.61, 0.36, 1),
+      left 300ms cubic-bezier(0.22, 0.61, 0.36, 1),
+      font-size 220ms ease,
+      gap 220ms ease;
+  }
+
+  .viz-guide.is-collapsed .viz-guide__title {
+    @apply text-[18px] gap-1.5;
+    left: 3.3rem;
+    top: 0;
+  }
+
+  .viz-guide.is-collapsed .viz-guide__header {
+    min-height: 1.75rem;
+  }
+
+  .viz-guide__title-map-name {
+      @apply inline-flex items-center px-3 py-1.5 border border-ink
+        font-mono text-[12px] uppercase tracking-eyebrow
+        bg-ink text-white;
+  }
+
+  .viz-guide__summary {
+    @apply m-0 text-[14px] text-ink/75 leading-relaxed max-w-[75ch];
+  }
+
+  .viz-guide__content {
+    @apply flex flex-col gap-4;
+    max-height: 900px;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-height 300ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 220ms ease;
+  }
+
+  .viz-guide__content.is-collapsed {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .viz-guide__hints {
+    @apply grid grid-cols-1 md:grid-cols-3 gap-3;
+  }
+
+  .viz-guide__hint-card {
+    @apply border border-rule bg-paper-raised p-3 flex flex-col gap-2;
+  }
+
+  .viz-guide__hint-index {
+    @apply font-mono text-[10px] uppercase tracking-eyebrow text-ink-muted;
+  }
+
+  .viz-guide__hint-title {
+    @apply m-0 font-mono text-[12px] uppercase tracking-eyebrow text-ink;
+  }
+
+  .viz-guide__hint-text {
+    @apply m-0 text-[13px] leading-relaxed text-ink/75;
+  }
 }
