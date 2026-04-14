@@ -1,4 +1,8 @@
 @layer components {
+    .surface-actions--disabled {
+        @apply opacity-60;
+    }
+
     .surface-metric-selector {
         @apply flex flex-wrap gap-1 border border-rule p-1 bg-paper;
     }
@@ -17,6 +21,10 @@
         @apply bg-ink text-white;
     }
 
+    .surface-metric-btn:disabled {
+        @apply cursor-not-allowed;
+    }
+
     .surface-divider {
         @apply w-full h-px bg-rule;
     }
@@ -25,12 +33,22 @@
         @apply relative w-full h-[560px] bg-paper-raised border border-rule;
     }
 
+    .surface-plot-3d .js-plotly-plot,
+    .surface-histogram-chart .js-plotly-plot {
+        @apply font-mono;
+    }
+
     .surface-histograms-grid {
-        @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+        @apply relative grid grid-cols-1 md:grid-cols-2 gap-6;
+    }
+
+    .surface-histograms-grid--hidden .surface-histogram-card__eyebrow,
+    .surface-histograms-grid--hidden .surface-histogram-chart {
+        visibility: hidden;
     }
 
     .surface-histogram-card {
-        @apply flex flex-col gap-2 bg-paper border-t border-ink
+        @apply relative flex flex-col gap-2 bg-paper border-t border-ink
                border-x border-b border-rule p-5;
     }
 

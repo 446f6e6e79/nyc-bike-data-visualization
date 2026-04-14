@@ -14,6 +14,14 @@
     @apply text-ink;
   }
 
+  .layer-selector-btn:disabled {
+    @apply opacity-55 cursor-not-allowed;
+  }
+
+  .layer-selector-btn:disabled:hover {
+    @apply text-ink-muted;
+  }
+
   .layer-selector-btn.active {
     @apply bg-ink text-white;
   }
@@ -153,7 +161,7 @@
 
   .map-speed-controls__speed-cycle:hover,
   .map-speed-controls__speed-cycle:focus-within {
-    width: 200px;
+    width: 150px;
     border-color: rgba(11, 12, 14, 0.22);
   }
 

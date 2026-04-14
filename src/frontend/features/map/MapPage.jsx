@@ -55,8 +55,10 @@ function MapPage({ filters }) {
         layers,
         loading,
         error,
+        refetch,
         resetSelectedStationIds
     } = useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes })
+    const shouldShowMapUi = !loading && !error
 
     return (
         <section className="page-card">
@@ -70,21 +72,23 @@ function MapPage({ filters }) {
                     </p>
                 </div>
                 <div className="page-card__actions">
-                    <LayerSelector activeLayer={activeLayer} setActiveLayer={setActiveLayer} />
+                    <LayerSelector
+                        activeLayer={activeLayer}
+                        setActiveLayer={setActiveLayer}
+                        disabled={loading}
+                    />
                 </div>
             </header>
             <div className="page-card__body">
-                {(error || loading) ? (
-                    <StatusMessage loading={loading} error={error} />
-                ) : (
-                    <div className="map-shell">
-                        <DeckGL
-                            viewState={viewState}
-                            onViewStateChange={handleViewStateChange}
-                            controller={controller}
-                            layers={layers}
-                            getTooltip={({ object }) => Tooltip({ object, activeLayer })}
-                        />
+                <div className="map-shell">
+                    <DeckGL
+                        viewState={viewState}
+                        onViewStateChange={handleViewStateChange}
+                        controller={controller}
+                        layers={layers}
+                        getTooltip={({ object }) => Tooltip({ object, activeLayer })}
+                    />
+                    {shouldShowMapUi && (
                         <MapController
                             activeLayer={activeLayer}
                             currentTime={currentTime}
@@ -94,12 +98,15 @@ function MapPage({ filters }) {
                             setShowBikeRoutes={setShowBikeRoutes}
                             resetSelectedStationIds={resetSelectedStationIds}
                         />
+                    )}
+                    {shouldShowMapUi && (
                         <MapLegend
                             activeLayer={activeLayer}
                             showBikeRoutes={showBikeRoutes}
                         />
-                    </div>
-                )}
+                    )}
+                    {(error || loading) && <StatusMessage loading={loading} error={error} onRefetch={refetch} />}
+                </div>
             </div>
         </section>
     )
