@@ -10,13 +10,17 @@ import {
     FONT_MONO,
 } from "../../../utils/editorialTokens.js"
 import { SCATTER_BORDER_COLOR, SCATTER_BORDER_WIDTH, SCATTER_POINT_RADIUS } from "../../../utils/styling"
+import StatusMessage from "../../../components/StatusMessage"
 
 /**
  * Component for rendering a scatter plot of weather data
- * @param {{ Array }} data - The props for the component
+ * @param {{ Array }} data - Scatter data
+ * @param {boolean} loading - Whether weather data is loading
+ * @param {Error|null} error - Fetch error for weather data
+ * @param {Function} onRefetch - Callback to trigger a retry after error
  * @returns {JSX.Element} The rendered scatter plot
  */
-export default function ScatterPlot({ data }) {
+export default function ScatterPlot({ data, loading, error, onRefetch }) {
     const canvasRef = useRef(null)
     const chartRef = useRef(null)
     const formattedData = useMemo(() => formatData(data), [data])
@@ -122,6 +126,9 @@ export default function ScatterPlot({ data }) {
     return (
         <div className="scatter-plot-frame">
             <canvas ref={canvasRef} />
+            {(loading || error) && (
+                <StatusMessage loading={loading} error={error} onRefetch={onRefetch} />
+            )}
         </div>
     )
 }

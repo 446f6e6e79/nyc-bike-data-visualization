@@ -1,5 +1,4 @@
 import useWeatherStats from "./hooks/useWeatherStats"
-import StatusMessage from "../../components/StatusMessage"
 import ScatterPlot from "./components/ScatterPlot"
 import VisualizationGuide from "../../components/VisualizationGuide"
 
@@ -24,11 +23,12 @@ function WeatherPage({ filters = {} }) {
                 </div>
             </header>
             <div className="page-card__body">
-                {(loading || error) ? (
-                    <StatusMessage loading={loading} error={error} onRefetch={refetch} />
-                ) : (
-                    <ScatterPlot data={weatherStats} />
-                )}
+                <ScatterPlot
+                    data={weatherStats}
+                    loading={loading}
+                    error={error}
+                    onRefetch={refetch}
+                />
 
                 <VisualizationGuide
                     title="How To Read Weather Impact"
