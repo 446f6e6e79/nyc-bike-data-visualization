@@ -15,12 +15,6 @@ export const METRICS = {
         get: row => row.total_rides,
         format: METRIC_FORMATTERS.total_rides,
     },
-    total_duration_minutes: {
-        label: "Total Duration (min)",
-        unit: "min",
-        get: row => row.total_duration_seconds / 60,
-        format: METRIC_FORMATTERS.total_duration_minutes,
-    },
     average_duration_minutes: {
         label: "Avg Duration (min)",
         unit: "min",
@@ -32,12 +26,6 @@ export const METRICS = {
         unit: "km/h",
         get: row => row.average_speed_kmh,
         format: METRIC_FORMATTERS.average_speed_kmh,
-    },
-    total_distance: {
-        label: "Total Distance (km)",
-        unit: "km",
-        get: row => row.total_distance_km,
-        format: METRIC_FORMATTERS.total_distance,
     },
     average_distance: {
         label: "Avg Distance (km)",
