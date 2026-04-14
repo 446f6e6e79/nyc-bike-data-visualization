@@ -2,7 +2,7 @@
   .status-wrap {
     @apply absolute inset-0
            flex flex-col items-center justify-center gap-3
-           bg-ink/5 backdrop-blur-md
+           bg-ink/5 backdrop-blur-md border border-rule
            font-mono text-[11px] uppercase tracking-eyebrow text-ink
            z-10;
   }

@@ -59,6 +59,7 @@ function SurfaceGraph({ data, activeMetric, setCoordinates, loading, error, onRe
                         },
                         margin: { l: 0, r: 0, b: 0, t: 24 },
                         font: { family: FONT_MONO, color: INK, size: 12 },
+                        hoverlabel: { font: { family: FONT_MONO } },
                     }}
                     onClick={handleSurfaceClick}
                     config={{
