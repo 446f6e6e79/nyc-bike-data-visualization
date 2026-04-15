@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSpeedHandler } from '../hooks/useSpeedHandler.js'
 
 export const HOURS_IN_DAY = 24
@@ -113,6 +113,7 @@ export default function SpeedController({ setCurrentTime, currentTime }) {
         const normalizedTime = normalizeTime(currentTime)
         return clamp(Math.floor(normalizedTime * MINUTES_IN_HOUR), 0, MAX_MINUTE_INDEX)
     }, [currentTime])
+
     const currentPosition = (currentMinuteIndex / MAX_MINUTE_INDEX) * 100
     const stripTransform = `translateX(calc(50% - ${currentPosition}%))`
     const currentSpeedLabel = useMemo(() => formatSpeedLabel(speed), [speed])
@@ -160,8 +161,8 @@ export default function SpeedController({ setCurrentTime, currentTime }) {
         dragStartXRef.current = 0
         dragStartMinuteIndexRef.current = 0
         dragTrackWidthRef.current = 0
-        hasDraggedRef.current = false
         setIsDragging(false)
+        hasDraggedRef.current = false
     }, [])
 
     const handlePointerDown = (event) => {
@@ -205,7 +206,7 @@ export default function SpeedController({ setCurrentTime, currentTime }) {
         }
 
         const deltaX = event.clientX - dragStartXRef.current
-        const minuteDelta = Math.round((deltaX / trackWidth) * MAX_MINUTE_INDEX)
+        const minuteDelta = (deltaX / trackWidth) * MAX_MINUTE_INDEX
         const nextMinuteIndex = clamp(dragStartMinuteIndexRef.current - minuteDelta, 0, MAX_MINUTE_INDEX)
         setCurrentTime(nextMinuteIndex / MINUTES_IN_HOUR)
     }
