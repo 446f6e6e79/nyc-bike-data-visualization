@@ -43,10 +43,10 @@ function SurfaceGraph({ data, activeMetric, setCoordinates, loading, error, onRe
                         plot_bgcolor: PAPER_RAISED,
                         scene: {
                             // Disable user-driven rotation/zoom to keep the editorial framing consistent
-                            dragmode: false,
+                            dragmode: "turntable",
                             camera: {
                                 eye: { x: 1.6, y: -1.6, z: 0.9 },
-                                center: { x: 0, y: 0, z: -0.1 },
+                                center: { x: 0, y: 0, z: -0.3 },
                                 up: { x: 0, y: 0, z: 1 },
                                 projection: { type: "perspective" },
                             },

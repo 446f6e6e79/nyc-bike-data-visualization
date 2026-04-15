@@ -6,13 +6,15 @@
  */
 export default function BikeRoutesToggle({ showBikeRoutes, setShowBikeRoutes }) {
     return (
-        <label className="map-controls-label map-controls-toggle">
-            <input
-                type="checkbox"
-                checked={showBikeRoutes}
-                onChange={(e) => setShowBikeRoutes(e.target.checked)}
-            />
-            Bike routes
-        </label>
+        <button
+            type="button"
+            className={`map-toggle-button${showBikeRoutes ? ' is-active' : ''}`}
+            aria-pressed={showBikeRoutes}
+            aria-label={`Bike routes ${showBikeRoutes ? 'visible' : 'inactive'}. Click to toggle.`}
+            onClick={() => setShowBikeRoutes(!showBikeRoutes)}
+        >
+            <span className="map-toggle-button__indicator" aria-hidden="true" />
+            <span className="map-toggle-button__label">Bike Routes</span>
+        </button>
     )
 }

@@ -160,7 +160,7 @@
   .viz-guide.is-collapsed .viz-guide__title {
     @apply text-[18px] gap-1.5;
     left: 3.3rem;
-    top: 0;
+    top: .1rem;
   }
 
   .viz-guide.is-collapsed .viz-guide__header {

@@ -48,7 +48,7 @@
     }
 
     .surface-histogram-card {
-        @apply relative flex flex-col gap-2 bg-paper border-t border-ink
+        @apply relative flex flex-col gap-4 bg-paper-raised border-t border-ink
                border-x border-b border-rule p-5;
     }
 

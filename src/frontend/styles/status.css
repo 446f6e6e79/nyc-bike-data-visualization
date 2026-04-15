@@ -2,19 +2,20 @@
   .status-wrap {
     @apply absolute inset-0
            flex flex-col items-center justify-center gap-3
-           bg-ink/5 backdrop-blur-md border border-rule
+           bg-paper-raised/5 backdrop-blur-lg border border-rule
            font-mono text-[11px] uppercase tracking-eyebrow text-ink
            z-10;
   }
 
   .status-wrap--error {
-    @apply bg-ink/5 text-error;
+    @apply text-error;
   }
 
   .status-spinner {
     @apply w-4 h-4 rounded-full shrink-0
-           border-2 border-rule border-t-accent
+           border-2 border-rule
            animate-spin-fast;
+    border-top-color: #0a2a7a;
   }
 
   .status-icon {
