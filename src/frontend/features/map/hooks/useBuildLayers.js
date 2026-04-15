@@ -81,11 +81,14 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
     const loading = stateLayers.find(layer => layer.layer === activeLayer)?.loading || false
     const error = stateLayers.find(layer => layer.layer === activeLayer)?.error || null
     const refetch = stateLayers.find(layer => layer.layer === activeLayer)?.refetch ?? (() => {})
+    const hasTripFlowSelection = selectedStationIds.length > 0
+
     return {
         layers,
         loading: loading,
         error: error,
         refetch,
         resetSelectedStationIds,
+        hasTripFlowSelection,
     }
 }

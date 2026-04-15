@@ -23,6 +23,7 @@ export default function MapController({
     showBikeRoutes,
     setShowBikeRoutes,
     resetSelectedStationIds,
+    hasTripFlowSelection,
 }) {
     return (
         <div className="map-controls">
@@ -44,6 +45,7 @@ export default function MapController({
 
                 {activeLayer === 'trip_flow' && (
                     <ResetButton
+                        disabled={!hasTripFlowSelection}
                         onClick={() => {
                             resetSelectedStationIds()
                         }}

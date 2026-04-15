@@ -5,16 +5,17 @@
  * @param {Function} onClick - An optional alternative prop for the click handler, provided for flexibility. If onReset is not provided, onClick will be used as the click handler for the button.
  * @returns 
  */
-export default function ResetButton({ onReset, onClick }) {
+export default function ResetButton({ onReset, onClick, disabled = false }) {
     const handleClick = onReset ?? onClick
 
     return (
         <button
             type="button"
             onClick={handleClick}
+            disabled={disabled}
             className="map-reset-button"
             aria-label="Reset map view"
-            title="Reset map view"
+            title={disabled ? "Select a path to enable reset" : "Reset map view"}
         >
             <span className="map-reset-button-icon" aria-hidden="true">↺</span>
             <span className="map-reset-button-text">Reset View</span>
