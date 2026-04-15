@@ -32,10 +32,11 @@ export const MAX_ZOOM = 15
 export const MIN_PITCH = 0
 export const MAX_PITCH = 60
 
-export const MIN_LONGITUDE = -73.98
-export const MAX_LONGITUDE = -73.96
-export const MIN_LATITUDE = 40.67
-export const MAX_LATITUDE = 40.84
+// Clamp bounds for NYC area to keep navigation constrained but still fluid.
+export const MIN_LONGITUDE = -74.30
+export const MAX_LONGITUDE = -73.65
+export const MIN_LATITUDE = 40.45
+export const MAX_LATITUDE = 40.95
 
 const MAP_LAYER_GUIDES = {
     station_usage: {
@@ -126,7 +127,8 @@ function MapPage({ filters }) {
         loading,
         error,
         refetch,
-        resetSelectedStationIds
+        resetSelectedStationIds,
+        hasTripFlowSelection,
     } = useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes })
     const shouldShowMapUi = !loading && !error
     const guide = MAP_LAYER_GUIDES[activeLayer] ?? MAP_LAYER_GUIDES.station_usage
@@ -168,6 +170,7 @@ function MapPage({ filters }) {
                             showBikeRoutes={showBikeRoutes}
                             setShowBikeRoutes={setShowBikeRoutes}
                             resetSelectedStationIds={resetSelectedStationIds}
+                            hasTripFlowSelection={hasTripFlowSelection}
                         />
                     )}
                     {shouldShowMapUi && (
