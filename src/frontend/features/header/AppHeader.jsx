@@ -11,6 +11,17 @@ const PAGES = [
     { to: '/weather', label: 'Weather' },
 ]
 
+function useSafeIsFetching() {
+    try {
+        return useIsFetching({
+            predicate: (query) => query.queryKey?.[0] !== 'dataset-date-range',
+        })
+    } catch (hookError) {
+        if (!String(hookError?.message).includes('No QueryClient set')) throw hookError
+        return 0
+    }
+}
+
 /**
  * Header component for the application, containing the title, navigation links, and the date range filter.
  * @returns
@@ -22,9 +33,7 @@ function AppHeader({ onFiltersChange }) {
         handleDateRangeCommit,
         handleUserFilterChange,
     } = useHeaderFilters(onFiltersChange)
-    const activeDataFetches = useIsFetching({
-        predicate: (query) => query.queryKey?.[0] !== 'dataset-date-range',
-    })
+    const activeDataFetches = useSafeIsFetching()
     const areUserFiltersDisabled = activeDataFetches > 0
     const { dateRange: datasetRange } = useDatasetDateRange()
     const kicker = datasetRange?.min_date && datasetRange?.max_date
