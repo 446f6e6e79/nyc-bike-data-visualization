@@ -26,7 +26,8 @@ export function useStationUsageLayer({ filters, currentTime }) {
     // Fetch station ride counts with the specified filters using the custom hook
     const { stationRideCounts,
         loading: loading,
-        error: error
+        error: error,
+        refetch,
     } = useStationRideCounts(stationRideCountFilters)
 
     // Process station data to get the stations for the current time frame and calculate the maximum usage for scaling
@@ -35,5 +36,5 @@ export function useStationUsageLayer({ filters, currentTime }) {
     const maxUsage = useMemo(() => getMaxUsage(stations), [stations])
     const maxDelta = useMemo(() => getMaxDelta(stations), [stations])
 
-    return { frameStations, maxUsage, maxDelta, loading, error }
+    return { frameStations, maxUsage, maxDelta, loading, error, refetch }
 }

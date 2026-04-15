@@ -1,4 +1,4 @@
-function StatusMessage({ loading, error }) {
+function StatusMessage({ loading, error, onRefetch }) {
     if (loading) {
         return (
             <div className="status-wrap">
@@ -9,6 +9,14 @@ function StatusMessage({ loading, error }) {
     }
 
     if (error) {
+        const handleRefetch = () => {
+            if (typeof onRefetch === 'function') {
+                onRefetch()
+                return
+            }
+            window.location.reload()
+        }
+
         return (
             <div className="status-wrap status-wrap--error">
                 <svg className="status-icon" viewBox="0 0 16 16" fill="none">
@@ -16,6 +24,9 @@ function StatusMessage({ loading, error }) {
                     <path d="M8 4.5v4M8 10.5v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
                 <span className="status-text">Could not load data — please try again.</span>
+                <button type="button" className="status-refetch-btn" onClick={handleRefetch}>
+                    Refetch
+                </button>
             </div>
         )
     }

@@ -52,9 +52,10 @@ export function useTripArcsLayer({ filters, selectedStationIds }) {
     //#TODO: For now placeholder for new loading component
     const loading = false//tripCountQueries.some((query) => query.isLoading || query.isFetching)
     const error = tripCountQueries.find((query) => query.error)?.error || null
+    const refetch = () => Promise.all(tripCountQueries.map((query) => query.refetch()))
     // Process the combined trip count data to select trips that meet the criteria and calculate the maximum flow for scaling the visualization
     const trips = useMemo(() => selectTrips(tripCount), [tripCount])
     const maxTripFlow = useMemo(() => (trips.length > 0 ? selectMaxFlow(trips) : 0), [trips])
 
-    return { trips, maxTripFlow, loading, error }
+    return { trips, maxTripFlow, loading, error, refetch }
 }

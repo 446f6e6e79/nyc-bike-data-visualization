@@ -9,11 +9,12 @@ import { useTripArcsLayer } from "./trips/useTripArcsHook";
  */
 export function useTripFlowLayer({ filters, selectedStationIds }) {
     // Data fetching for station availability and trip arcs
-    const { stations: stationData, loading: stationLoading, error: stationError } = useInfrastructureLayer({ showBikeRoutes: false })
-    const { trips, maxTripFlow, loading: tripLoading, error: tripError } = useTripArcsLayer({ filters, selectedStationIds })
+    const { stations: stationData, loading: stationLoading, error: stationError, refetch: refetchStations } = useInfrastructureLayer({ showBikeRoutes: false })
+    const { trips, maxTripFlow, loading: tripLoading, error: tripError, refetch: refetchTrips } = useTripArcsLayer({ filters, selectedStationIds })
     // Combine loading and error states for easier handling in the component
     const loading = stationLoading || tripLoading
     const error = stationError || tripError
+    const refetch = () => Promise.all([refetchStations(), refetchTrips()])
     // Return combined data and states for the trip flow layer
-    return { trips, maxTripFlow, stations: stationData, loading, error }
+    return { trips, maxTripFlow, stations: stationData, loading, error, refetch }
 }

@@ -12,19 +12,26 @@ import useBikeRoutes from './bike_routes/useBikeRoutes.js'
  * @returns 
  */
 export function useInfrastructureLayer({ showBikeRoutes = false } = {}) {
-    const { stationData, loading: stationsLoading, error: stationsError } = useStationAvailability()
-    const { bikeRoutes, loading: routesLoading, error: routesError } = useBikeRoutes()
+    const { stationData, loading: stationsLoading, error: stationsError, refetch: refetchStations } = useStationAvailability()
+    const { bikeRoutes, loading: routesLoading, error: routesError, refetch: refetchRoutes } = useBikeRoutes()
 
     const stations = useMemo(() => selectStationAvailability(stationData), [stationData])
 
     // Combine loading/error: if routes are toggled off, their state is irrelevant
     const loading = stationsLoading || (showBikeRoutes && routesLoading)
     const error = stationsError || (showBikeRoutes ? routesError : null)
+    const refetch = () => {
+        if (showBikeRoutes) {
+            return Promise.all([refetchStations(), refetchRoutes()])
+        }
+        return refetchStations()
+    }
 
     return {
         stations,
         bikeRoutes: showBikeRoutes ? bikeRoutes : [],   // Only provide routes if requested, more efficient for components that don't need them
         loading,
         error,
+        refetch,
     }
 }

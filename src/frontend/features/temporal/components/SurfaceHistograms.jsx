@@ -1,6 +1,7 @@
 import { getMetricConfig } from "../utils/metric_formatter.jsx"
 import { DAY_LABELS, HOUR_LABELS } from "../../../utils/config.jsx"
 import BarChart from "./BarChart.jsx"
+import StatusMessage from "../../../components/StatusMessage"
 
 /**
  * Component for displaying the histograms that accompany the surface graph
@@ -8,10 +9,14 @@ import BarChart from "./BarChart.jsx"
  * @param {Object} dayData - The data for the day of week histogram, used to display the distribution of the selected metric across different days of the week.
  * @param {string} activeMetric - The currently selected metric key, used to determine which metric's data to display in the histograms.
  * @param {Object} coordinates - The coordinates of the currently hovered point on the surface graph, used to highlight the corresponding bars in the histograms.
+ * @param {boolean} loading - Whether temporal data is loading.
+ * @param {Error|null} error - Error state for temporal data fetch.
+ * @param {Function} onRefetch - Callback to trigger a retry after error.
  * @returns
  */
-export default function SurfaceHistograms({ dayData, hourData, activeMetric, coordinates }) {
+export default function SurfaceHistograms({ dayData, hourData, activeMetric, coordinates, loading, error, onRefetch }) {
     const metric = getMetricConfig(activeMetric)
+    const showOverlay = loading || error
     // Extracts the metric values for the selected metric from the day and hour data using the corresponding metric getter function, preparing the data for the histograms. The highlight variable is used to determine which bar to highlight based on the hovered coordinates from the surface graph.
     const metricDayData = dayData?.map(metric.get)
     const metricHourData = hourData?.map(metric.get)
@@ -34,7 +39,7 @@ export default function SurfaceHistograms({ dayData, hourData, activeMetric, coo
     ]
 
     return (
-        <div className="surface-histograms-grid">
+        <div className={`surface-histograms-grid${showOverlay ? ' surface-histograms-grid--hidden' : ''}`}>
             {/*Iterate over the histogram cards and render each one */}
             {cards.map(({ label, data, labels, highlight, xAxisTitle }) => (
                 <div key={label} className="surface-histogram-card">
@@ -53,6 +58,8 @@ export default function SurfaceHistograms({ dayData, hourData, activeMetric, coo
                             unit={metric.unit}
                         />
                     </div>
+
+                    {showOverlay && <StatusMessage loading={loading} error={error} onRefetch={onRefetch} />}
                 </div>
             ))}
         </div>
