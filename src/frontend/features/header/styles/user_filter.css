@@ -3,12 +3,48 @@
         @apply flex flex-col items-start gap-5;
     }
 
+    .rider-filter--disabled {
+        @apply opacity-70;
+    }
+
+    .rider-filter--disabled .rider-filter-selector,
+    .rider-filter--disabled .rider-filter-btn,
+    .rider-filter--disabled .rider-filter-help {
+        cursor: not-allowed;
+    }
+
     .rider-filter-group {
         @apply flex items-center gap-2;
     }
 
+    .rider-filter-label-wrap {
+        @apply relative flex items-center pl-3;
+    }
+
     .rider-filter-label {
         @apply font-mono text-[10px] uppercase tracking-eyebrow text-white/55 whitespace-nowrap;
+    }
+
+    .rider-filter-help {
+         @apply absolute -top-0.5 left-0 inline-flex items-center justify-center w-3 h-3
+             font-mono text-[8px] leading-none text-white/75
+               cursor-help select-none;
+    }
+
+    .rider-filter-tooltip {
+        @apply absolute right-[130%] top-1/2 -translate-y-1/2
+               w-[220px] p-2.5 border border-rule bg-rule-invert backdrop-blur-sm text-white/90
+               font-mono normal-case tracking-normal text-[10px] leading-relaxed
+               opacity-0 pointer-events-none transition-opacity duration-150 z-20;
+    }
+
+    .rider-filter-help:hover .rider-filter-tooltip,
+    .rider-filter-help:focus-visible .rider-filter-tooltip {
+        @apply opacity-100;
+    }
+
+    .rider-filter-help:focus-visible {
+        @apply outline-none ring-2 ring-white/70;
     }
 
     .rider-filter-selector {
@@ -28,5 +64,9 @@
 
     .rider-filter-btn.active {
         @apply bg-white/15 text-white;
+    }
+
+    .rider-filter-btn:disabled {
+        @apply cursor-not-allowed text-white/40;
     }
 }

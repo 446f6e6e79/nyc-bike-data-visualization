@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useIsFetching } from '@tanstack/react-query'
 import DateRangeFilter from './components/DateRangeFilter.jsx'
 import useHeaderFilters from './hooks/useHeaderFilters.js'
 import RiderBikeFilter from './components/RiderBikeFilter.jsx'
@@ -21,6 +22,10 @@ function AppHeader({ onFiltersChange }) {
         handleDateRangeCommit,
         handleUserFilterChange,
     } = useHeaderFilters(onFiltersChange)
+    const activeDataFetches = useIsFetching({
+        predicate: (query) => query.queryKey?.[0] !== 'dataset-date-range',
+    })
+    const areUserFiltersDisabled = activeDataFetches > 0
     const { dateRange: datasetRange } = useDatasetDateRange()
     const kicker = datasetRange?.min_date && datasetRange?.max_date
         ? `NYC / ${datasetRange.min_date.slice(0, 4)}–${datasetRange.max_date.slice(0, 4)}`
@@ -46,8 +51,16 @@ function AppHeader({ onFiltersChange }) {
                 </nav>
             </div>
             <div className="app-header__filters">
-                <DateRangeFilter value={dateRange} onCommit={handleDateRangeCommit} />
-                <RiderBikeFilter value={currentUserFilters} onChange={handleUserFilterChange} />
+                <DateRangeFilter
+                    value={dateRange}
+                    onCommit={handleDateRangeCommit}
+                    disabled={areUserFiltersDisabled}
+                />
+                <RiderBikeFilter
+                    value={currentUserFilters}
+                    onChange={handleUserFilterChange}
+                    disabled={areUserFiltersDisabled}
+                />
             </div>
         </header>
     )

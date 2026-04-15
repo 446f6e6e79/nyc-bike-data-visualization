@@ -5,6 +5,17 @@
     padding: 10px 0 0;
   }
 
+  .date-range-filter--disabled {
+    @apply opacity-70;
+  }
+
+  .date-range-filter--disabled .date-range-filter__track,
+  .date-range-filter--disabled .date-range-filter__selection,
+  .date-range-filter--disabled .date-range-filter__handle-anchor,
+  .date-range-filter--disabled .date-range-filter__handle {
+    cursor: not-allowed;
+  }
+
   .date-range-filter__header {
     @apply mb-1 flex items-baseline gap-3;
   }
@@ -113,6 +124,15 @@
   .date-range-filter__handle:focus-visible {
     outline: 2px solid rgba(255,255,255,0.72);
     outline-offset: 2px;
+  }
+
+  .date-range-filter__handle:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .date-range-filter__handle:disabled .date-range-filter__handle-line {
+    background: rgba(255,255,255,0.45);
   }
 
   .date-range-filter__handle-line {

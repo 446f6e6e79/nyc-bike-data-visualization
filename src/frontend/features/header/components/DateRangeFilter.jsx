@@ -26,9 +26,10 @@ function PlaceholderState({ label }) {
  * @param {Object} props
  * @param {Object} props.value - The currently applied date range filter value, containing start_date and end_date.
  * @param {Function} props.onCommit - Callback function to commit the selected date range, receiving the payload with start_date and end_date in 'YYYY-MM-DD' format.
+ * @param {boolean} props.disabled - Whether interactions should be disabled while data is fetching.
  * @returns JSX element representing the date range filter UI, including the slider, markers, year labels, and apply button.
  */
-export default function DateRangeFilter({ value, onCommit }) {
+export default function DateRangeFilter({ value, onCommit, disabled = false }) {
     // Hooks to manage date range bounds, slider interaction, presentation logic, and commit handling
     const {
         bounds,
@@ -64,7 +65,7 @@ export default function DateRangeFilter({ value, onCommit }) {
     if (isUnavailableView) return <PlaceholderState label="Date range unavailable" />
 
     return (
-        <div className="date-range-filter">
+        <div className={`date-range-filter${disabled ? ' date-range-filter--disabled' : ''}`} aria-disabled={disabled}>
             {/* Header */}
             <div className="date-range-filter__header">
                 <span className="date-range-filter__eyebrow">
@@ -131,12 +132,12 @@ export default function DateRangeFilter({ value, onCommit }) {
 
                 {/* Selection window */}
                 <div
-                    onPointerDown={(event) => beginPointerAction(event, 'move')}
+                    onPointerDown={disabled ? undefined : (event) => beginPointerAction(event, 'move')}
                     className="date-range-filter__selection"
                 >
                     {/* Start handle */}
                     <div
-                        onPointerDown={(event) => beginPointerAction(event, 'resize-start')}
+                        onPointerDown={disabled ? undefined : (event) => beginPointerAction(event, 'resize-start')}
                         className="date-range-filter__handle-anchor date-range-filter__handle-anchor--start"
                     >
                         <SliderHandle
@@ -146,12 +147,13 @@ export default function DateRangeFilter({ value, onCommit }) {
                             max={selectionView.endIndex}
                             label={MONTH_LABELS[selectionView.startDate.getMonth()]}
                             onStep={resizeStart}
+                            disabled={disabled}
                         />
                     </div>
 
                     {/* End handle */}
                     <div
-                        onPointerDown={(event) => beginPointerAction(event, 'resize-end')}
+                        onPointerDown={disabled ? undefined : (event) => beginPointerAction(event, 'resize-end')}
                         className="date-range-filter__handle-anchor date-range-filter__handle-anchor--end"
                     >
                         <SliderHandle
@@ -161,6 +163,7 @@ export default function DateRangeFilter({ value, onCommit }) {
                             max={totalMonths - 1}
                             label={MONTH_LABELS[selectionView.endDate.getMonth()]}
                             onStep={resizeEnd}
+                            disabled={disabled}
                         />
                     </div>
                 </div>
@@ -169,7 +172,7 @@ export default function DateRangeFilter({ value, onCommit }) {
                 <button
                     type="button"
                     onClick={handleApply}
-                    disabled={!hasPendingChanges || isCommitting || !onCommit}
+                    disabled={disabled || !hasPendingChanges || isCommitting || !onCommit}
                     className={cx(
                         'date-range-filter__button',
                         isCommitting && 'date-range-filter__button--committing',

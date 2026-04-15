@@ -2,15 +2,16 @@
 import { useCallback } from 'react'
 
 // Handle component represents the draggable handles for resizing the date range selection, supporting keyboard interactions for accessibility by allowing users to step through months using arrow keys.
-export default function SliderHandle({ side, value, min, max, label, onStep }) {
+export default function SliderHandle({ side, value, min, max, label, onStep, disabled = false }) {
     // Handle left and right arrow keys to step through months, ensuring the value stays within the provided min and max bounds.
     const handleKeyDown = useCallback((event) => {
+        if (disabled) return
         const step = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0
         if (!step) return
 
         event.preventDefault()
         onStep(value + step)
-    }, [onStep, value])
+    }, [disabled, onStep, value])
 
     // Render a button element for the handle, with appropriate ARIA attributes for accessibility, and styling classes based on the side (start or end) of the handle.
     return (
@@ -23,6 +24,7 @@ export default function SliderHandle({ side, value, min, max, label, onStep }) {
             aria-valuenow={value}
             aria-valuetext={label}
             onKeyDown={handleKeyDown}
+            disabled={disabled}
             className={`date-range-filter__handle date-range-filter__handle--${side}`}
         >
             <div className="date-range-filter__handle-line" />
