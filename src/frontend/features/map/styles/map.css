@@ -348,6 +348,14 @@
     letter-spacing: 0.08em;
   }
 
+  .map-reset-button:disabled {
+    @apply opacity-55 cursor-not-allowed;
+  }
+
+  .map-reset-button:disabled:hover {
+    @apply bg-ink;
+  }
+
   .map-error {
     @apply px-4 py-3 font-sans text-sm text-error bg-error-bg border border-error-border;
   }

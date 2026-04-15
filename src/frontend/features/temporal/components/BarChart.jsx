@@ -35,7 +35,10 @@ export default function BarChart({
     const yAxisTickCallback = formatYAxisTick.bind(null, unit)
 
     useEffect(() => {
-        chartRef.current = new Chart(canvasRef.current, {
+        const ctx = canvasRef.current?.getContext("2d", { willReadFrequently: true })
+        if (!ctx) return
+
+        chartRef.current = new Chart(ctx, {
             type: "bar",
             data: {
                 labels,
