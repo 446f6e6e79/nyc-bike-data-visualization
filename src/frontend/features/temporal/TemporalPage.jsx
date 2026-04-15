@@ -54,25 +54,6 @@ function TemporalPage({ filters }) {
                     onRefetch={refetch}
                 />
 
-                <VisualizationGuide
-                    title="How To Read The Weekly Rhythm"
-                    summary="The 3D surface shows how your selected metric changes at every day-hour intersection, while the two histograms break the same signal into simpler one-dimensional views."
-                    hints={[
-                        {
-                            title: 'Read shape before numbers',
-                            text: 'Ridges and valleys on the surface reveal recurring cycles. Focus on where the terrain rises consistently before inspecting exact values.',
-                        },
-                        {
-                            title: 'Use metric switch as a lens',
-                            text: 'Keep day/hour context fixed and switch metric to compare whether peaks are driven by volume, speed, or duration behavior.',
-                        },
-                        {
-                            title: 'Validate with histograms',
-                            text: 'After spotting a hotspot on the surface, verify if it is mostly a day effect or an hour effect using the corresponding histogram.',
-                        },
-                    ]}
-                />
-
                 <SurfaceHistograms
                     hourData={hourStats}
                     dayData={dayStats}
@@ -81,6 +62,26 @@ function TemporalPage({ filters }) {
                     loading={loading}
                     error={error}
                     onRefetch={refetch}
+                />
+
+                <VisualizationGuide
+                    mapName="Weekly Rhythm"
+                    title="How To Read It"
+                    summary="The 3D surface shows how your selected metric changes at every day-hour intersection, while the two histograms break the same signal into simpler one-dimensional views."
+                    hints={[
+                        {
+                            title: 'Read shape before numbers',
+                            text: 'Ridges and valleys on the surface reveal recurring cycles. Focus on where the terrain rises consistently before inspecting exact values.',
+                        },
+                        {
+                            title: 'Compare user and bike types',
+                            text: 'Use the header filter to compare how the same rhythms change across different user types or bike type behavior.',
+                        },
+                        {
+                            title: 'Validate with histograms',
+                            text: 'After spotting a hotspot on the surface, verify if it is mostly a day effect or an hour effect using the corresponding histogram.',
+                        },
+                    ]}
                 />
             </div>
         </section>
