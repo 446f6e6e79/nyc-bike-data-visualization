@@ -30,9 +30,10 @@ export default function useSurfaceGraph({ data, activeMetric, setCoordinates }) 
         return grid
     }, [data, metric])
 
-    // Handler for when a user clicks on a point on the surface graph, which updates the coordinates state in the parent component with the corresponding day, hour, and metric value of the clicked point. This allows the histograms to highlight the relevant bars based on the user's interaction with the surface graph.
-    const handleSurfaceClick = useCallback((eventData) => {
-        const point = eventData.points[0]
+    const updateCoordinatesFromEvent = useCallback((eventData) => {
+        const point = eventData?.points?.[0]
+        if (!point) return
+
         setCoordinates({
             day: point.y,
             hour: point.x,
@@ -40,10 +41,26 @@ export default function useSurfaceGraph({ data, activeMetric, setCoordinates }) 
         })
     }, [setCoordinates])
 
+    // Click keeps existing behavior for explicit selection.
+    const handleSurfaceClick = useCallback((eventData) => {
+        updateCoordinatesFromEvent(eventData)
+    }, [updateCoordinatesFromEvent])
+
+    // Hover updates highlights immediately while moving on the 3D surface.
+    const handleSurfaceHover = useCallback((eventData) => {
+        updateCoordinatesFromEvent(eventData)
+    }, [updateCoordinatesFromEvent])
+
+    const handleSurfaceUnhover = useCallback(() => {
+        setCoordinates(null)
+    }, [setCoordinates])
+
     return {
         metric,
         Z,
         hoverTemplate,
         handleSurfaceClick,
+        handleSurfaceHover,
+        handleSurfaceUnhover,
     }
 }

@@ -19,7 +19,7 @@ function SurfaceGraph({ data, activeMetric, setCoordinates, loading, error, onRe
     const safeData = Array.isArray(data) ? data : []
     const hasData = safeData.length > 0
 
-    const { metric, Z, hoverTemplate, handleSurfaceClick } = useSurfaceGraph({
+    const { metric, Z, hoverTemplate, handleSurfaceClick, handleSurfaceHover, handleSurfaceUnhover } = useSurfaceGraph({
         data: safeData,
         activeMetric,
         setCoordinates,
@@ -62,6 +62,8 @@ function SurfaceGraph({ data, activeMetric, setCoordinates, loading, error, onRe
                         hoverlabel: { font: { family: FONT_MONO } },
                     }}
                     onClick={handleSurfaceClick}
+                    onHover={handleSurfaceHover}
+                    onUnhover={handleSurfaceUnhover}
                     config={{
                         displayModeBar: false,
                         scrollZoom: false,
