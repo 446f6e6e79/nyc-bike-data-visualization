@@ -158,9 +158,9 @@
   }
 
   .viz-guide.is-collapsed .viz-guide__title {
-    @apply text-[18px] gap-1.5;
+    @apply text-[18px] gap-3;
     left: 3.3rem;
-    top: .1rem;
+    top: 0;
   }
 
   .viz-guide.is-collapsed .viz-guide__header {

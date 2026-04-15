@@ -31,7 +31,8 @@ function WeatherPage({ filters = {} }) {
                 />
 
                 <VisualizationGuide
-                    title="How To Read Weather Impact"
+                    mapName="Weather Impact"
+                    title="How To Read It"
                     summary="Each point links weather conditions to mobility behavior. Use the chart to identify thresholds where weather starts changing trip speed or volume in a meaningful way."
                     hints={[
                         {
