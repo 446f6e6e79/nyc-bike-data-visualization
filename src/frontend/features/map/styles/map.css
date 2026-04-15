@@ -272,7 +272,7 @@
   }
 
   .map-time-wheel__tick-next-day {
-    @apply inline-block ml-px -translate-y-[1px] text-[8px] leading-none font-semibold text-ink/30;
+    @apply inline-block ml-px text-[8px] leading-none font-semibold text-ink/30;
   }
 
   @media (max-width: 1024px) {
