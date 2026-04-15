@@ -88,7 +88,7 @@
 
   .map-controls__secondary {
     @apply self-end flex items-center gap-2 flex-wrap max-w-full pointer-events-auto
-           px-3 py-2 text-xs text-ink bg-paper-raised/95 backdrop-blur-sm border border-rule;
+           text-xs text-ink bg-paper-raised/10 backdrop-blur-md;
   }
 
   .map-controls-label {
@@ -103,11 +103,35 @@
     @apply font-sans text-[11px] text-ink-muted;
   }
 
+  .map-toggle-button {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 font-mono text-[11px]
+           uppercase tracking-eyebrow text-ink border border-rule bg-paper
+           transition-colors duration-150
+           hover:bg-paper-raised
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+  }
+
+  .map-toggle-button.is-active {
+    @apply border-ink bg-ink text-white;
+  }
+
+  .map-toggle-button__label {
+    letter-spacing: 0.08em;
+  }
+
+  .map-toggle-button__indicator {
+    @apply inline-flex w-2 h-2 rounded-full border border-current opacity-70;
+  }
+
+  .map-toggle-button.is-active .map-toggle-button__indicator {
+    @apply bg-white border-white opacity-100;
+  }
+
   /* Speed controller */
 
   .map-speed-controls {
     @apply w-full px-4 py-3 text-xs text-ink pointer-events-auto
-           bg-paper-raised/40 backdrop-blur-sm border border-rule;
+           bg-paper-raised backdrop-blur-sm border border-rule;
   }
 
   .map-speed-controls__header {
@@ -151,7 +175,7 @@
 
   .map-speed-controls__speed-selector {
     @apply relative inline-flex h-full w-[3rem] flex-col items-center justify-center overflow-hidden
-           border border-rule bg-ink/5 py-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-ink
+           border border-rule bg-paper-raised py-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-ink
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
     justify-self: end;
     transition-property: width, background-color, border-color;
@@ -194,7 +218,7 @@
   }
 
   .map-speed-controls__speed-wheel-rail {
-    @apply relative h-full w-full bg-white overflow-hidden;
+    @apply relative h-full w-full bg-paper-raised overflow-hidden;
   }
 
   .map-speed-controls__speed-wheel-overlay {
