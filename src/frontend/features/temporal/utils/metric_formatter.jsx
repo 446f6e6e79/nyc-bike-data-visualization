@@ -1,18 +1,35 @@
 // Utility functions and configurations for formatting and retrieving metrics
 export const METRIC_FORMATTERS = {
-    total_rides: value => Math.round(value).toLocaleString(),
+    total_rides: value => value.toFixed(1),
     total_duration_minutes: value => value.toFixed(1) + " min",
     average_duration_minutes: value => value.toFixed(1) + " min",
     total_distance: value => value.toFixed(1) + " km",
     average_distance: value => value.toFixed(1) + " km",
     average_speed_kmh: value => value.toFixed(1) + " km/h",
 }
+
+function getRidesPerDay(row) {
+    const totalRides = Number(row?.total_rides ?? 0)
+    const hoursCount = Number(row?.hours_count ?? 0)
+
+    if (!Number.isFinite(totalRides) || !Number.isFinite(hoursCount) || hoursCount <= 0) {
+        return 0
+    }
+
+    // day_of_week buckets include all 24 hours for each matching weekday.
+    // hour and day+hour buckets contain one hour slot per day occurrence.
+    const daysCount = row?.day_of_week != null && row?.hour == null
+        ? hoursCount / 24
+        : hoursCount
+
+    return daysCount > 0 ? totalRides / daysCount : 0
+}
 // Configuration object that defines the available metrics
 export const METRICS = {
     total_rides: {
-        label: "Total Rides",
-        unit: "rides",
-        get: row => row.total_rides,
+        label: "Rides per Day",
+        unit: "rides/day",
+        get: getRidesPerDay,
         format: METRIC_FORMATTERS.total_rides,
     },
     average_duration_minutes: {
