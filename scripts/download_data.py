@@ -12,6 +12,7 @@ from utils.distances import compute_and_save_station_distances
 from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
+from utils.daily_stats import compute_and_save_daily_stats
 from src.backend.config import (
     DATA_DIR,
     RIDES_DATA_DIR,
@@ -84,6 +85,9 @@ def main():
 
     # Download and convert the filtered files
     download_ride_data(args.start_date, args.end_date, download_jc=args.download_jc)
+
+    # Precompute daily aggregated stats over all downloaded rides
+    compute_and_save_daily_stats()
 
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances(force_download=args.force_download)

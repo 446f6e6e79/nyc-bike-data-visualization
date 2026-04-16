@@ -1,12 +1,11 @@
 from pydantic import BaseModel
 from enum import Enum
-from datetime import date
+from datetime import date as date_type
 
 class DatasetDateRange(BaseModel):
-    min_date: date | None
-    max_date: date | None
+    min_date: date_type | None
+    max_date: date_type | None
 
-#TODO: add fields for average speed
 class Stats(BaseModel):
     """Base class for statistics models."""
     total_rides: int
@@ -23,6 +22,7 @@ class StatsGroupBy(str, Enum):
     HOUR = "hour"
     DAY_OF_WEEK_AND_HOUR = "day_of_week,hour"
     WEATHER_CODE = "weather"
+    DATE = "date"
 
 class RideCountGroupBy(str, Enum):
     NONE = "none"
@@ -37,6 +37,7 @@ class GroupedStats(Stats):
     day_of_week: int | None = None      # Day of week data refers to (0=Monday, 6=Sunday), or None if not grouped by day of week
     hour: int | None = None             # Hour of day data refers to (0-23), or None if not grouped by hour
     weather_code: int | None = None     # Weather condition for the group, or None if not grouped by weather
+    date: date_type | None = None       # Calendar date, populated only when grouped by date
 
 class GroupedStationRideCount(BaseModel):
     """Grouped bucket of rides starting or ending at a station."""
@@ -71,11 +72,11 @@ class TripsCountBetweenStations(BaseModel):
     # The station metadata is constant across all groups, so we can just include it at the top level
     station_a_id: str
     station_a_name: str
-    station_a_lat: float 
+    station_a_lat: float
     station_a_lon: float
     station_b_id: str
     station_b_name: str
     station_b_lat: float
     station_b_lon: float
     # Grouped counts of trips between the two stations, grouped by day of week, hour, both or none
-    groups: list[GroupedTripsCountBetweenStations] 
+    groups: list[GroupedTripsCountBetweenStations]
