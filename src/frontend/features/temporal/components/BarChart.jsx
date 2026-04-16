@@ -27,11 +27,18 @@ export default function BarChart({
     xAxisTitle,
     yAxisTitle,
     unit,
+    xLabelStep = 1,
 }) {
     const canvasRef = useRef(null)
     const chartRef = useRef(null)
     const colors = labels.map(label => (label === highlight ? BAR_SOLID : BAR_MUTED))
+    const isHourChart = xAxisTitle === "Hour of Day"
     const tooltipLabelCallback = formatTooltipLabel.bind(null, format)
+    const tooltipTitleCallback = (items) => {
+        if (!isHourChart) return ""
+        const hourLabel = String(items?.[0]?.label ?? "")
+        return `Hour: ${hourLabel.padStart(2, "0")}`
+    }
     const yAxisTickCallback = formatYAxisTick.bind(null, unit)
 
     useEffect(() => {
@@ -56,7 +63,10 @@ export default function BarChart({
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        callbacks: { label: tooltipLabelCallback }
+                        callbacks: {
+                            title: tooltipTitleCallback,
+                            label: tooltipLabelCallback,
+                        }
                     }
                 },
                 scales: {
@@ -70,6 +80,7 @@ export default function BarChart({
                         ticks: {
                             maxRotation: 0,
                             autoSkip: false,
+                            callback: (value, index) => (index % xLabelStep === 0 ? labels[index] : ''),
                             font: { family: FONT_MONO, size: 10 },
                             color: INK_MUTED,
                         },
@@ -98,7 +109,7 @@ export default function BarChart({
         })
 
         return () => chartRef.current?.destroy()
-    }, [data, labels, colors, tooltipLabelCallback, xAxisTitle, yAxisTitle, yAxisTickCallback])
+    }, [data, labels, colors, isHourChart, tooltipLabelCallback, xAxisTitle, yAxisTitle, yAxisTickCallback, xLabelStep])
 
     return <canvas ref={canvasRef} />
 }

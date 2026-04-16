@@ -126,8 +126,7 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                             Activity
                         </div>
                         <div style="margin-bottom: 4px; font-family: ${FONT_MONO}; font-size: 11px;">
-                            <span style="color: ${PAPER_RAISED}; font-weight: 600;">${point.ridesPerHour.toFixed(0)}</span>
-                            <span style="color: rgba(251, 248, 242, 0.7);">/h</span>
+                            <span style="color: ${PAPER_RAISED}; font-weight: 600;">${point.ridesPerHour.toFixed(0)}</span><span style="color: rgba(251, 248, 242, 0.7);">/h</span>
                         </div>
                         <div style="margin-bottom: 4px; font-family: ${FONT_MONO}; font-size: 11px;">
                             <span style="color: rgba(251, 248, 242, 0.7);">Total:</span>
