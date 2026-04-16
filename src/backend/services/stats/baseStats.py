@@ -14,6 +14,7 @@ from src.backend.services.stats.utils import (
 )
 from src.backend.services.rides import add_trip_duration, get_filtered_rides
 from src.backend.loaders.weather_loader import load_weather_data
+from src.backend.loaders.daily_stats_loader import load_daily_stats
 
 def _fill_null_exprs() -> list[pl.Expr]:
     """Helper to return a list of expressions to fill nulls in grouped stats results with appropriate default values."""
@@ -87,6 +88,28 @@ def _stats_aggregations() -> list[pl.Expr]:
         ),
     ]
 
+def _get_daily_stats(start_date: date, end_date: date) -> list[GroupedStats]:
+    """
+    Return precomputed daily stats for the given date range.
+    Note: user_type, bike_type, and station filters are not supported — the precomputed
+    file contains overall stats only.
+    """
+    rows = load_daily_stats(start_date, end_date).sort("date").collect()
+    return [
+        GroupedStats(
+            date=row["date"],
+            total_rides=row["total_rides"],
+            hours_count=row["hours_count"],
+            average_duration_seconds=row["average_duration_seconds"],
+            average_distance_km=row["average_distance_km"],
+            total_duration_seconds=row["total_duration_seconds"],
+            total_distance_km=row["total_distance_km"],
+            average_speed_kmh=float(row["average_speed_kmh"] or 0.0),
+        )
+        for row in rows.iter_rows(named=True)
+    ]
+
+
 def get_stats_data(
     start_date: date,
     end_date: date,
@@ -97,6 +120,9 @@ def get_stats_data(
     end_station_id: str | None = None,
 ) -> Stats | list[GroupedStats]:
     """Get historical rides stats, optionally grouped by day_of_week, hour, or both."""
+    if group_by == StatsGroupBy.DATE:
+        return _get_daily_stats(start_date=start_date, end_date=end_date)
+
     if group_by != StatsGroupBy.NONE:
         return _get_grouped_stats(
             group_by=group_by,

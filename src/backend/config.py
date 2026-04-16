@@ -30,6 +30,8 @@ STATION_DATA_DIR = DATA_DIR / "stations"        # Directory for precomputed stat
 STATION_DISTANCES_PATH = STATION_DATA_DIR / "station_pair_distances.parquet"
 BIKE_ROUTES_DATA_DIR = DATA_DIR / "bike_routes" # Directory for preprocessed bike route data
 BIKE_ROUTES_PATH = BIKE_ROUTES_DATA_DIR / "bike_routes.parquet"
+DAILY_STATS_DATA_DIR = DATA_DIR / "daily_stats"  # Directory for precomputed daily stats
+DAILY_STATS_PATH = DAILY_STATS_DATA_DIR / "daily_stats.parquet"
 
 # Setting for weather data retrieval
 NYC_COORDS = (40.7823234, -73.9654161)
