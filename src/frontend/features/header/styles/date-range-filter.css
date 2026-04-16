@@ -2,7 +2,7 @@
   .date-range-filter {
     @apply flex select-none flex-col gap-3 text-white font-sans;
     width: min(100%, 36rem);
-    padding: 10px 0 0;
+    padding: 10px 0;
   }
 
   .date-range-filter--disabled {
