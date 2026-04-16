@@ -32,14 +32,15 @@ def _normalize_ride_types(df: RideFrame) -> RideFrame:
         pl.col("member_casual").cast(MemberCasual, strict=False),
     )
 
-def _set_current_coverage(dir_path: str | Path) -> tuple[int | None, int | None]:
+def list_rides_months_partitions(dir_path: str | Path) -> list[tuple[int, int]]:
     """
-    Return the min and max covered periods from the downloaded parquet folders.
+    Return a sorted list of (year, month) tuples for every hive partition found
+    under dir_path (i.e. year=YYYY/month=MM directories).
+    """
+    partitions: list[tuple[int, int]] = []
 
-    Example:
-        (202401, 202603)
-    """
-    coverage: list[int] = []
+    if not os.path.isdir(dir_path):
+        return []
 
     for year_dir in os.listdir(dir_path):
         year_path = os.path.join(dir_path, year_dir)
@@ -52,32 +53,31 @@ def _set_current_coverage(dir_path: str | Path) -> tuple[int | None, int | None]
                 continue
 
             try:
-                year = year_dir.split("=")[1]
-                month = month_dir.split("=")[1].zfill(2)
-                coverage.append(int(f"{year}{month}"))
+                year = int(year_dir.split("=")[1])
+                month = int(month_dir.split("=")[1].zfill(2))
+                partitions.append((year, month))
             except (IndexError, ValueError):
                 continue
+    return sorted(partitions)
 
-    if not coverage:
-        return None, None
-
-    min_coverage = str(min(coverage))
-    max_coverage = str(max(coverage))
-
-    # Convert the min and max coverage strings into date objects
-    min_coverage_date = f"{min_coverage[:4]}-{min_coverage[4:]}-01"
-    # For the max coverage, we want to return the last 
-    year = int(max_coverage[:4])
-    month = int(max_coverage[4:])
-    last_day = calendar.monthrange(year, month)[1]
-    max_coverage_date = f"{year}-{str(month).zfill(2)}-{last_day}"
-
+def _set_current_coverage(dir_path: str | Path) -> None:
+    """Set the global _dataset_date_range variable to reflect the min and max ride dates in the dataset based on the hive partition directories."""
     global _dataset_date_range
-    _dataset_date_range = DatasetDateRange(
-        min_date=min_coverage_date,
-        max_date=max_coverage_date,
-    )
+    partitions = list_rides_months_partitions(dir_path)
+    if not partitions:
+        _dataset_date_range = None
+        return
 
+    min_year, min_month = partitions[0]
+    max_year, max_month = partitions[-1]
+
+    # Get the last day of the max month using calendar module
+    last_day_of_max_month = calendar.monthrange(max_year, max_month)[1]
+
+    _dataset_date_range = DatasetDateRange(
+        min_date=f"{min_year}-{str(min_month).zfill(2)}-01",
+        max_date=f"{max_year}-{str(max_month).zfill(2)}-{last_day_of_max_month}"
+    )
 
 def get_data_range_coverage():
     """Get the min and max ride dates in the dataset"""
