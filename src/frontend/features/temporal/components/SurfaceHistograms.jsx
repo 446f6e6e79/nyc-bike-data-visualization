@@ -28,6 +28,7 @@ export default function SurfaceHistograms({ dayData, hourData, activeMetric, coo
             labels: DAY_LABELS,
             highlight: coordinates?.day,
             xAxisTitle: "Day of Week",
+            xLabelStep: 1,
         },
         {
             label: "by hour of day",
@@ -35,13 +36,14 @@ export default function SurfaceHistograms({ dayData, hourData, activeMetric, coo
             labels: HOUR_LABELS,
             highlight: coordinates?.hour,
             xAxisTitle: "Hour of Day",
+            xLabelStep: 3,
         },
     ]
 
     return (
         <div className={`surface-histograms-grid${showOverlay ? ' surface-histograms-grid--hidden' : ''}`}>
             {/*Iterate over the histogram cards and render each one */}
-            {cards.map(({ label, data, labels, highlight, xAxisTitle }) => (
+            {cards.map(({ label, data, labels, highlight, xAxisTitle, xLabelStep }) => (
                 <div key={label} className="surface-histogram-card">
                     <p className="surface-histogram-card__eyebrow">
                         {metric.label} {label}
@@ -56,6 +58,7 @@ export default function SurfaceHistograms({ dayData, hourData, activeMetric, coo
                             xAxisTitle={xAxisTitle}
                             yAxisTitle={metric.label}
                             unit={metric.unit}
+                            xLabelStep={xLabelStep}
                         />
                     </div>
 

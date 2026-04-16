@@ -174,7 +174,7 @@
   }
 
   .viz-guide__summary {
-    @apply m-0 text-[14px] text-ink/75 leading-relaxed max-w-[75ch];
+    @apply m-0 text-[14px] text-ink/75 max-w-[75ch];
   }
 
   .viz-guide__content {
@@ -208,6 +208,6 @@
   }
 
   .viz-guide__hint-text {
-    @apply m-0 text-[13px] leading-relaxed text-ink/75;
+    @apply m-0 text-[13px] text-ink/75;
   }
 }
