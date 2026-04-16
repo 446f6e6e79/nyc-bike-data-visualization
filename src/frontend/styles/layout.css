@@ -103,7 +103,7 @@
   }
 
   .page-card__subtitle {
-    @apply font-sans text-[15px] text-ink/70 leading-relaxed max-w-[50ch];
+    @apply font-sans text-[15px] text-ink/70  max-w-[50ch];
   }
 
   .page-card__actions {
@@ -111,7 +111,7 @@
   }
 
   .page-card__body {
-    @apply flex flex-col gap-8 px-6 md:px-8 py-6 md:py-8;
+    @apply flex flex-col gap-16 px-6 md:px-8 py-6 md:py-8;
   }
 
   .viz-guide {
@@ -160,7 +160,7 @@
   .viz-guide.is-collapsed .viz-guide__title {
     @apply text-[18px] gap-3;
     left: 3.3rem;
-    top: .1rem;
+    top: 0;
   }
 
   .viz-guide.is-collapsed .viz-guide__header {

@@ -26,6 +26,17 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
     const chartRef = useRef(null)
     const tooltipRef = useRef(null)
     const formattedData = useMemo(() => formatData(data), [data])
+    const pointSizeScale = useMemo(() => {
+        if (formattedData.length === 0) {
+            return { min: 0, max: 1 }
+        }
+
+        const values = formattedData.map((item) => item.ridesPerDay)
+        return {
+            min: Math.min(...values),
+            max: Math.max(...values),
+        }
+    }, [formattedData])
 
     const WEATHER_ICONS = {
         Clear: "☀",
@@ -59,7 +70,28 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                 z-index: 9999;
                 max-width: 280px;
                 backdrop-filter: blur(4px);
+                transition: opacity 120ms ease, left 100ms ease, top 100ms ease;
+                overflow: visible;
             `
+
+            const contentEl = document.createElement('div')
+            contentEl.setAttribute('data-tooltip-content', 'true')
+            contentEl.style.position = 'relative'
+            contentEl.style.zIndex = '2'
+
+            const arrowEl = document.createElement('div')
+            arrowEl.setAttribute('data-tooltip-arrow', 'true')
+            arrowEl.style.position = 'absolute'
+            arrowEl.style.width = '0'
+            arrowEl.style.height = '0'
+            arrowEl.style.borderTop = '6px solid transparent'
+            arrowEl.style.borderBottom = '6px solid transparent'
+            arrowEl.style.left = '-7px'
+            arrowEl.style.borderRight = `7px solid ${INK}`
+            arrowEl.style.zIndex = '1'
+
+            tooltipEl.appendChild(contentEl)
+            tooltipEl.appendChild(arrowEl)
             document.body.appendChild(tooltipEl)
             tooltipRef.current = tooltipEl
         }
@@ -124,14 +156,56 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                         </div>
                     </div>
                 `
-                tooltipEl.innerHTML = html
+                const contentEl = tooltipEl.querySelector('[data-tooltip-content="true"]')
+                if (contentEl) {
+                    contentEl.innerHTML = html
+                }
             }
         }
 
+        const TOOLTIP_OFFSET_X = 34
+        const TOOLTIP_OFFSET_Y = -26
+        const VIEWPORT_MARGIN = 12
         const canvasRect = chart.canvas.getBoundingClientRect()
+        const pointX = canvasRect.left + tooltip.caretX
+        const pointY = canvasRect.top + tooltip.caretY
+        const tooltipWidth = tooltipEl.offsetWidth
+        const tooltipHeight = tooltipEl.offsetHeight
+
+        const canPlaceRight = pointX + TOOLTIP_OFFSET_X + tooltipWidth <= window.innerWidth - VIEWPORT_MARGIN
+        const isRightSide = canPlaceRight
+        const baseLeft = isRightSide
+            ? pointX + TOOLTIP_OFFSET_X
+            : pointX - TOOLTIP_OFFSET_X - tooltipWidth
+        const baseTop = pointY + TOOLTIP_OFFSET_Y
+
+        const maxLeft = window.innerWidth - tooltipEl.offsetWidth - VIEWPORT_MARGIN
+        const maxTop = window.innerHeight - tooltipEl.offsetHeight - VIEWPORT_MARGIN
+
+        const nextLeft = Math.min(Math.max(baseLeft, VIEWPORT_MARGIN), Math.max(maxLeft, VIEWPORT_MARGIN))
+        const nextTop = Math.min(Math.max(baseTop, VIEWPORT_MARGIN), Math.max(maxTop, VIEWPORT_MARGIN))
+
+        const arrowEl = tooltipEl.querySelector('[data-tooltip-arrow="true"]')
+        if (arrowEl) {
+            const arrowTop = Math.min(Math.max(pointY - nextTop - 6, 8), Math.max(tooltipHeight - 14, 8))
+            arrowEl.style.top = `${arrowTop}px`
+
+            if (isRightSide) {
+                arrowEl.style.left = '-7px'
+                arrowEl.style.right = 'auto'
+                arrowEl.style.borderRight = `7px solid ${INK}`
+                arrowEl.style.borderLeft = 'none'
+            } else {
+                arrowEl.style.left = 'auto'
+                arrowEl.style.right = '-7px'
+                arrowEl.style.borderLeft = `7px solid ${INK}`
+                arrowEl.style.borderRight = 'none'
+            }
+        }
+
         tooltipEl.style.opacity = 1
-        tooltipEl.style.left = canvasRect.left + tooltip.caretX + 'px'
-        tooltipEl.style.top = canvasRect.top + tooltip.caretY - 20 + 'px'
+        tooltipEl.style.left = nextLeft + 'px'
+        tooltipEl.style.top = nextTop + 'px'
     }
 
     useEffect(() => {
@@ -151,15 +225,34 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                     backgroundColor: GROUPED_WEATHER_CODES[point.weatherGroup]?.[1],
                     borderColor: SCATTER_BORDER_COLOR,
                     borderWidth: SCATTER_BORDER_WIDTH,
-                    pointRadius: SCATTER_POINT_RADIUS,
-                    pointHoverRadius: SCATTER_POINT_RADIUS,
+                    pointRadius: (ctx) => {
+                        const ridesPerDay = Number(ctx.raw?.ridesPerDay || 0)
+                        const { min, max } = pointSizeScale
+                        const ratio = max > min ? (ridesPerDay - min) / (max - min) : 0.5
+                        return SCATTER_POINT_RADIUS - 3 + ratio * 8
+                    },
+                    pointHoverRadius: (ctx) => {
+                        const ridesPerDay = Number(ctx.raw?.ridesPerDay || 0)
+                        const { min, max } = pointSizeScale
+                        const ratio = max > min ? (ridesPerDay - min) / (max - min) : 0.5
+                        return SCATTER_POINT_RADIUS + ratio * 10
+                    },
                     pointStyle: 'circle',
                 })),
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: false,
+                animation: {
+                    duration: 420,
+                    easing: "easeOutQuart",
+                },
+                animations: {
+                    radius: {
+                        duration: 520,
+                        easing: "easeOutQuart",
+                    },
+                },
                 plugins: {
                     legend: {
                         position: "bottom",
@@ -214,7 +307,11 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                             color: INK,
                         },
                         beginAtZero: true,
-                        ticks: { font: { family: FONT_MONO, size: 10 }, color: INK_MUTED },
+                        ticks: {
+                            font: { family: FONT_MONO, size: 10 },
+                            color: INK_MUTED,
+                            callback: value => Number(value).toFixed(0),
+                        },
                         grid: { color: RULE },
                         border: { display: false },
                     },
@@ -229,7 +326,7 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                 tooltipRef.current = null
             }
         }
-    }, [formattedData])
+    }, [formattedData, pointSizeScale])
 
     return (
         <div className="scatter-plot-frame">
