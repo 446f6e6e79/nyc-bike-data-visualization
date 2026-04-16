@@ -1,5 +1,6 @@
 import useWeatherStats from "./hooks/useWeatherStats"
 import ScatterPlot from "./components/ScatterPlot"
+import WeatherHistogram from "./components/WeatherHistogram"
 import VisualizationGuide from "../../components/VisualizationGuide"
 
 /**
@@ -24,6 +25,13 @@ function WeatherPage({ filters = {} }) {
             </header>
             <div className="page-card__body">
                 <ScatterPlot
+                    data={weatherStats}
+                    loading={loading}
+                    error={error}
+                    onRefetch={refetch}
+                />
+
+                <WeatherHistogram
                     data={weatherStats}
                     loading={loading}
                     error={error}

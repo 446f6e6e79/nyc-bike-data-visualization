@@ -2,4 +2,8 @@
   .scatter-plot-frame {
     @apply relative w-full h-[520px];
   }
+
+  .weather-histogram-frame {
+    @apply relative w-full h-[320px];
+  }
 }
