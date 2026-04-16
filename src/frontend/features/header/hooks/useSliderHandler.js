@@ -9,10 +9,11 @@ import { clampRange } from '../utils/date_formatter.jsx'
  * @param {number} params.maxWindowSize - Maximum selectable window size.
  * @param {Date|null} params.minDate - Minimum month date in the dataset coverage.
  * @param {{startIndex: number, endIndex: number}|null} params.defaultRange - Initial/default range for the slider.
- * @returns {{range: Object|null, selection: Object|null, resizeStart: Function, resizeEnd: Function, beginPointerAction: Function}}
+ * @returns {{range: Object|null, selection: Object|null, resizeStart: Function, resizeEnd: Function, beginPointerAction: Function, isInteracting: boolean}}
  */
 export default function useSliderHandler({ totalMonths, maxWindowSize, minDate, defaultRange }) {
 	const [range, setRange] = useState(null)
+	const [isInteracting, setIsInteracting] = useState(false)
     // Memoized selection object that derives the currently selected date range 
 	const selection = useMemo(() => {
 		if (!range || !minDate) return null
@@ -77,6 +78,7 @@ export default function useSliderHandler({ totalMonths, maxWindowSize, minDate, 
 		if (!selection) return
 		event.preventDefault()
 		event.stopPropagation()
+		setIsInteracting(true)
 
 		const track = event.currentTarget.closest('[data-month-slider]')
 		if (!track) return
@@ -100,6 +102,7 @@ export default function useSliderHandler({ totalMonths, maxWindowSize, minDate, 
 		const handleUp = () => {
 			window.removeEventListener('pointermove', handleMove)
 			window.removeEventListener('pointerup', handleUp)
+			setIsInteracting(false)
 		}
 
 		window.addEventListener('pointermove', handleMove)
@@ -112,5 +115,6 @@ export default function useSliderHandler({ totalMonths, maxWindowSize, minDate, 
 		resizeStart,
 		resizeEnd,
 		beginPointerAction,
+		isInteracting,
 	}
 }

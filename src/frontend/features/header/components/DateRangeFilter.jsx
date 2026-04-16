@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import useDateRangeBounds from '../hooks/useDateBounds.js'
 import useDateRangeCommit from '../hooks/useDateRangeCommit.js'
 import useDateRangePresentation from '../hooks/useDatePresentation.js'
@@ -27,7 +28,7 @@ function PlaceholderState({ label }) {
  * @param {Object} props.value - The currently applied date range filter value, containing start_date and end_date.
  * @param {Function} props.onCommit - Callback function to commit the selected date range, receiving the payload with start_date and end_date in 'YYYY-MM-DD' format.
  * @param {boolean} props.disabled - Whether interactions should be disabled while data is fetching.
- * @returns JSX element representing the date range filter UI, including the slider, markers, year labels, and apply button.
+ * @returns JSX element representing the date range filter UI, including the slider, markers, and year labels.
  */
 export default function DateRangeFilter({ value, onCommit, disabled = false }) {
     // Hooks to manage date range bounds, slider interaction, presentation logic, and commit handling
@@ -41,11 +42,32 @@ export default function DateRangeFilter({ value, onCommit, disabled = false }) {
         error,
     } = useDateRangeBounds()
     // Slider handler hook to manage the current selection state and interaction handlers for resizing and moving the date range selection on the slider
-    const { selection: selectionView,
+    const {
+        selection: selectionView,
         resizeStart,
         resizeEnd,
-        beginPointerAction
+        beginPointerAction,
+        isInteracting,
     } = useSliderHandler({ totalMonths, maxWindowSize, minDate, defaultRange })
+    // Commit hook to manage commit payload derivation and commit action state for the selected range
+    const {
+        isCommitting,
+        handleApply,
+    } = useDateRangeCommit({ selection: selectionView, value, onCommit, defaultRange })
+
+    const wasInteractingRef = useRef(false)
+    useEffect(() => {
+        if (isInteracting) {
+            wasInteractingRef.current = true
+            return
+        }
+
+        const shouldCommitOnRelease = wasInteractingRef.current && !disabled && !isCommitting
+        wasInteractingRef.current = false
+        if (shouldCommitOnRelease) {
+            handleApply()
+        }
+    }, [disabled, handleApply, isCommitting, isInteracting])
     // Presentation hook to derive UI-facing labels
     const {
         dateLabel,
@@ -54,13 +76,6 @@ export default function DateRangeFilter({ value, onCommit, disabled = false }) {
         isLoadingView,
         isUnavailableView,
     } = useDateRangePresentation({ selection: selectionView, minDate, totalMonths, loading, error, bounds })
-    // Commit hook to manage the commit payload derivation, auto-commit behavior, and apply action state for the currently selected date range on the slider
-    const {
-        isCommitting,
-        hasPendingChanges,
-        handleApply,
-    } = useDateRangeCommit({ selection: selectionView, value, onCommit, defaultRange })
-
     if (isLoadingView) return <PlaceholderState label="Loading date range..." />
     if (isUnavailableView) return <PlaceholderState label="Date range unavailable" />
 
@@ -167,19 +182,6 @@ export default function DateRangeFilter({ value, onCommit, disabled = false }) {
                         />
                     </div>
                 </div>
-            </div>
-            <div className="date-range-filter__actions">
-                <button
-                    type="button"
-                    onClick={handleApply}
-                    disabled={disabled || !hasPendingChanges || isCommitting || !onCommit}
-                    className={cx(
-                        'date-range-filter__button',
-                        isCommitting && 'date-range-filter__button--committing',
-                    )}
-                >
-                    {isCommitting ? 'Loading...' : 'Apply'}
-                </button>
             </div>
         </div>
     )
