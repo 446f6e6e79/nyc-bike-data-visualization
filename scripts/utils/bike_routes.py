@@ -1,8 +1,27 @@
+import io
+import requests
 import polars as pl
 from pathlib import Path
 from datetime import datetime, timezone
 
 from src.backend.config import BIKE_ROUTES_URL, BIKE_ROUTES_PATH, PARQUET_COMPRESSION
+
+
+def _fetch_bike_routes_csv() -> pl.DataFrame:
+    """Fetch bike routes CSV bytes over HTTPS and parse with Polars."""
+    try:
+        response = requests.get(BIKE_ROUTES_URL, timeout=(5, 120))
+        response.raise_for_status()
+    except requests.exceptions.SSLError as exc:
+        raise RuntimeError(
+            "TLS certificate verification failed while downloading bike routes. "
+            "If you're using the python.org macOS installer, run 'Install Certificates.command' "
+            "and retry."
+        ) from exc
+    except requests.exceptions.RequestException as exc:
+        raise RuntimeError(f"Failed to download bike routes CSV: {exc}") from exc
+
+    return pl.read_csv(io.BytesIO(response.content))
 
 def _clean_bike_data(df: pl.DataFrame) -> pl.DataFrame:
     # Filter to current facilities only (note capital C)
@@ -61,8 +80,8 @@ def download_bike_routes(force_download: bool = False) -> None:
         print(f"Bike routes data already exists at {BIKE_ROUTES_PATH} and is fresh, skipping download.")
         return
     
-    # Read the file directly from the URL
-    df = pl.read_csv(BIKE_ROUTES_URL)
+    # Download CSV with requests (uses certifi bundle) and parse from memory.
+    df = _fetch_bike_routes_csv()
 
     # Clean the bike data before saving
     df = _clean_bike_data(df)

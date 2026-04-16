@@ -38,7 +38,7 @@ def _distance_km(lat_a: float, lon_a: float, lat_b: float, lon_b: float) -> floa
     # Multiply by the Earth's radius in kilometers and the circuity factor to get the estimated real-world distance
     return 6371 * c * STREET_CIRCUITY_FACTOR
 
-def compute_and_save_station_distances() -> None:
+def compute_and_save_station_distances(force_download: bool = False) -> None:
     """
     Compute unique undirected station-pair distances (haversine * 1.3) and save as parquet.
     Only keep GBFS stations that appear in ride data to avoid impossible pairs.
@@ -46,7 +46,7 @@ def compute_and_save_station_distances() -> None:
         force_download (bool): Whether to force re-download of station data, even if it already exists.
     """
     # If the distances file already exists and is fresh, skip recomputation to save time
-    if _check_freshness(Path(STATION_DISTANCES_PATH)):
+    if not force_download and _check_freshness(Path(STATION_DISTANCES_PATH)):
         print(f"Station distances file already exists at {STATION_DISTANCES_PATH}, skipping recomputation.")
         return
     # Fetch raw station data

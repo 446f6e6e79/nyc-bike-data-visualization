@@ -86,11 +86,11 @@ def main():
     # Download and convert the filtered files
     download_ride_data(args.start_date, args.end_date, download_jc=args.download_jc)
 
-    # Precompute daily aggregated stats over all downloaded rides
-    compute_and_save_daily_stats()
-
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances(force_download=args.force_download)
+
+    # Precompute daily aggregated stats over all downloaded rides
+    compute_and_save_daily_stats()
 
     # Download hourly weather data for the requested date range
     download_weather_data(args.start_date, args.end_date)
