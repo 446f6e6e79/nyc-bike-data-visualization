@@ -13,5 +13,11 @@ export function formatYAxisTick(unit: string, value: number) {
         return Math.round(value).toLocaleString()
     }
 
+    if (unit === "rides/day") {
+        if (value >= 1e6) return (value / 1e6).toFixed(1) + "M"
+        if (value >= 1e3) return (value / 1e3).toFixed(1) + "k"
+        return Number(value).toFixed(1)
+    }
+
     return Number(value).toFixed(1)
 }
