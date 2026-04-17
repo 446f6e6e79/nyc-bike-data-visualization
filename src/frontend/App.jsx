@@ -13,18 +13,31 @@ import prefetchData from './utils/prefetcher.js'
  */
 function App() {
     const [filters, setFilters] = useState({})
+    const [isTemporalCompareActive, setIsTemporalCompareActive] = useState(false)
     // Prefetch data for the current filters (this will be cached by the hooks)
     prefetchData(filters)
     return (
         <BrowserRouter>
             <div className="app-shell">
-                <AppHeader filters={filters} onFiltersChange={setFilters} />
+                <AppHeader
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    forceDisableFilters={isTemporalCompareActive}
+                />
                 <main className="app-content">
                     <div className="page-shell">
                         <Routes>
                             <Route path="/" element={<Navigate to="/map" replace />} />
                             <Route path="/map" element={<MapPage filters={filters} />} />
-                            <Route path="/temporal" element={<TemporalPage filters={filters} />} />
+                            <Route
+                                path="/temporal"
+                                element={
+                                    <TemporalPage
+                                        filters={filters}
+                                        onCompareModeChange={setIsTemporalCompareActive}
+                                    />
+                                }
+                            />
                             <Route path="/weather" element={<WeatherPage filters={filters} />} />
                         </Routes>
                     </div>

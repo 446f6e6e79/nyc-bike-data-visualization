@@ -1,15 +1,115 @@
+import { useEffect, useMemo, useRef, useState } from "react"
 import useTemporalState from "./hooks/useTemporalState"
+import useCompareTemporalLayers from "./hooks/useCompareTemporalLayers"
 import MetricSelector from "./components/MetricSelector"
 import SurfaceGraph from "./components/SurfaceGraph"
 import SurfaceHistograms from "./components/SurfaceHistograms"
 import VisualizationGuide from "../../components/VisualizationGuide"
+import { FILTERS } from "../header/components/RiderBikeFilter.jsx"
+
+const COMPARE_LAYER_COLORS = [
+    "#1953d8",
+    "#c24747",
+    "#2f7d4f",
+    "#a7701e",
+    "#6f52bf",
+]
+
+const COMPARE_LAYER_SCALES = ["Blues", "Reds", "Greens", "Oranges", "Purples"]
+
+const CLASS_FILTER_KEYS = ["user_type", "bike_type"]
+
+function formatFilterValue(value) {
+    if (!value) return "All"
+    return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function buildLayerLabel(layerFilters = {}) {
+    const userLabel = formatFilterValue(layerFilters.user_type)
+    const bikeLabel = formatFilterValue(layerFilters.bike_type)
+    return `${userLabel} · ${bikeLabel}`
+}
+
+function buildLayerKey(layerFilters = {}) {
+    return `${layerFilters.user_type ?? "all"}|${layerFilters.bike_type ?? "all"}`
+}
+
+function stripClassFilters(filters = {}) {
+    const { user_type, bike_type, ...rest } = filters
+    return rest
+}
+
+function CompareFilterDropdown({ value, options, onChange }) {
+    const [isOpen, setIsOpen] = useState(false)
+    const rootRef = useRef(null)
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            const rootNode = rootRef.current
+            if (!rootNode) return
+            if (!rootNode.contains(event.target)) {
+                setIsOpen(false)
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside)
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside)
+        }
+    }, [])
+
+    const selectedLabel = value ? formatFilterValue(value) : "All"
+
+    const handleSelect = (nextValue) => {
+        onChange(nextValue)
+        setIsOpen(false)
+    }
+
+    return (
+        <div ref={rootRef} className={`surface-compare-select-wrap${isOpen ? " is-open" : ""}`}>
+            <button
+                type="button"
+                className="surface-compare-select"
+                aria-haspopup="listbox"
+                aria-expanded={isOpen}
+                onClick={() => setIsOpen((prev) => !prev)}
+            >
+                <span className={`surface-compare-select-value${value ? "" : " is-placeholder"}`}>{selectedLabel}</span>
+                <span className="surface-compare-select-chevron" aria-hidden="true">&gt;</span>
+            </button>
+
+            {isOpen ? (
+                <div className="surface-compare-select-menu" role="listbox">
+                    <button
+                        type="button"
+                        className={`surface-compare-select-option${value ? "" : " is-selected"}`}
+                        onClick={() => handleSelect("")}
+                    >
+                        All
+                    </button>
+                    {options.map((option) => (
+                        <button
+                            key={option}
+                            type="button"
+                            className={`surface-compare-select-option${value === option ? " is-selected" : ""}`}
+                            onClick={() => handleSelect(option)}
+                        >
+                            {formatFilterValue(option)}
+                        </button>
+                    ))}
+                </div>
+            ) : null}
+        </div>
+    )
+}
 
 /**
  * Component for the temporal stats page, which includes a metric selector, the surface graph itself, and accompanying histograms.
  * @param {Object} filters - The filters to apply to the data.
  * @returns The rendered TemporalPage component, which displays the surface graph and histograms based on the selected metric and applied filters.
  */
-function TemporalPage({ filters }) {
+function TemporalPage({ filters, onCompareModeChange }) {
     // Use the custom hook to manage the temporal state, including the active metric, hovered coordinates, and fetched data for the surface graph and histograms. The hook also provides loading and error states to handle the data fetching process.
     const {
         activeMetric,
@@ -23,7 +123,289 @@ function TemporalPage({ filters }) {
         error,
         refetch,
     } = useTemporalState(filters)
-    const isActionsDisabled = loading || error
+    const [isCompareMode, setIsCompareMode] = useState(false)
+    const [isCompareHovered, setIsCompareHovered] = useState(false)
+    const [pendingLayerFilters, setPendingLayerFilters] = useState({
+        user_type: "",
+        bike_type: "",
+    })
+    const [compareLayers, setCompareLayers] = useState([])
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+    const [showTooltip, setShowTooltip] = useState(false)
+    const previousFiltersRef = useRef(filters)
+    const overlayRef = useRef(null)
+    const compareButtonRef = useRef(null)
+    const comparePanelRef = useRef(null)
+    const compareHoverCloseTimeoutRef = useRef(null)
+    const addLayerButtonRef = useRef(null)
+    const hasPinnedCompareLayers = compareLayers.length > 0
+    const isComparePanelOpen = isCompareMode || isCompareHovered
+
+    const baseClassFilters = useMemo(
+        () => ({
+            user_type: filters?.user_type,
+            bike_type: filters?.bike_type,
+        }),
+        [filters]
+    )
+
+    const baseLayerKey = useMemo(() => buildLayerKey(baseClassFilters), [baseClassFilters])
+
+    const {
+        layerData: comparedLayerData,
+        loading: compareLoading,
+        error: compareError,
+        refetch: refetchCompare,
+    } = useCompareTemporalLayers({
+        filters: stripClassFilters(filters),
+        layers: compareLayers,
+        enabled: hasPinnedCompareLayers,
+    })
+
+    const comparedLayers = useMemo(
+        () => compareLayers.map((layer) => ({
+            ...layer,
+            ...(comparedLayerData.find((entry) => entry.id === layer.id) ?? {
+                dayHourStats: [],
+                dayStats: [],
+                hourStats: [],
+                loading: false,
+                error: null,
+            }),
+        })),
+        [compareLayers, comparedLayerData]
+    )
+
+    const baseLayer = useMemo(
+        () => ({
+            id: "base-layer",
+            label: `Current: ${buildLayerLabel(baseClassFilters)}`,
+            color: COMPARE_LAYER_COLORS[0],
+            colorscale: COMPARE_LAYER_SCALES[0],
+            visible: true,
+            dayHourStats,
+            dayStats,
+            hourStats,
+            loading,
+            error,
+        }),
+        [baseClassFilters, dayHourStats, dayStats, hourStats, loading, error]
+    )
+
+    const activeLayers = useMemo(() => {
+        if (!hasPinnedCompareLayers) return [baseLayer]
+        return [baseLayer, ...comparedLayers.filter((layer) => layer.visible)]
+    }, [hasPinnedCompareLayers, baseLayer, comparedLayers])
+
+    const mergedLoading = loading || (hasPinnedCompareLayers && compareLoading)
+    const mergedError = error || (hasPinnedCompareLayers ? compareError : null)
+    const isActionsDisabled = mergedLoading || mergedError
+
+    const handleRefetchAll = () => Promise.all([
+        refetch(),
+        hasPinnedCompareLayers ? refetchCompare() : Promise.resolve(),
+    ])
+
+    const handleCompareToggle = () => {
+        // Se il pannello era aperto solo per hovering, chiudilo
+        if (!isCompareMode && isCompareHovered) {
+            setIsCompareHovered(false)
+        } else {
+            // Altrimenti toggle il compare mode
+            setIsCompareMode((prev) => !prev)
+        }
+    }
+
+    const handleCompareHoverEnter = () => {
+        if (compareHoverCloseTimeoutRef.current) {
+            clearTimeout(compareHoverCloseTimeoutRef.current)
+            compareHoverCloseTimeoutRef.current = null
+        }
+
+        setIsCompareHovered(true)
+    }
+
+    const closeCompareHoverWithDelay = () => {
+        if (compareHoverCloseTimeoutRef.current) {
+            clearTimeout(compareHoverCloseTimeoutRef.current)
+        }
+
+        compareHoverCloseTimeoutRef.current = setTimeout(() => {
+            setIsCompareHovered(false)
+            compareHoverCloseTimeoutRef.current = null
+        }, 120)
+    }
+
+    const handleCompareHoverLeave = (event) => {
+        const nextTarget = event.relatedTarget
+        const buttonNode = compareButtonRef.current
+        const panelNode = comparePanelRef.current
+
+        if (!(nextTarget instanceof Node)) {
+            closeCompareHoverWithDelay()
+            return
+        }
+
+        const isInsideButton = buttonNode ? buttonNode.contains(nextTarget) : false
+        const isInsidePanel = panelNode ? panelNode.contains(nextTarget) : false
+
+        if (isInsideButton || isInsidePanel) {
+            return
+        }
+
+        closeCompareHoverWithDelay()
+    }
+
+    const handlePendingFilterChange = (key, value) => {
+        setPendingLayerFilters((prev) => ({ ...prev, [key]: value }))
+    }
+
+    const handleAddLayer = () => {
+        const normalizedFilters = {
+            user_type: pendingLayerFilters.user_type || undefined,
+            bike_type: pendingLayerFilters.bike_type || undefined,
+        }
+        const candidateKey = buildLayerKey(normalizedFilters)
+
+        if (candidateKey === baseLayerKey) return
+
+        const hasDuplicate = compareLayers.some((layer) => buildLayerKey(layer.filters) === candidateKey)
+        if (hasDuplicate) return
+
+        const colorIndex = (compareLayers.length + 1) % COMPARE_LAYER_COLORS.length
+
+        setCompareLayers((prev) => [
+            ...prev,
+            {
+                id: `compare-layer-${Date.now()}-${prev.length}`,
+                filters: normalizedFilters,
+                label: buildLayerLabel(normalizedFilters),
+                color: COMPARE_LAYER_COLORS[colorIndex],
+                colorscale: COMPARE_LAYER_SCALES[colorIndex],
+                visible: true,
+            },
+        ])
+    }
+
+    const handleResetCompare = () => {
+        setCompareLayers([])
+        setPendingLayerFilters({ user_type: "", bike_type: "" })
+    }
+
+    const handleRemoveLayer = (layerId) => {
+        setCompareLayers((prev) => prev.filter((layer) => layer.id !== layerId))
+    }
+
+    const handleToggleLayerVisibility = (layerId) => {
+        setCompareLayers((prev) => prev.map((layer) => (
+            layer.id === layerId ? { ...layer, visible: !layer.visible } : layer
+        )))
+    }
+
+    const pendingCandidateKey = useMemo(
+        () => buildLayerKey({
+            user_type: pendingLayerFilters.user_type || undefined,
+            bike_type: pendingLayerFilters.bike_type || undefined,
+        }),
+        [pendingLayerFilters]
+    )
+
+    const isPendingSelectionDuplicate = useMemo(() => {
+        if (pendingCandidateKey === baseLayerKey) return true
+        return compareLayers.some((layer) => buildLayerKey(layer.filters) === pendingCandidateKey)
+    }, [baseLayerKey, compareLayers, pendingCandidateKey])
+
+    useEffect(() => {
+        if (!onCompareModeChange) return
+
+        onCompareModeChange(hasPinnedCompareLayers)
+
+        return () => {
+            onCompareModeChange(false)
+        }
+    }, [hasPinnedCompareLayers, onCompareModeChange])
+
+    useEffect(() => {
+        const previousFilters = previousFiltersRef.current ?? {}
+        const filtersChanged = JSON.stringify(previousFilters) !== JSON.stringify(filters ?? {})
+
+        if (!filtersChanged) return
+
+        previousFiltersRef.current = filters
+
+        if (!isCompareMode && compareLayers.length === 0) return
+
+        setIsCompareMode(false)
+        setCompareLayers([])
+        setPendingLayerFilters({ user_type: "", bike_type: "" })
+    }, [filters, isCompareMode, compareLayers.length])
+
+    useEffect(() => {
+        if (!isCompareMode) return
+
+        const handleClickOutsideOverlay = (event) => {
+            const overlayNode = overlayRef.current
+            if (!overlayNode) return
+
+            if (!overlayNode.contains(event.target)) {
+                setIsCompareMode(false)
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutsideOverlay)
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutsideOverlay)
+        }
+    }, [isCompareMode])
+
+    useEffect(() => () => {
+        if (compareHoverCloseTimeoutRef.current) {
+            clearTimeout(compareHoverCloseTimeoutRef.current)
+        }
+    }, [])
+
+    const handleAddLayerMouseEnter = (event) => {
+        if (!isPendingSelectionDuplicate) {
+            setShowTooltip(false)
+            return
+        }
+
+        const overlayRect = overlayRef.current?.getBoundingClientRect()
+        if (overlayRect) {
+            setTooltipPosition({
+                x: event.clientX - overlayRect.left,
+                y: event.clientY - overlayRect.top - 12,
+            })
+        }
+        setShowTooltip(true)
+    }
+
+    const handleAddLayerMouseMove = (event) => {
+        if (!isPendingSelectionDuplicate) {
+            setShowTooltip(false)
+            return
+        }
+
+        const overlayRect = overlayRef.current?.getBoundingClientRect()
+        if (overlayRect) {
+            setTooltipPosition({
+                x: event.clientX - overlayRect.left,
+                y: event.clientY - overlayRect.top - 12,
+            })
+        }
+    }
+
+    const handleAddLayerMouseLeave = () => {
+        setShowTooltip(false)
+    }
+
+    const getAddLayerTooltipText = () => {
+        if (isPendingSelectionDuplicate) {
+            return "Cannot add: this surface is already present.\nChange User Type or Bike Type."
+        }
+        return null
+    }
 
     return (
         <section className="page-card">
@@ -45,23 +427,142 @@ function TemporalPage({ filters }) {
                 </div>
             </header>
             <div className="page-card__body">
-                <SurfaceGraph
-                    data={dayHourStats}
-                    activeMetric={activeMetric}
-                    setCoordinates={setCoordinates}
-                    loading={loading}
-                    error={error}
-                    onRefetch={refetch}
-                />
+                <div className="surface-plot-stack">
+                    <SurfaceGraph
+                        data={baseLayer.dayHourStats}
+                        activeMetric={activeMetric}
+                        setCoordinates={setCoordinates}
+                        loading={mergedLoading}
+                        error={mergedError}
+                        onRefetch={handleRefetchAll}
+                        compareMode={hasPinnedCompareLayers}
+                        layers={activeLayers}
+                    />
+
+                    <div
+                        ref={overlayRef}
+                        className="surface-plot-overlay"
+                    >
+                        <button
+                            ref={compareButtonRef}
+                            type="button"
+                            className={`surface-compare-btn${(isCompareMode || isCompareHovered) && !mergedLoading ? " is-active" : ""}`}
+                            onClick={handleCompareToggle}
+                            onMouseEnter={handleCompareHoverEnter}
+                            onMouseLeave={handleCompareHoverLeave}
+                            disabled={mergedLoading || mergedError}
+                        >
+                            Compare
+                        </button>
+
+                            <div
+                                ref={comparePanelRef}
+                                className={`surface-compare-panel${isComparePanelOpen ? " is-open" : ""}`}
+                                role="dialog"
+                                aria-label="Compare surfaces"
+                                onMouseEnter={handleCompareHoverEnter}
+                                onMouseLeave={handleCompareHoverLeave}
+                            >
+                            <div className="surface-compare-panel__controls">
+                                {CLASS_FILTER_KEYS.map((key) => (
+                                    <label key={key} className="surface-compare-field">
+                                        <span>{FILTERS[key].label}</span>
+                                        <CompareFilterDropdown
+                                            value={pendingLayerFilters[key]}
+                                            options={FILTERS[key].options}
+                                            onChange={(nextValue) => handlePendingFilterChange(key, nextValue)}
+                                        />
+                                    </label>
+                                ))}
+                                <div
+                                    onMouseEnter={handleAddLayerMouseEnter}
+                                    onMouseMove={handleAddLayerMouseMove}
+                                    onMouseLeave={handleAddLayerMouseLeave}
+                                >
+                                    <button
+                                        ref={addLayerButtonRef}
+                                        type="button"
+                                        className="surface-compare-add"
+                                        onClick={handleAddLayer}
+                                        disabled={isPendingSelectionDuplicate}
+                                    >
+                                        Add Surface
+                                    </button>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="surface-compare-reset"
+                                    onClick={handleResetCompare}
+                                    disabled={compareLayers.length === 0}
+                                >
+                                    Reset
+                                </button>
+                            </div>
+
+                            <details className="surface-layer-list" open>
+                                <summary>
+                                    <span className="surface-layer-list__title">Surfaces ({1 + compareLayers.length})</span>
+                                    <span className="surface-layer-list__hint" aria-hidden="true">
+                                        <span className="surface-layer-list__hint-open">Collapse</span>
+                                        <span className="surface-layer-list__hint-closed">Expand</span>
+                                    </span>
+                                    <span className="surface-layer-list__chevron" aria-hidden="true">&gt;</span>
+                                </summary>
+                                <div className="surface-layer-list__items">
+                                    <div className="surface-layer-item is-base">
+                                        <span className="surface-layer-swatch" style={{ backgroundColor: baseLayer.color }} />
+                                        <span className="surface-layer-name">{baseLayer.label}</span>
+                                    </div>
+
+                                    {comparedLayers.map((layer) => (
+                                        <div key={layer.id} className="surface-layer-item">
+                                            <span className="surface-layer-swatch" style={{ backgroundColor: layer.color }} />
+                                            <span className="surface-layer-name">{layer.label}</span>
+                                            <button
+                                                type="button"
+                                                className={`surface-layer-toggle${layer.visible ? " is-on" : ""}`}
+                                                onClick={() => handleToggleLayerVisibility(layer.id)}
+                                            >
+                                                {layer.visible ? "Hide" : "Show"}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="surface-layer-delete"
+                                                onClick={() => handleRemoveLayer(layer.id)}
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </details>
+                        </div>
+
+                        {showTooltip && getAddLayerTooltipText() && (
+                            <div
+                                className="surface-compare-add-tooltip"
+                                style={{
+                                    left: `${tooltipPosition.x}px`,
+                                    top: `${tooltipPosition.y}px`,
+                                }}
+                                role="tooltip"
+                            >
+                                {getAddLayerTooltipText()}
+                            </div>
+                        )}
+                    </div>
+                </div>
 
                 <SurfaceHistograms
-                    hourData={hourStats}
-                    dayData={dayStats}
+                    hourData={baseLayer.hourStats}
+                    dayData={baseLayer.dayStats}
                     activeMetric={activeMetric}
                     coordinates={coordinates}
-                    loading={loading}
-                    error={error}
-                    onRefetch={refetch}
+                    loading={mergedLoading}
+                    error={mergedError}
+                    onRefetch={handleRefetchAll}
+                    compareMode={hasPinnedCompareLayers}
+                    layers={activeLayers}
                 />
 
                 <VisualizationGuide

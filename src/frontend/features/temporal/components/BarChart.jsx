@@ -10,6 +10,27 @@ import {
 } from "../../../utils/editorialTokens.js"
 import { BAR_SOLID, BAR_MUTED } from "../../../utils/styling"
 
+function toRgba(hexColor, alpha) {
+    if (!hexColor?.startsWith("#") || (hexColor.length !== 7 && hexColor.length !== 4)) {
+        return `rgba(25, 83, 216, ${alpha})`
+    }
+
+    const expanded = hexColor.length === 4
+        ? `#${hexColor[1]}${hexColor[1]}${hexColor[2]}${hexColor[2]}${hexColor[3]}${hexColor[3]}`
+        : hexColor
+
+    const red = Number.parseInt(expanded.slice(1, 3), 16)
+    const green = Number.parseInt(expanded.slice(3, 5), 16)
+    const blue = Number.parseInt(expanded.slice(5, 7), 16)
+
+    return `rgba(${red}, ${green}, ${blue}, ${alpha})`
+}
+
+function buildHighlightColors(labels, highlight, solidColor, mutedColor) {
+    if (!highlight) return labels.map(() => solidColor)
+    return labels.map((label) => (label === highlight ? solidColor : mutedColor))
+}
+
 
 /**
  * Component for rendering a bar chart using Chart.js, with support for highlighting a specific bar based on the provided highlight value.
@@ -28,13 +49,19 @@ export default function BarChart({
     yAxisTitle,
     unit,
     xLabelStep = 1,
+    compareDatasets = null,
 }) {
     const canvasRef = useRef(null)
     const chartRef = useRef(null)
-    const colors = labels.map(label => (label === highlight ? BAR_SOLID : BAR_MUTED))
+    const hasCompareDatasets = Array.isArray(compareDatasets) && compareDatasets.length > 0
+    const colors = buildHighlightColors(labels, highlight, BAR_SOLID, BAR_MUTED)
     const isHourChart = xAxisTitle === "Hour of Day"
     const isDayChart = xAxisTitle === "Day of Week"
-    const tooltipLabelCallback = formatTooltipLabel.bind(null, format)
+    const tooltipLabelCallback = (ctx) => {
+        const valueLabel = formatTooltipLabel(format, ctx)
+        if (!hasCompareDatasets) return valueLabel
+        return ` ${ctx.dataset.label}:${valueLabel}`
+    }
     const tooltipTitleCallback = (items) => {
         if (!isHourChart) return ""
         const hourLabel = String(items?.[0]?.label ?? "")
@@ -51,23 +78,57 @@ export default function BarChart({
         const ctx = canvasRef.current?.getContext("2d", { willReadFrequently: true })
         if (!ctx) return
 
+        const datasets = hasCompareDatasets
+            ? compareDatasets.map((dataset, index) => {
+                const baseColor = dataset.color ?? BAR_SOLID
+                const emphasized = toRgba(baseColor, 0.86)
+                const softened = toRgba(baseColor, 0.32)
+
+                return {
+                    label: dataset.label,
+                    data: dataset.data,
+                    backgroundColor: buildHighlightColors(labels, highlight, emphasized, softened),
+                    borderColor: toRgba(baseColor, 0.95),
+                    borderWidth: 1,
+                    borderRadius: 0,
+                    borderSkipped: false,
+                    barPercentage: 0.86,
+                    categoryPercentage: 0.7,
+                    order: index,
+                }
+            })
+            : [{
+                data,
+                backgroundColor: colors,
+                borderRadius: 0,
+                borderSkipped: false,
+            }]
+
         chartRef.current = new Chart(ctx, {
             type: "bar",
             data: {
                 labels,
-                datasets: [{
-                    data,
-                    backgroundColor: colors,
-                    borderRadius: 0,
-                    borderSkipped: false,
-                }]
+                datasets,
             },
             options: {
-                animation: false,
+                animation: {
+                    duration: 440,
+                    easing: "easeOutQuart",
+                },
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false },
+                    legend: {
+                        display: hasCompareDatasets,
+                        position: "top",
+                        labels: {
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            useBorderRadius: false,
+                            font: { family: FONT_MONO, size: 10 },
+                            color: INK_MUTED,
+                        },
+                    },
                     tooltip: {
                         callbacks: {
                             title: tooltipTitleCallback,
@@ -116,7 +177,21 @@ export default function BarChart({
         })
 
         return () => chartRef.current?.destroy()
-    }, [data, labels, colors, isHourChart, isDayChart, tooltipLabelCallback, xAxisTitle, yAxisTitle, yAxisTickCallback, xLabelStep])
+    }, [
+        data,
+        labels,
+        colors,
+        compareDatasets,
+        hasCompareDatasets,
+        highlight,
+        isHourChart,
+        isDayChart,
+        tooltipLabelCallback,
+        xAxisTitle,
+        yAxisTitle,
+        yAxisTickCallback,
+        xLabelStep,
+    ])
 
     return <canvas ref={canvasRef} />
 }

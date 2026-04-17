@@ -25,12 +25,405 @@
         @apply cursor-not-allowed;
     }
 
+    .surface-compare-btn {
+        @apply font-mono text-[11px] uppercase tracking-eyebrow px-3 py-1.5 border border-rule
+               text-ink-muted bg-paper/90 transition-all duration-200
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+        backdrop-filter: blur(4px);
+    }
+
+    .surface-compare-btn:hover {
+        @apply text-white bg-ink border-ink;
+    }
+
+    .surface-compare-btn.is-active {
+        @apply text-white bg-ink border-ink;
+    }
+
+    .surface-compare-btn:disabled,
+    .surface-compare-btn:disabled:hover,
+    .surface-compare-btn:disabled.is-active {
+        @apply text-ink-muted bg-paper/90 border-rule cursor-not-allowed;
+    }
+
+    .surface-compare-panel {
+        @apply border border-rule p-4 flex flex-col gap-3;
+        margin-top: .5rem;
+        width: min(520px, calc(100vw - 4.5rem));
+        background: linear-gradient(
+            180deg,
+            rgba(251, 248, 242, 0.76) 0%,
+            rgba(245, 241, 234, 0.66) 100%
+        );
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translate(10px, -10px) scale(0.985);
+        transform-origin: top right;
+        transition:
+            opacity 220ms ease,
+            visibility 0ms linear 220ms,
+            transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    .surface-compare-panel.is-open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translate(0, 0) scale(1);
+        transition:
+            opacity 220ms ease,
+            visibility 0ms linear 0ms,
+            transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    .surface-compare-panel__controls {
+        @apply grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end;
+    }
+
+    .surface-compare-field {
+        @apply flex flex-col gap-1;
+    }
+
+    .surface-compare-field span {
+        @apply font-mono text-[10px] uppercase tracking-eyebrow text-ink;
+    }
+
+    .surface-compare-select-wrap {
+        @apply relative;
+    }
+
+    .surface-compare-select-wrap.is-open {
+        z-index: 30;
+    }
+
+    .surface-compare-select {
+        @apply w-full bg-paper-raised border border-rule px-3 py-1.5 pr-8 text-[12px] text-ink font-mono
+               transition-colors duration-150 text-left cursor-pointer select-none overflow-hidden
+               text-ellipsis whitespace-nowrap;
+    }
+
+    .surface-compare-select:hover {
+        @apply border-ink bg-paper;
+    }
+
+    .surface-compare-select:active {
+        background: rgba(235, 230, 221, 0.92);
+    }
+
+    .surface-compare-select:focus {
+        @apply outline-none border-ink;
+        box-shadow: 0 0 0 2px rgba(25, 83, 216, 0.18);
+    }
+
+    .surface-compare-select-chevron {
+        @apply absolute right-3 top-1/2 text-[11px] text-ink;
+        transform: translateY(-50%) rotate(90deg);
+        pointer-events: none;
+        transition: transform 180ms ease;
+        opacity: 0.82;
+    }
+
+    .surface-compare-select-wrap.is-open .surface-compare-select-chevron {
+        transform: translateY(-50%) rotate(270deg);
+        opacity: 1;
+    }
+
+    .surface-compare-select-value.is-placeholder {
+        @apply text-ink;
+        opacity: 1;
+    }
+
+    .surface-compare-select-wrap:hover .surface-compare-select-chevron {
+        opacity: 1;
+    }
+
+    .surface-compare-select-menu {
+        @apply absolute left-0 right-0 mt-1 border border-rule bg-paper-raised;
+        box-shadow: 0 10px 24px rgba(22, 20, 18, 0.14);
+        max-height: 220px;
+        overflow-y: auto;
+        animation: surface-select-in 160ms ease;
+    }
+
+    .surface-compare-select-option {
+        @apply w-full text-left px-3 py-1.5 font-mono text-[11px] text-ink border-b border-rule/50 overflow-hidden
+               text-ellipsis whitespace-nowrap;
+        background: transparent;
+        cursor: pointer;
+        transition: background-color 140ms ease, color 140ms ease;
+    }
+
+    .surface-compare-select-option:last-child {
+        border-bottom: 0;
+    }
+
+    .surface-compare-select-option:hover {
+        @apply bg-paper text-ink;
+    }
+
+    .surface-compare-select-option:active {
+        background: rgba(235, 230, 221, 0.92);
+    }
+
+    .surface-compare-select-option.is-selected {
+        @apply bg-ink text-white;
+    }
+
+    @keyframes surface-select-in {
+        from {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .surface-compare-add {
+        @apply h-[32px] px-4 bg-ink text-white font-mono text-[11px] uppercase tracking-eyebrow
+               border border-ink transition-colors duration-150 hover:bg-accent;
+    }
+
+    .surface-compare-add:disabled {
+        @apply cursor-not-allowed opacity-45 hover:bg-ink;
+    }
+
+    .surface-compare-reset {
+        @apply h-[32px] px-4 bg-paper text-ink font-mono text-[11px] uppercase tracking-eyebrow
+               border border-ink/40 transition-colors duration-150 hover:text-white hover:bg-ink hover:border-ink
+               cursor-pointer;
+    }
+
+    .surface-compare-reset:disabled {
+        @apply cursor-not-allowed opacity-45 bg-paper-raised text-ink-muted border-rule hover:text-ink-muted hover:bg-paper-raised hover:border-rule;
+    }
+
+    .surface-compare-add-tooltip {
+        position: absolute;
+        width: 260px;
+        padding: 0.5rem 0.75rem;
+        background: rgba(22, 20, 18, 0.92);
+        border: 1px solid rgba(22, 20, 18, 1);
+        border-radius: 0;
+        @apply font-mono;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: white;
+        white-space: pre-line;
+        text-align: left;
+        pointer-events: none;
+        z-index: 50;
+        transform: translate(-50%, -100%);
+        animation: surface-tooltip-in 120ms ease;
+        box-shadow: 0 4px 12px rgba(22, 20, 18, 0.24);
+    }
+
+    @keyframes surface-tooltip-in {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -90%);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -100%);
+        }
+    }
+
+    .surface-layer-list {
+        @apply border border-rule;
+        background: rgba(251, 248, 242, 0.74);
+        backdrop-filter: blur(8px);
+    }
+
+    .surface-layer-list > summary {
+        @apply list-none cursor-pointer select-none px-3 py-2 font-mono text-[11px] uppercase tracking-eyebrow text-ink
+               flex items-center gap-2;
+        line-height: 1;
+    }
+
+    .surface-layer-list > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .surface-layer-list__title {
+        @apply flex-1;
+    }
+
+    .surface-layer-list__hint {
+        @apply text-[9px] text-ink-muted inline-flex items-center;
+        line-height: 1;
+    }
+
+    .surface-layer-list__hint-open {
+        display: inline;
+    }
+
+    .surface-layer-list__hint-closed {
+        display: none;
+    }
+
+    .surface-layer-list__chevron {
+        @apply text-[11px] text-ink-muted inline-flex items-center;
+        line-height: 1;
+        transform: rotate(90deg);
+        transition: transform 180ms ease;
+    }
+
+    .surface-layer-list:not([open]) .surface-layer-list__hint-open {
+        display: none;
+    }
+
+    .surface-layer-list:not([open]) .surface-layer-list__hint-closed {
+        display: inline;
+    }
+
+    .surface-layer-list:not([open]) .surface-layer-list__chevron {
+        transform: rotate(0deg);
+    }
+
+    .surface-layer-list__items {
+        @apply flex flex-col gap-2 p-3 border-t border-rule;
+    }
+
+    .surface-layer-item {
+        @apply flex items-center gap-2 border border-rule bg-paper px-2.5 py-2;
+        animation: surface-layer-in 220ms ease;
+        height: 2.5rem;
+    }
+
+    .surface-layer-item.is-base {
+        @apply bg-paper-raised;
+    }
+
+    .surface-layer-swatch {
+        @apply inline-block w-2.5 h-2.5 shrink-0;
+    }
+
+    .surface-layer-name {
+        @apply font-mono text-[11px] text-ink flex-1;
+    }
+
+    .surface-layer-toggle,
+    .surface-layer-delete {
+        @apply px-2 py-0.5 border border-rule font-mono text-[10px] uppercase tracking-eyebrow text-ink-muted
+               transition-colors duration-150 hover:text-ink hover:border-ink;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        align-self: center;
+        height: 1.45rem;
+        line-height: 1;
+    }
+
+    .surface-layer-toggle:hover {
+        background: rgba(22, 20, 18, 0.07);
+    }
+
+    .surface-layer-toggle:active {
+        background: rgba(22, 20, 18, 0.11);
+    }
+
+    .surface-layer-delete {
+        color: #a32d2d;
+        border-color: rgba(163, 45, 45, 0.45);
+    }
+
+    .surface-layer-delete:hover {
+        color: #861f1f;
+        border-color: rgba(134, 31, 31, 0.65);
+        background: rgba(163, 45, 45, 0.08);
+    }
+
+    .surface-layer-toggle.is-on {
+        @apply border-ink text-ink;
+    }
+
+    @keyframes surface-layer-in {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
     .surface-divider {
         @apply w-full h-px bg-rule;
     }
 
     .surface-plot-3d {
         @apply relative w-full h-[560px] bg-paper-raised border border-rule;
+    }
+
+    .surface-plot-stack {
+        @apply relative;
+    }
+
+    .surface-angle-indicator {
+        @apply absolute top-3 left-3 z-10;
+        width: min(180px, calc(100% - 1.5rem));
+        pointer-events: auto;
+    }
+
+    .surface-angle-row {
+        @apply flex flex-col gap-0.5;
+    }
+
+    .surface-angle-track {
+        @apply relative h-4 cursor-ew-resize;
+        touch-action: none;
+    }
+
+    .surface-angle-track.is-disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+    }
+
+    .surface-angle-track:focus {
+        outline: none;
+    }
+
+    .surface-angle-track:focus-visible .surface-angle-track__line {
+        box-shadow: 0 0 0 2px rgba(25, 83, 216, 0.2);
+    }
+
+    .surface-angle-track__line {
+        @apply absolute left-0 right-0 top-1/2;
+        height: 1px;
+        background: rgba(22, 20, 18, 0.26);
+        transform: translateY(-50%);
+    }
+
+    .surface-angle-track__thumb {
+        @apply absolute top-1/2;
+        width: 2px;
+        height: 14px;
+        background: rgba(22, 20, 18, 0.84);
+        transform: translate(-50%, -50%);
+    }
+
+    .surface-angle-track:active .surface-angle-track__thumb {
+        background: rgba(22, 20, 18, 1);
+    }
+
+    .surface-angle-ticks {
+        @apply flex items-center justify-between;
+    }
+
+    .surface-angle-tick {
+        @apply font-mono text-[9px] text-ink-muted;
+        line-height: 1;
+    }
+
+    .surface-plot-overlay {
+        @apply absolute top-3 right-3 z-20 flex flex-col gap-0 items-end;
+        pointer-events: auto;
     }
 
     .surface-plot-3d .js-plotly-plot,
