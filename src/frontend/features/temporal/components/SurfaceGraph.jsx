@@ -16,7 +16,17 @@ const INITIAL_CAMERA = {
 const BASE_RADIUS_XY = Math.hypot(INITIAL_CAMERA.eye.x, INITIAL_CAMERA.eye.y)
 const BASE_EYE_Z = INITIAL_CAMERA.eye.z
 const AZIMUTH_PER_PIXEL = 0.01
-const INITIAL_AZIMUTH = Math.atan2(INITIAL_CAMERA.eye.y, INITIAL_CAMERA.eye.x)
+const DEG_TO_RAD = Math.PI / 180
+const MIN_ANGLE_DEG = -180
+const MAX_ANGLE_DEG = 0
+const MIN_ANGLE = MIN_ANGLE_DEG * DEG_TO_RAD
+const MAX_ANGLE = MAX_ANGLE_DEG * DEG_TO_RAD
+const DEFAULT_AZIMUTH = Math.atan2(INITIAL_CAMERA.eye.y, INITIAL_CAMERA.eye.x)
+const INITIAL_AZIMUTH = Math.max(MIN_ANGLE, Math.min(MAX_ANGLE, DEFAULT_AZIMUTH))
+
+function clampAzimuth(value) {
+    return Math.max(MIN_ANGLE, Math.min(MAX_ANGLE, value))
+}
 
 function buildCameraFromAzimuth(azimuth) {
     return {
@@ -75,7 +85,7 @@ function SurfaceGraph({ data, activeMetric, setCoordinates, loading, error, onRe
 
         const deltaX = event.clientX - dragStartXRef.current
         const nextAzimuth = dragStartAzimuthRef.current - deltaX * AZIMUTH_PER_PIXEL
-        setAzimuth(nextAzimuth)
+        setAzimuth(clampAzimuth(nextAzimuth))
     }, [])
 
     const stopDragging = useCallback((event) => {
