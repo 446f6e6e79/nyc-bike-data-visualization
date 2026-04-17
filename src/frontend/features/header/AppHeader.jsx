@@ -1,3 +1,4 @@
+import { useCallback, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useIsFetching } from '@tanstack/react-query'
 import DateRangeFilter from './components/DateRangeFilter.jsx'
@@ -26,7 +27,7 @@ function useSafeIsFetching() {
  * Header component for the application, containing the title, navigation links, and the date range filter.
  * @returns
  */
-function AppHeader({ onFiltersChange }) {
+function AppHeader({ onFiltersChange, forceDisableFilters = false }) {
     const {
         dateRange,
         currentUserFilters,
@@ -34,11 +35,46 @@ function AppHeader({ onFiltersChange }) {
         handleUserFilterChange,
     } = useHeaderFilters(onFiltersChange)
     const activeDataFetches = useSafeIsFetching()
-    const areUserFiltersDisabled = activeDataFetches > 0
+    const areDateFiltersDisabled = activeDataFetches > 0
+    const areUserFiltersDisabled = activeDataFetches > 0 || forceDisableFilters
+    const [isLockHintVisible, setIsLockHintVisible] = useState(false)
+    const [lockHintPosition, setLockHintPosition] = useState({ x: 0, y: 0 })
+    const lockHintRef = useRef(null)
     const { dateRange: datasetRange } = useDatasetDateRange()
     const kicker = datasetRange?.min_date && datasetRange?.max_date
         ? `NYC / ${datasetRange.min_date.slice(0, 4)}–${datasetRange.max_date.slice(0, 4)}`
         : 'NYC'
+
+    const updateLockHintPosition = useCallback((event) => {
+        if (!areUserFiltersDisabled) return
+
+        const VIEWPORT_MARGIN = 12
+        const NORTH_OFFSET_Y = 14
+        const hintWidth = lockHintRef.current?.offsetWidth ?? 340
+        const hintHeight = lockHintRef.current?.offsetHeight ?? 70
+
+        const anchorX = event.clientX
+        const anchorY = event.clientY + NORTH_OFFSET_Y
+
+        const rawLeft = anchorX - hintWidth / 2
+        const rawTop = anchorY
+
+        const maxLeft = Math.max(VIEWPORT_MARGIN, window.innerWidth - hintWidth - VIEWPORT_MARGIN)
+        const maxTop = Math.max(VIEWPORT_MARGIN, window.innerHeight - hintHeight - VIEWPORT_MARGIN)
+
+        const nextX = Math.min(Math.max(VIEWPORT_MARGIN, rawLeft), maxLeft)
+        const nextY = Math.min(Math.max(VIEWPORT_MARGIN, rawTop), maxTop)
+
+        setLockHintPosition({
+            x: nextX,
+            y: nextY,
+        })
+        setIsLockHintVisible(true)
+    }, [areUserFiltersDisabled])
+
+    const hideLockHint = useCallback(() => {
+        setIsLockHintVisible(false)
+    }, [])
 
     return (
         <header className="app-header">
@@ -63,13 +99,34 @@ function AppHeader({ onFiltersChange }) {
                 <DateRangeFilter
                     value={dateRange}
                     onCommit={handleDateRangeCommit}
-                    disabled={areUserFiltersDisabled}
+                    disabled={areDateFiltersDisabled}
                 />
-                <RiderBikeFilter
-                    value={currentUserFilters}
-                    onChange={handleUserFilterChange}
-                    disabled={areUserFiltersDisabled}
-                />
+                <div
+                    className={`app-header__filter-lockzone${areUserFiltersDisabled ? ' is-locked' : ''}`}
+                    onMouseEnter={updateLockHintPosition}
+                    onMouseMove={updateLockHintPosition}
+                    onMouseLeave={hideLockHint}
+                >
+                    <RiderBikeFilter
+                        value={currentUserFilters}
+                        onChange={handleUserFilterChange}
+                        disabled={areUserFiltersDisabled}
+                    />
+                    {areUserFiltersDisabled && (
+                        <p
+                            ref={lockHintRef}
+                            className={`app-header__filter-lock-hint${isLockHintVisible ? ' is-visible' : ''}`}
+                            role="note"
+                            aria-live="polite"
+                            style={{
+                                '--filter-lock-hint-x': `${lockHintPosition.x}px`,
+                                '--filter-lock-hint-y': `${lockHintPosition.y}px`,
+                            }}
+                        >
+                            Class filters are locked while comparison surfaces are active. Remove all surfaces or press Reset to unlock them.
+                        </p>
+                    )}
+                </div>
             </div>
         </header>
     )

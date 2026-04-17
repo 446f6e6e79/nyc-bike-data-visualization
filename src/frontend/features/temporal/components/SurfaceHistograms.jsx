@@ -14,7 +14,17 @@ import StatusMessage from "../../../components/StatusMessage"
  * @param {Function} onRefetch - Callback to trigger a retry after error.
  * @returns
  */
-export default function SurfaceHistograms({ dayData, hourData, activeMetric, coordinates, loading, error, onRefetch }) {
+export default function SurfaceHistograms({
+    dayData,
+    hourData,
+    activeMetric,
+    coordinates,
+    loading,
+    error,
+    onRefetch,
+    compareMode = false,
+    layers = [],
+}) {
     const metric = getMetricConfig(activeMetric)
     const showOverlay = loading || error
     // Extracts the metric values for the selected metric from the day and hour data using the corresponding metric getter function, preparing the data for the histograms. The highlight variable is used to determine which bar to highlight based on the hovered coordinates from the surface graph.
@@ -40,6 +50,21 @@ export default function SurfaceHistograms({ dayData, hourData, activeMetric, coo
         },
     ]
 
+    const compareDatasetsByCard = compareMode
+        ? {
+            "Day of Week": layers.map((layer) => ({
+                label: layer.label,
+                color: layer.color,
+                data: (layer.dayStats ?? []).map(metric.get),
+            })),
+            "Hour of Day": layers.map((layer) => ({
+                label: layer.label,
+                color: layer.color,
+                data: (layer.hourStats ?? []).map(metric.get),
+            })),
+        }
+        : null
+
     return (
         <div className={`surface-histograms-grid${showOverlay ? ' surface-histograms-grid--hidden' : ''}`}>
             {/*Iterate over the histogram cards and render each one */}
@@ -59,6 +84,7 @@ export default function SurfaceHistograms({ dayData, hourData, activeMetric, coo
                             yAxisTitle={metric.label}
                             unit={metric.unit}
                             xLabelStep={xLabelStep}
+                            compareDatasets={compareDatasetsByCard?.[xAxisTitle]}
                         />
                     </div>
 

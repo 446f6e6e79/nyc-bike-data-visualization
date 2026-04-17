@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from "react"
 import Plot from "react-plotly.js"
-import { HOUR_LABELS, DAY_LABELS } from "../../../utils/config.jsx"
-import useSurfaceGraph from "../hooks/useSurfaceGraph"
+import { HOUR_LABELS, DAY_LABELS, normalizeDay } from "../../../utils/config.jsx"
 import StatusMessage from "../../../components/StatusMessage"
 import { PAPER_RAISED, FONT_MONO, INK } from "../../../utils/editorialTokens.js"
 import { EDITORIAL_COLORSCALE, editorialAxis } from "../../../utils/styling"
+import { getMetricConfig } from "../utils/metric_formatter.jsx"
 
 const INITIAL_CAMERA = {
     eye: { x: 1.6, y: -1.6, z: 0.9 },
@@ -19,6 +19,8 @@ const AZIMUTH_PER_PIXEL = 0.01
 const DEG_TO_RAD = Math.PI / 180
 const MIN_ANGLE_DEG = -180
 const MAX_ANGLE_DEG = 0
+const DISPLAY_MIN_DEG = -90
+const DISPLAY_MAX_DEG = 90
 const MIN_ANGLE = MIN_ANGLE_DEG * DEG_TO_RAD
 const MAX_ANGLE = MAX_ANGLE_DEG * DEG_TO_RAD
 const DEFAULT_AZIMUTH = Math.atan2(INITIAL_CAMERA.eye.y, INITIAL_CAMERA.eye.x)
@@ -39,6 +41,32 @@ function buildCameraFromAzimuth(azimuth) {
     }
 }
 
+function clampDisplayAngle(value) {
+    return Math.max(DISPLAY_MIN_DEG, Math.min(DISPLAY_MAX_DEG, value))
+}
+
+function azimuthToDisplayAngle(azimuth) {
+    const azimuthDeg = azimuth / DEG_TO_RAD
+    return clampDisplayAngle(azimuthDeg + 90)
+}
+
+function displayAngleToAzimuth(displayAngle) {
+    return clampAzimuth((displayAngle - 90) * DEG_TO_RAD)
+}
+
+function buildSurfaceMatrix(data, metricGetter) {
+    const grid = Array.from({ length: 7 }, () => Array(24).fill(0))
+
+    for (let i = 0; i < data.length; i++) {
+        const row = data[i]
+        const day = normalizeDay(row.day_of_week)
+        const value = Number(metricGetter(row))
+        grid[day][row.hour] = Number.isFinite(value) ? value : 0
+    }
+
+    return grid
+}
+
 /**
  * Component for rendering the 3D surface graph that visualizes the selected metric across days of the week and hours of the day.
  * @param {Object} data - The day-hour statistics data used to build the surface graph, containing the metric values for each day-hour combination.
@@ -49,23 +77,117 @@ function buildCameraFromAzimuth(azimuth) {
  * @param {Function} onRefetch - Callback to trigger a retry after error.
  * @returns
  */
-function SurfaceGraph({ data, activeMetric, setCoordinates, loading, error, onRefetch }) {
+function SurfaceGraph({
+    data,
+    activeMetric,
+    setCoordinates,
+    loading,
+    error,
+    onRefetch,
+    compareMode = false,
+    layers = [],
+}) {
     const safeData = Array.isArray(data) ? data : []
-    const hasData = safeData.length > 0
     const containerRef = useRef(null)
+    const angleTrackRef = useRef(null)
     const dragPointerIdRef = useRef(null)
+    const anglePointerIdRef = useRef(null)
     const dragStartXRef = useRef(0)
     const dragStartAzimuthRef = useRef(0)
     const [azimuth, setAzimuth] = useState(INITIAL_AZIMUTH)
     const [isDragging, setIsDragging] = useState(false)
+    const isAngleSliderDisabled = Boolean(loading)
     const camera = useMemo(() => buildCameraFromAzimuth(azimuth), [azimuth])
+    const rawDisplayAngle = useMemo(() => azimuthToDisplayAngle(azimuth), [azimuth])
+    const roundedDisplayAngle = Math.round(rawDisplayAngle)
+    const anglePercent = ((rawDisplayAngle - DISPLAY_MIN_DEG) / (DISPLAY_MAX_DEG - DISPLAY_MIN_DEG)) * 100
+    const metric = useMemo(() => getMetricConfig(activeMetric), [activeMetric])
 
-    const { metric, Z, hoverTemplate, handleSurfaceClick, handleSurfaceHover, handleSurfaceUnhover } = useSurfaceGraph({
-        data: safeData,
-        activeMetric,
-        setCoordinates,
-    })
-    const maxZ = useMemo(() => Math.max(0, ...Z.flat()), [Z])
+    const hoverTemplate = useMemo(
+        () =>
+            "<b>%{y}</b><br>" +
+            "Hour: %{x}<br>" +
+            `${metric.label}: <b>%{z}</b><extra></extra>`,
+        [metric.label]
+    )
+
+    const updateCoordinatesFromEvent = useCallback((eventData) => {
+        const point = eventData?.points?.[0]
+        if (!point) return
+
+        setCoordinates({
+            day: point.y,
+            hour: point.x,
+            value: point.z,
+            layer: point?.data?.name ?? null,
+        })
+    }, [setCoordinates])
+
+    const handleSurfaceClick = useCallback((eventData) => {
+        updateCoordinatesFromEvent(eventData)
+    }, [updateCoordinatesFromEvent])
+
+    const handleSurfaceHover = useCallback((eventData) => {
+        updateCoordinatesFromEvent(eventData)
+    }, [updateCoordinatesFromEvent])
+
+    const handleSurfaceUnhover = useCallback(() => {
+        setCoordinates(null)
+    }, [setCoordinates])
+
+    const compareTraces = useMemo(() => {
+        if (!compareMode || layers.length <= 1) return []
+
+        return layers.map((layer, index) => {
+            const matrix = buildSurfaceMatrix(layer.dayHourStats ?? [], metric.get)
+            const isBase = index === 0
+            const layerHoverTemplate =
+                `<b>${layer.label}</b><br>` +
+                "<b>%{y}</b><br>" +
+                "Hour: %{x}<br>" +
+                `${metric.label}: <b>%{z}</b><extra></extra>`
+
+            return {
+                type: "surface",
+                name: layer.label,
+                z: matrix,
+                x: HOUR_LABELS,
+                y: DAY_LABELS,
+                colorscale: layer.colorscale ?? EDITORIAL_COLORSCALE,
+                opacity: isBase ? 0.92 : 0.55,
+                showscale: false,
+                hovertemplate: layerHoverTemplate,
+            }
+        })
+    }, [compareMode, layers, metric])
+
+    const singleTrace = useMemo(() => ({
+        type: "surface",
+        z: buildSurfaceMatrix(safeData, metric.get),
+        x: HOUR_LABELS,
+        y: DAY_LABELS,
+        colorscale: EDITORIAL_COLORSCALE,
+        showscale: false,
+        hovertemplate: hoverTemplate,
+    }), [safeData, metric, hoverTemplate])
+
+    const traces = compareTraces.length > 0 ? compareTraces : [singleTrace]
+    const hasTraces = traces.length > 0 && traces.some((trace) => Array.isArray(trace.z) && trace.z.length > 0)
+
+    const maxZ = useMemo(() => {
+        let zMax = 0
+
+        for (let i = 0; i < traces.length; i++) {
+            const matrix = traces[i].z
+            for (let row = 0; row < matrix.length; row++) {
+                for (let col = 0; col < matrix[row].length; col++) {
+                    zMax = Math.max(zMax, Number(matrix[row][col]) || 0)
+                }
+            }
+        }
+
+        return zMax
+    }, [traces])
 
     const handlePointerDown = useCallback((event) => {
         if (event.button !== 0) return
@@ -100,6 +222,73 @@ function SurfaceGraph({ data, activeMetric, setCoordinates, loading, error, onRe
         setIsDragging(false)
     }, [])
 
+    const updateAngleFromClientX = useCallback((clientX) => {
+        const trackNode = angleTrackRef.current
+        if (!trackNode) return
+
+        const rect = trackNode.getBoundingClientRect()
+        if (rect.width <= 0) return
+
+        const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+        const nextDisplayAngle = DISPLAY_MIN_DEG + ratio * (DISPLAY_MAX_DEG - DISPLAY_MIN_DEG)
+        setAzimuth(displayAngleToAzimuth(nextDisplayAngle))
+    }, [])
+
+    const handleAnglePointerDown = useCallback((event) => {
+        if (isAngleSliderDisabled) return
+        if (event.button !== 0) return
+
+        event.preventDefault()
+        event.stopPropagation()
+
+        anglePointerIdRef.current = event.pointerId
+        event.currentTarget.setPointerCapture(event.pointerId)
+        updateAngleFromClientX(event.clientX)
+    }, [isAngleSliderDisabled, updateAngleFromClientX])
+
+    const handleAnglePointerMove = useCallback((event) => {
+        if (isAngleSliderDisabled) return
+        if (anglePointerIdRef.current !== event.pointerId) return
+
+        event.preventDefault()
+        event.stopPropagation()
+        updateAngleFromClientX(event.clientX)
+    }, [isAngleSliderDisabled, updateAngleFromClientX])
+
+    const stopAngleDragging = useCallback((event) => {
+        if (isAngleSliderDisabled) return
+        if (anglePointerIdRef.current !== event.pointerId) return
+
+        event.preventDefault()
+        event.stopPropagation()
+
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId)
+        }
+
+        anglePointerIdRef.current = null
+    }, [isAngleSliderDisabled])
+
+    const handleAngleKeyDown = useCallback((event) => {
+        if (isAngleSliderDisabled) return
+        const step = event.shiftKey ? 6 : 2
+        let nextDisplayAngle = null
+
+        if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+            nextDisplayAngle = clampDisplayAngle(rawDisplayAngle - step)
+        }
+
+        if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+            nextDisplayAngle = clampDisplayAngle(rawDisplayAngle + step)
+        }
+
+        if (nextDisplayAngle === null) return
+
+        event.preventDefault()
+        event.stopPropagation()
+        setAzimuth(displayAngleToAzimuth(nextDisplayAngle))
+    }, [isAngleSliderDisabled, rawDisplayAngle])
+
     return (
         <div
             ref={containerRef}
@@ -110,20 +299,16 @@ function SurfaceGraph({ data, activeMetric, setCoordinates, loading, error, onRe
             onPointerCancel={stopDragging}
             style={{ cursor: isDragging ? "grabbing" : "grab" }}
         >
-            {hasData && (
+            {hasTraces && (
                 <Plot
-                    data={[{
-                        type: "surface",
-                        z: Z,
-                        x: HOUR_LABELS,
-                        y: DAY_LABELS,
-                        colorscale: EDITORIAL_COLORSCALE,
-                        showscale: false,
-                        hovertemplate: hoverTemplate,
-                    }]}
+                    data={traces}
                     layout={{
                         paper_bgcolor: PAPER_RAISED,
                         plot_bgcolor: PAPER_RAISED,
+                        transition: {
+                            duration: 420,
+                            easing: "cubic-in-out",
+                        },
                         scene: {
                             dragmode: false,
                             camera,
@@ -149,11 +334,40 @@ function SurfaceGraph({ data, activeMetric, setCoordinates, loading, error, onRe
                         scrollZoom: false,
                         staticPlot: false,
                     }}
+                    revision={traces.length}
                     useResizeHandler
                     className="w-full h-full"
                 />
             )}
             {(loading || error) && <StatusMessage loading={loading} error={error} onRefetch={onRefetch} />}
+
+            <div className="surface-angle-indicator" onPointerDown={(event) => event.stopPropagation()}>
+                <div className="surface-angle-row">
+                    <div
+                        ref={angleTrackRef}
+                        className={`surface-angle-track${isAngleSliderDisabled ? " is-disabled" : ""}`}
+                        role="slider"
+                        tabIndex={isAngleSliderDisabled ? -1 : 0}
+                        aria-label="Surface angle"
+                        aria-disabled={isAngleSliderDisabled}
+                        aria-valuemin={DISPLAY_MIN_DEG}
+                        aria-valuemax={DISPLAY_MAX_DEG}
+                        aria-valuenow={roundedDisplayAngle}
+                        onPointerDown={handleAnglePointerDown}
+                        onPointerMove={handleAnglePointerMove}
+                        onPointerUp={stopAngleDragging}
+                        onPointerCancel={stopAngleDragging}
+                        onKeyDown={handleAngleKeyDown}
+                    >
+                        <div className="surface-angle-track__line" />
+                        <div className="surface-angle-track__thumb" style={{ left: `${anglePercent}%` }} />
+                    </div>
+                    <div className="surface-angle-ticks">
+                        <span className="surface-angle-tick">-90&deg;</span>
+                        <span className="surface-angle-tick">90&deg;</span>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }
