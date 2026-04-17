@@ -33,11 +33,17 @@ export default function BarChart({
     const chartRef = useRef(null)
     const colors = labels.map(label => (label === highlight ? BAR_SOLID : BAR_MUTED))
     const isHourChart = xAxisTitle === "Hour of Day"
+    const isDayChart = xAxisTitle === "Day of Week"
     const tooltipLabelCallback = formatTooltipLabel.bind(null, format)
     const tooltipTitleCallback = (items) => {
         if (!isHourChart) return ""
         const hourLabel = String(items?.[0]?.label ?? "")
         return `Hour: ${hourLabel.padStart(2, "0")}`
+    }
+    const tooltipAfterTitleCallback = (items) => {
+        if (!isDayChart) return ""
+        const dayLabel = String(items?.[0]?.label ?? "")
+        return `Day: ${dayLabel}`
     }
     const yAxisTickCallback = formatYAxisTick.bind(null, unit)
 
@@ -65,6 +71,7 @@ export default function BarChart({
                     tooltip: {
                         callbacks: {
                             title: tooltipTitleCallback,
+                            afterTitle: tooltipAfterTitleCallback,
                             label: tooltipLabelCallback,
                         }
                     }
@@ -109,7 +116,7 @@ export default function BarChart({
         })
 
         return () => chartRef.current?.destroy()
-    }, [data, labels, colors, isHourChart, tooltipLabelCallback, xAxisTitle, yAxisTitle, yAxisTickCallback, xLabelStep])
+    }, [data, labels, colors, isHourChart, isDayChart, tooltipLabelCallback, xAxisTitle, yAxisTitle, yAxisTickCallback, xLabelStep])
 
     return <canvas ref={canvasRef} />
 }
