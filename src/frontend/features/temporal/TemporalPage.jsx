@@ -138,6 +138,8 @@ function TemporalPage({ filters, onCompareModeChange }) {
     const comparePanelRef = useRef(null)
     const compareHoverCloseTimeoutRef = useRef(null)
     const addLayerButtonRef = useRef(null)
+    const addLayerTooltipRef = useRef(null)
+    const tooltipAnimationFrameRef = useRef(null)
     const hasPinnedCompareLayers = compareLayers.length > 0
     const isComparePanelOpen = isCompareMode || isCompareHovered
 
@@ -207,8 +209,13 @@ function TemporalPage({ filters, onCompareModeChange }) {
     ])
 
     const handleCompareToggle = () => {
-        // Se il pannello era aperto solo per hovering, chiudilo
+        // Se il pannello era aperto solo per hovering, fissalo aperto
         if (!isCompareMode && isCompareHovered) {
+            if (compareHoverCloseTimeoutRef.current) {
+                clearTimeout(compareHoverCloseTimeoutRef.current)
+                compareHoverCloseTimeoutRef.current = null
+            }
+            setIsCompareMode(true)
             setIsCompareHovered(false)
         } else {
             // Altrimenti toggle il compare mode
@@ -285,6 +292,13 @@ function TemporalPage({ filters, onCompareModeChange }) {
                 visible: true,
             },
         ])
+
+        if (compareHoverCloseTimeoutRef.current) {
+            clearTimeout(compareHoverCloseTimeoutRef.current)
+            compareHoverCloseTimeoutRef.current = null
+        }
+        setIsCompareMode(false)
+        setIsCompareHovered(false)
     }
 
     const handleResetCompare = () => {
@@ -363,7 +377,31 @@ function TemporalPage({ filters, onCompareModeChange }) {
         if (compareHoverCloseTimeoutRef.current) {
             clearTimeout(compareHoverCloseTimeoutRef.current)
         }
+
+        if (tooltipAnimationFrameRef.current) {
+            cancelAnimationFrame(tooltipAnimationFrameRef.current)
+            tooltipAnimationFrameRef.current = null
+        }
     }, [])
+
+    const positionAddLayerTooltip = (clientX, clientY) => {
+        const overlayRect = overlayRef.current?.getBoundingClientRect()
+        const tooltipNode = addLayerTooltipRef.current
+        if (!overlayRect || !tooltipNode) return
+
+        const nextX = clientX - overlayRect.left
+        const nextY = clientY - overlayRect.top - 12
+
+        if (tooltipAnimationFrameRef.current) {
+            cancelAnimationFrame(tooltipAnimationFrameRef.current)
+        }
+
+        tooltipAnimationFrameRef.current = requestAnimationFrame(() => {
+            tooltipNode.style.left = `${nextX}px`
+            tooltipNode.style.top = `${nextY}px`
+            tooltipAnimationFrameRef.current = null
+        })
+    }
 
     const handleAddLayerMouseEnter = (event) => {
         if (!isPendingSelectionDuplicate) {
@@ -387,22 +425,20 @@ function TemporalPage({ filters, onCompareModeChange }) {
             return
         }
 
-        const overlayRect = overlayRef.current?.getBoundingClientRect()
-        if (overlayRect) {
-            setTooltipPosition({
-                x: event.clientX - overlayRect.left,
-                y: event.clientY - overlayRect.top - 12,
-            })
-        }
+        positionAddLayerTooltip(event.clientX, event.clientY)
     }
 
     const handleAddLayerMouseLeave = () => {
+        if (tooltipAnimationFrameRef.current) {
+            cancelAnimationFrame(tooltipAnimationFrameRef.current)
+            tooltipAnimationFrameRef.current = null
+        }
         setShowTooltip(false)
     }
 
     const getAddLayerTooltipText = () => {
         if (isPendingSelectionDuplicate) {
-            return "Cannot add: this surface is already present.\nChange User Type or Bike Type."
+            return "This surface is already present. Change User Type or Bike Type."
         }
         return null
     }
@@ -540,6 +576,7 @@ function TemporalPage({ filters, onCompareModeChange }) {
 
                         {showTooltip && getAddLayerTooltipText() && (
                             <div
+                                ref={addLayerTooltipRef}
                                 className="surface-compare-add-tooltip"
                                 style={{
                                     left: `${tooltipPosition.x}px`,

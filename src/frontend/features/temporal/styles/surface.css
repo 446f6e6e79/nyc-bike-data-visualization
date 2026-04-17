@@ -206,13 +206,12 @@
         position: absolute;
         width: 260px;
         padding: 0.5rem 0.75rem;
-        background: rgba(22, 20, 18, 0.92);
-        border: 1px solid rgba(22, 20, 18, 1);
+        @apply border border-ink bg-ink/90 backdrop-blur-sm text-white;
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
         border-radius: 0;
         @apply font-mono;
-        font-family: var(--font-mono);
         font-size: 11px;
-        color: white;
         white-space: pre-line;
         text-align: left;
         pointer-events: none;

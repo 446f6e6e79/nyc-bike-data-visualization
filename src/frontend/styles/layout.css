@@ -77,7 +77,7 @@
 
   .app-header__filter-lock-hint {
     @apply fixed w-[340px] max-w-[calc(100vw-4rem)]
-           px-3 py-2 border border-white/30 bg-ink/90 text-white/90
+           px-3 py-2 border border-white/30 bg-ink/90 backdrop-blur-sm text-white/90
            font-mono text-[10px] tracking-[0.02em]
            opacity-0 pointer-events-none;
     z-index: 9999;
