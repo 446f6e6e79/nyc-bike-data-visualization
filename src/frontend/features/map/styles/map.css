@@ -75,7 +75,10 @@
   }
 
   .deck-tooltip {
-    @apply font-mono text-[11px] leading-tight;
+    @apply font-mono text-[11px] leading-tight border border-rule text-white/90;
+    background-color: rgba(18, 18, 18, 0.9);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
   }
 
   .deck-tooltip * {

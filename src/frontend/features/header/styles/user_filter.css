@@ -13,6 +13,10 @@
         cursor: not-allowed;
     }
 
+    .rider-filter--disabled .rider-filter-tooltip {
+        display: none;
+    }
+
     .rider-filter-group {
         @apply flex items-center gap-2;
     }
@@ -36,6 +40,9 @@
                w-[220px] p-2.5 border border-rule bg-rule-invert backdrop-blur-sm text-white/90
                font-mono normal-case tracking-normal text-[10px] leading-relaxed
                opacity-0 pointer-events-none transition-opacity duration-150 z-20;
+        background-color: rgba(18, 18, 18, 0.9);
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
     }
 
     .rider-filter-help:hover .rider-filter-tooltip,
