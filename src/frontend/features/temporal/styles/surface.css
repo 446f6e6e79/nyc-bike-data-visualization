@@ -8,9 +8,21 @@
     }
 
     .surface-metric-btn {
-        @apply font-mono text-[11px] uppercase tracking-eyebrow px-3 py-1.5
+        @apply inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-eyebrow px-3 py-1.5
                text-ink-muted transition-colors duration-150
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+        line-height: 1;
+    }
+
+    .surface-metric-btn__icon {
+        @apply inline-flex items-center justify-center w-4 h-4 text-[12px] text-current;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .surface-metric-btn__icon::before {
+        display: block;
+        line-height: 1;
     }
 
     .surface-metric-btn:hover {
@@ -26,10 +38,15 @@
     }
 
     .surface-compare-btn {
-        @apply font-mono text-[11px] uppercase tracking-eyebrow px-3 py-1.5 border border-rule
+        @apply inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-eyebrow px-3 py-1.5 border border-rule
                text-ink-muted bg-paper/90 transition-all duration-200
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
         backdrop-filter: blur(4px);
+    }
+
+    .surface-compare-btn__icon,
+    .surface-btn-icon {
+        @apply inline-flex items-center justify-center w-4 h-4 text-[13px];
     }
 
     .surface-compare-btn:hover {
@@ -118,16 +135,39 @@
     }
 
     .surface-compare-select-chevron {
-        @apply absolute right-3 top-1/2 text-[11px] text-ink;
-        transform: translateY(-50%) rotate(90deg);
+        @apply absolute right-3 top-1/2 inline-flex items-center justify-center w-4 h-4 text-[13px] text-ink;
+        transform: translateY(-50%);
         pointer-events: none;
-        transition: transform 180ms ease;
         opacity: 0.82;
     }
 
+    .surface-compare-select-chevron i {
+        display: block !important;
+        position: relative;
+        width: 1em;
+        height: 1em;
+        line-height: 1;
+        transform: rotate(90deg);
+        transform-origin: center;
+        transition: transform 180ms ease;
+    }
+
+    .surface-compare-select-chevron i::before {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: block;
+        width: max-content;
+        line-height: 1;
+    }
+
     .surface-compare-select-wrap.is-open .surface-compare-select-chevron {
-        transform: translateY(-50%) rotate(270deg);
         opacity: 1;
+    }
+
+    .surface-compare-select-wrap.is-open .surface-compare-select-chevron i {
+        transform: rotate(270deg);
     }
 
     .surface-compare-select-value.is-placeholder {
@@ -184,7 +224,7 @@
     }
 
     .surface-compare-add {
-        @apply h-[32px] px-4 bg-ink text-white font-mono text-[11px] uppercase tracking-eyebrow
+        @apply inline-flex items-center gap-1.5 h-[32px] px-4 bg-ink text-white font-mono text-[11px] uppercase tracking-eyebrow
                border border-ink transition-colors duration-150 hover:bg-accent;
     }
 
@@ -193,7 +233,7 @@
     }
 
     .surface-compare-reset {
-        @apply h-[32px] px-4 bg-paper text-ink font-mono text-[11px] uppercase tracking-eyebrow
+        @apply inline-flex items-center gap-1.5 h-[32px] px-4 bg-paper text-ink font-mono text-[11px] uppercase tracking-eyebrow
                border border-ink/40 transition-colors duration-150 hover:text-white hover:bg-ink hover:border-ink
                cursor-pointer;
     }
@@ -266,10 +306,29 @@
     }
 
     .surface-layer-list__chevron {
-        @apply text-[11px] text-ink-muted inline-flex items-center;
+        @apply text-[11px] text-ink-muted inline-flex items-center justify-center w-4 h-4;
+        line-height: 1;
+    }
+
+    .surface-layer-list__chevron i {
+        display: block !important;
+        position: relative;
+        width: 1em;
+        height: 1em;
         line-height: 1;
         transform: rotate(90deg);
+        transform-origin: center;
         transition: transform 180ms ease;
+    }
+
+    .surface-layer-list__chevron i::before {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: block;
+        width: max-content;
+        line-height: 1;
     }
 
     .surface-layer-list:not([open]) .surface-layer-list__hint-open {
@@ -280,7 +339,7 @@
         display: inline;
     }
 
-    .surface-layer-list:not([open]) .surface-layer-list__chevron {
+    .surface-layer-list:not([open]) .surface-layer-list__chevron i {
         transform: rotate(0deg);
     }
 
@@ -313,6 +372,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        gap: 0.3rem;
         align-self: center;
         height: 1.45rem;
         line-height: 1;

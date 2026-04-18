@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useIsFetching } from '@tanstack/react-query'
 import DateRangeFilter from './components/DateRangeFilter.jsx'
 import useHeaderFilters from './hooks/useHeaderFilters.js'
@@ -7,9 +8,9 @@ import RiderBikeFilter from './components/RiderBikeFilter.jsx'
 import { useDatasetDateRange } from './hooks/useDatasetDateRange.js'
 
 const PAGES = [
-    { to: '/map', label: 'Map' },
-    { to: '/temporal', label: 'Temporal' },
-    { to: '/weather', label: 'Weather' },
+    { to: '/map', label: 'Map', icon: 'fa-solid fa-map-location-dot' },
+    { to: '/temporal', label: 'Temporal', icon: 'fa-solid fa-clock' },
+    { to: '/weather', label: 'Weather', icon: 'fa-solid fa-cloud-sun' },
 ]
 
 function useSafeIsFetching() {
@@ -28,6 +29,8 @@ function useSafeIsFetching() {
  * @returns
  */
 function AppHeader({ onFiltersChange, forceDisableFilters = false }) {
+    const location = useLocation()
+    const isTemporalRoute = location.pathname === '/temporal'
     const {
         dateRange,
         currentUserFilters,
@@ -37,6 +40,7 @@ function AppHeader({ onFiltersChange, forceDisableFilters = false }) {
     const activeDataFetches = useSafeIsFetching()
     const areDateFiltersDisabled = activeDataFetches > 0
     const areUserFiltersDisabled = activeDataFetches > 0 || forceDisableFilters
+    const shouldShowLockHint = isTemporalRoute && forceDisableFilters
     const [isLockHintVisible, setIsLockHintVisible] = useState(false)
     const [lockHintPosition, setLockHintPosition] = useState({ x: 0, y: 0 })
     const lockHintRef = useRef(null)
@@ -46,7 +50,7 @@ function AppHeader({ onFiltersChange, forceDisableFilters = false }) {
         : 'NYC'
 
     const updateLockHintPosition = useCallback((event) => {
-        if (!areUserFiltersDisabled) return
+        if (!shouldShowLockHint) return
 
         const VIEWPORT_MARGIN = 12
         const NORTH_OFFSET_Y = 14
@@ -70,7 +74,7 @@ function AppHeader({ onFiltersChange, forceDisableFilters = false }) {
             y: nextY,
         })
         setIsLockHintVisible(true)
-    }, [areUserFiltersDisabled])
+    }, [shouldShowLockHint])
 
     const hideLockHint = useCallback(() => {
         setIsLockHintVisible(false)
@@ -84,12 +88,15 @@ function AppHeader({ onFiltersChange, forceDisableFilters = false }) {
                     <h1 className="app-title">Citi Bike, in motion.</h1>
                 </div>
                 <nav className="app-header__nav">
-                    {PAGES.map(({ to, label }) => (
+                    {PAGES.map(({ to, label, icon }) => (
                         <NavLink
                             key={to}
                             to={to}
                             className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
                         >
+                            <span className="nav-link__icon" aria-hidden="true">
+                                <i className={icon} />
+                            </span>
                             {label}
                         </NavLink>
                     ))}
@@ -102,7 +109,7 @@ function AppHeader({ onFiltersChange, forceDisableFilters = false }) {
                     disabled={areDateFiltersDisabled}
                 />
                 <div
-                    className={`app-header__filter-lockzone${areUserFiltersDisabled ? ' is-locked' : ''}`}
+                    className={`app-header__filter-lockzone${shouldShowLockHint ? ' is-locked' : ''}`}
                     onMouseEnter={updateLockHintPosition}
                     onMouseMove={updateLockHintPosition}
                     onMouseLeave={hideLockHint}
@@ -112,7 +119,7 @@ function AppHeader({ onFiltersChange, forceDisableFilters = false }) {
                         onChange={handleUserFilterChange}
                         disabled={areUserFiltersDisabled}
                     />
-                    {areUserFiltersDisabled && (
+                    {shouldShowLockHint && (
                         <p
                             ref={lockHintRef}
                             className={`app-header__filter-lock-hint${isLockHintVisible ? ' is-visible' : ''}`}

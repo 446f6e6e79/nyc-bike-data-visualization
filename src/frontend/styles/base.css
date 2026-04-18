@@ -1,4 +1,15 @@
 @layer base {
+  .fa,
+  .fa-brands,
+  .fa-classic,
+  .fa-regular,
+  .fa-solid,
+  .fab,
+  .far,
+  .fas {
+    display: flex !important;
+  }
+
   html {
     @apply antialiased;
   }

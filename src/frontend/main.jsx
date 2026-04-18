@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { QueryClientProvider } from '@tanstack/react-query'
 import App from './App.jsx'
 import './styles/index.css'
+import '@fortawesome/fontawesome-free/css/all.min.css'
 import { queryClient } from './clients/queryClient.js'
 import { applyEditorialChartDefaults } from './utils/styling'
 

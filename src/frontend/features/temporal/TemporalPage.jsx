@@ -76,7 +76,9 @@ function CompareFilterDropdown({ value, options, onChange }) {
                 onClick={() => setIsOpen((prev) => !prev)}
             >
                 <span className={`surface-compare-select-value${value ? "" : " is-placeholder"}`}>{selectedLabel}</span>
-                <span className="surface-compare-select-chevron" aria-hidden="true">&gt;</span>
+                <span className="surface-compare-select-chevron" aria-hidden="true">
+                    <i className="fa-solid fa-chevron-right" />
+                </span>
             </button>
 
             {isOpen ? (
@@ -488,6 +490,9 @@ function TemporalPage({ filters, onCompareModeChange }) {
                             onMouseLeave={handleCompareHoverLeave}
                             disabled={mergedLoading || mergedError}
                         >
+                            <span className="surface-compare-btn__icon" aria-hidden="true">
+                                <i className="fa-solid fa-code-compare" />
+                            </span>
                             Compare
                         </button>
 
@@ -522,6 +527,9 @@ function TemporalPage({ filters, onCompareModeChange }) {
                                         onClick={handleAddLayer}
                                         disabled={isPendingSelectionDuplicate}
                                     >
+                                        <span className="surface-btn-icon" aria-hidden="true">
+                                            <i className="fa-solid fa-plus" />
+                                        </span>
                                         Add Surface
                                     </button>
                                 </div>
@@ -531,6 +539,9 @@ function TemporalPage({ filters, onCompareModeChange }) {
                                     onClick={handleResetCompare}
                                     disabled={compareLayers.length === 0}
                                 >
+                                    <span className="surface-btn-icon" aria-hidden="true">
+                                        <i className="fa-solid fa-rotate-left" />
+                                    </span>
                                     Reset
                                 </button>
                             </div>
@@ -542,7 +553,9 @@ function TemporalPage({ filters, onCompareModeChange }) {
                                         <span className="surface-layer-list__hint-open">Collapse</span>
                                         <span className="surface-layer-list__hint-closed">Expand</span>
                                     </span>
-                                    <span className="surface-layer-list__chevron" aria-hidden="true">&gt;</span>
+                                    <span className="surface-layer-list__chevron" aria-hidden="true">
+                                        <i className="fa-solid fa-chevron-right" />
+                                    </span>
                                 </summary>
                                 <div className="surface-layer-list__items">
                                     <div className="surface-layer-item is-base">
@@ -559,6 +572,9 @@ function TemporalPage({ filters, onCompareModeChange }) {
                                                 className={`surface-layer-toggle${layer.visible ? " is-on" : ""}`}
                                                 onClick={() => handleToggleLayerVisibility(layer.id)}
                                             >
+                                                <span className="surface-btn-icon" aria-hidden="true">
+                                                    <i className={`fa-solid ${layer.visible ? "fa-eye-slash" : "fa-eye"}`} />
+                                                </span>
                                                 {layer.visible ? "Hide" : "Show"}
                                             </button>
                                             <button
@@ -566,6 +582,9 @@ function TemporalPage({ filters, onCompareModeChange }) {
                                                 className="surface-layer-delete"
                                                 onClick={() => handleRemoveLayer(layer.id)}
                                             >
+                                                <span className="surface-btn-icon" aria-hidden="true">
+                                                    <i className="fa-solid fa-trash" />
+                                                </span>
                                                 Remove
                                             </button>
                                         </div>

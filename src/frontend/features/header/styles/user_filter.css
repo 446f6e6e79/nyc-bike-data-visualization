@@ -26,23 +26,21 @@
     }
 
     .rider-filter-label {
-        @apply font-mono text-[10px] uppercase tracking-eyebrow text-white/55 whitespace-nowrap;
+        @apply inline-flex items-center font-mono text-[10px] uppercase tracking-eyebrow text-white/55 whitespace-nowrap;
+        line-height: 1;
     }
 
     .rider-filter-help {
-         @apply absolute -top-0.5 left-0 inline-flex items-center justify-center w-3 h-3
+            @apply absolute -top-1 left-0 inline-flex items-center justify-center w-3 h-3
              font-mono text-[8px] leading-none text-white/75
                cursor-help select-none;
     }
 
     .rider-filter-tooltip {
         @apply absolute right-[130%] top-1/2 -translate-y-1/2
-               w-[220px] p-2.5 border border-rule bg-rule-invert backdrop-blur-sm text-white/90
+               w-[220px] p-2.5 border border-rule border-white/30 bg-ink backdrop-blur-sm text-white/90
                font-mono normal-case tracking-normal text-[10px] leading-relaxed
                opacity-0 pointer-events-none transition-opacity duration-150 z-20;
-        background-color: rgba(18, 18, 18, 0.9);
-        -webkit-backdrop-filter: blur(6px);
-        backdrop-filter: blur(6px);
     }
 
     .rider-filter-help:hover .rider-filter-tooltip,
@@ -59,14 +57,35 @@
     }
 
     .rider-filter-btn {
-        @apply font-mono text-[10px] uppercase tracking-eyebrow px-2.5 py-1
+        @apply inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-eyebrow px-2.5 py-1
                text-white/60 bg-transparent transition-colors duration-150
                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60
                cursor-pointer;
+        line-height: 1;
+    }
+
+    .rider-filter-btn-icon {
+        @apply inline-flex items-center justify-center w-4 h-4 text-[12px] text-white/45;
+        line-height: 1;
+        flex-shrink: 0;
+        transition: color 150ms ease, opacity 150ms ease;
+        opacity: 0.75;
+    }
+
+    .rider-filter-btn-icon::before {
+        display: block;
+        line-height: 1;
     }
 
     .rider-filter-btn:hover {
         @apply text-white;
+    }
+
+    .rider-filter-btn:hover .rider-filter-btn-icon,
+    .rider-filter-btn:focus-visible .rider-filter-btn-icon,
+    .rider-filter-btn.active .rider-filter-btn-icon {
+        @apply text-white;
+        opacity: 1;
     }
 
     .rider-filter-btn.active {
