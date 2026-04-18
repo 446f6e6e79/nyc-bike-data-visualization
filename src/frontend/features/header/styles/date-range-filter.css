@@ -21,7 +21,27 @@
   }
 
   .date-range-filter__eyebrow {
-    @apply font-mono text-[10px] uppercase tracking-eyebrow text-white/55;
+    @apply inline-flex gap-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-white/55;
+    line-height: 1;
+  }
+
+  .date-range-filter__eyebrow-icon {
+    @apply inline-flex justify-center w-3.5 h-3.5 text-[10px] text-current;
+    line-height: 1;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: color 160ms ease, opacity 160ms ease;
+  }
+
+  .date-range-filter__eyebrow-icon::before {
+    display: block;
+    line-height: 1;
+  }
+
+  .date-range-filter__header:hover .date-range-filter__eyebrow-icon,
+  .date-range-filter__header:focus-within .date-range-filter__eyebrow-icon {
+    @apply text-white;
+    opacity: 1;
   }
 
   .date-range-filter__value {

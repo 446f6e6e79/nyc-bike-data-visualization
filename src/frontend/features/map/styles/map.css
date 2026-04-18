@@ -4,10 +4,22 @@
   }
 
   .layer-selector-btn {
-    @apply font-mono text-[11px] uppercase tracking-eyebrow px-3 py-1.5
+    @apply inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-eyebrow px-3 py-1.5
            text-ink-muted transition-colors duration-150
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
            cursor-pointer;
+    line-height: 1;
+  }
+
+  .layer-selector-btn__icon {
+    @apply inline-flex items-center justify-center w-4 h-4 text-[12px] text-current;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .layer-selector-btn__icon::before {
+    display: block;
+    line-height: 1;
   }
 
   .layer-selector-btn:hover {
@@ -122,12 +134,14 @@
     letter-spacing: 0.08em;
   }
 
-  .map-toggle-button__indicator {
-    @apply inline-flex w-2 h-2 rounded-full border border-current opacity-70;
+  .map-toggle-button__icon {
+    @apply inline-flex items-center justify-center w-4 h-4 text-[13px] text-current;
+    border: 1px solid currentColor;
+    opacity: 0.8;
   }
 
-  .map-toggle-button.is-active .map-toggle-button__indicator {
-    @apply bg-white border-white opacity-100;
+  .map-toggle-button.is-active .map-toggle-button__icon {
+    opacity: 1;
   }
 
   /* Speed controller */
@@ -138,15 +152,17 @@
   }
 
   .map-speed-controls__header {
-    @apply flex items-start justify-between gap-3 flex-wrap mb-3;
+    @apply flex items-start justify-between gap-3 flex-wrap mb-2;
   }
 
   .map-speed-controls__meta {
     @apply flex items-baseline gap-3 min-w-0;
+    padding-left: 2.5px;
   }
 
   .map-speed-controls__eyebrow {
     @apply font-mono text-[11px] uppercase tracking-eyebrow text-ink-muted shrink-0;
+    padding-left: 1.5px;
   }
 
   .map-speed-clock {
@@ -344,7 +360,8 @@
   }
 
   .map-reset-button-icon {
-    @apply inline-flex items-center justify-center w-[14px] h-[14px] text-xs;
+    @apply inline-flex items-center justify-center w-4 h-4 text-[13px] text-white;
+    border: 1px solid rgba(255, 255, 255, 0.5);
   }
 
   .map-reset-button-text {

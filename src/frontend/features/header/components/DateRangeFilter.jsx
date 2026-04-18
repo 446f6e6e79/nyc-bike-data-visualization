@@ -15,7 +15,10 @@ function PlaceholderState({ label }) {
     return (
         <div className="date-range-filter">
             <div className="date-range-filter__header">
-                <span className="date-range-filter__eyebrow">Date Window</span>
+                <span className="date-range-filter__eyebrow">
+                    <i className="date-range-filter__eyebrow-icon fa-solid fa-calendar-days" aria-hidden="true" />
+                    Date Window
+                </span>
                 <span className="date-range-filter__value">{label}</span>
             </div>
         </div>
@@ -84,6 +87,7 @@ export default function DateRangeFilter({ value, onCommit, disabled = false }) {
             {/* Header */}
             <div className="date-range-filter__header">
                 <span className="date-range-filter__eyebrow">
+                    <i className="date-range-filter__eyebrow-icon fa-solid fa-calendar-days" aria-hidden="true" />
                     Date Window
                 </span>
                 <span className="date-range-filter__value">

@@ -1,4 +1,5 @@
 import DeckGL from '@deck.gl/react'
+import { useEffect, useState } from 'react'
 import { useMapHandler } from './hooks/useMapHandler.js'
 import { useBuildLayers } from './hooks/useBuildLayers.js'
 import MapController from './components/MapController.jsx'
@@ -108,6 +109,18 @@ const MAP_LAYER_GUIDES = {
 }
 
 function MapPage({ filters }) {
+    const [showInitialLoadingOverlay, setShowInitialLoadingOverlay] = useState(true)
+
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            setShowInitialLoadingOverlay(false)
+        }, 220)
+
+        return () => {
+            clearTimeout(timeoutId)
+        }
+    }, [])
+
     // Map handler manages view state, active layer, animation time, and related logic
     const {
         activeLayer,
@@ -131,6 +144,7 @@ function MapPage({ filters }) {
         hasTripFlowSelection,
     } = useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes })
     const shouldShowMapUi = !loading && !error
+    const shouldShowStatusOverlay = showInitialLoadingOverlay || loading || error
     const guide = MAP_LAYER_GUIDES[activeLayer] ?? MAP_LAYER_GUIDES.station_usage
 
     return (
@@ -179,7 +193,13 @@ function MapPage({ filters }) {
                             showBikeRoutes={showBikeRoutes}
                         />
                     )}
-                    {(error || loading) && <StatusMessage loading={loading} error={error} onRefetch={refetch} />}
+                    {shouldShowStatusOverlay && (
+                        <StatusMessage
+                            loading={showInitialLoadingOverlay || loading}
+                            error={error}
+                            onRefetch={refetch}
+                        />
+                    )}
                 </div>
 
                 <VisualizationGuide

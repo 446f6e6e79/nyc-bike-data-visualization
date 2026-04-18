@@ -369,8 +369,8 @@ export default function SpeedController({ setCurrentTime, currentTime }) {
         <div className="map-speed-controls">
             <div className="map-speed-controls__header">
                 <div className="map-speed-controls__meta">
-                    <span className="map-speed-controls__eyebrow">Time wheel</span>
                     <span className="map-speed-clock">{currentTimeLabel}</span>
+                    <span className="map-speed-controls__eyebrow">Time wheel</span>
                 </div>
                 <p className="map-speed-controls__hint">Drag the wheel to scrub the day in minute increments.</p>
             </div>

@@ -17,7 +17,9 @@ export default function ResetButton({ onReset, onClick, disabled = false }) {
             aria-label="Reset map view"
             title={disabled ? "Select a path to enable reset" : "Reset map view"}
         >
-            <span className="map-reset-button-icon" aria-hidden="true">↺</span>
+            <span className="map-reset-button-icon" aria-hidden="true">
+                <i className="fa-solid fa-rotate-left" />
+            </span>
             <span className="map-reset-button-text">Reset View</span>
         </button>
     )

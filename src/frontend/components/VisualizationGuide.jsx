@@ -20,6 +20,9 @@ function VisualizationGuide({ title, summary, hints = [], mapName }) {
                     onClick={() => setCollapsed((prev) => !prev)}
                     aria-expanded={!collapsed}
                 >
+                    <span className="viz-guide__toggle-icon" aria-hidden="true">
+                        <i className={`fa-solid ${collapsed ? 'fa-eye' : 'fa-eye-slash'}`} />
+                    </span>
                     {collapsed ? 'Show' : 'Hide'}
                 </button>
             </div>

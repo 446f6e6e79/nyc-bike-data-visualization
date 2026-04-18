@@ -13,7 +13,9 @@ export default function BikeRoutesToggle({ showBikeRoutes, setShowBikeRoutes }) 
             aria-label={`Bike routes ${showBikeRoutes ? 'visible' : 'inactive'}. Click to toggle.`}
             onClick={() => setShowBikeRoutes(!showBikeRoutes)}
         >
-            <span className="map-toggle-button__indicator" aria-hidden="true" />
+            <span className="map-toggle-button__icon" aria-hidden="true">
+                <i className="fa-solid fa-map" />
+            </span>
             <span className="map-toggle-button__label">Bike Routes</span>
         </button>
     )

@@ -11,6 +11,16 @@ const FILTER_HINTS = {
 const formatLabel = (value) =>
   value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
+const FILTER_OPTION_ICONS = {
+  all: 'fa-solid fa-globe',
+  member: 'fa-solid fa-id-card',
+  casual: 'fa-solid fa-user',
+  classic_bike: 'fa-solid fa-bicycle',
+  electric_bike: 'fa-solid fa-bolt',
+};
+
+const getFilterIcon = (option) => FILTER_OPTION_ICONS[option] ?? FILTER_OPTION_ICONS.all;
+
 /**
  * Component for filtering rides based on rider type and bike type, allowing users to select from predefined options for each filter category, with an "All" option to reset filters.
  * @param {object} value - An object containing the current filter values, where keys correspond to filter categories (e.g., user_type, bike_type) and values are the selected options for those categories.
@@ -42,6 +52,7 @@ export default function RiderBikeFilter({ value = {}, onChange, disabled = false
               disabled={disabled}
               onClick={() => onChange({ ...value, [key]: undefined })}
             >
+              <i className={`rider-filter-btn-icon ${getFilterIcon('all')}`} aria-hidden="true" />
               All
             </button>
             {options.map((opt) => (
@@ -51,6 +62,7 @@ export default function RiderBikeFilter({ value = {}, onChange, disabled = false
                 disabled={disabled}
                 onClick={() => onChange({ ...value, [key]: opt })}
               >
+                <i className={`rider-filter-btn-icon ${getFilterIcon(opt)}`} aria-hidden="true" />
                 {formatLabel(opt)}
               </button>
             ))}
