@@ -89,6 +89,8 @@ To use the script, run the following command in your terminal:
 python scripts/download_data.py
 ```
 
+Database schema initialization in `scripts/download_data.py` executes ordered files from `scripts/postgre/schemas/`. For manual `psql` bootstrap, use `scripts/postgre/init.sql`.
+
 The available options for the script are:
 
 - `--start-date`: The start date for filtering files (in YYYYMM format). Default is "202601".

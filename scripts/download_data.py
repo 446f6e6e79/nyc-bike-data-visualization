@@ -7,12 +7,13 @@ import argparse
 import os
 import re
 from datetime import date
+import psycopg2
 
 from utils.distances import compute_and_save_station_distances
 from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
-from utils.daily_stats import compute_and_save_daily_stats
+from utils.pg_loader import init_db, load_stats_for_month, update_dataset_coverage
 from src.backend.config import (
     DATA_DIR,
     RIDES_DATA_DIR,
@@ -23,8 +24,8 @@ from src.backend.config import (
     DOWNLOAD_JC,
     BIKE_ROUTES_DATA_DIR,
 )
-# TODO: should we remove the dataset outside the specified range?
-#Right now, there might be problems if we install different ranges of data at different times
+from src.backend.loaders.rides_loader import list_rides_months_partitions
+
 def validate_yyyymm(date_value: str, arg_name: str) -> None:
     """
     Validate that the provided date value is in the format YYYYMM and represents a valid month.
@@ -83,19 +84,31 @@ def main():
     os.makedirs(WEATHER_DATA_DIR, exist_ok=True)
     os.makedirs(BIKE_ROUTES_DATA_DIR, exist_ok=True)
 
+    # Connect to Postgres
+    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    # Initialise the database schema from scripts/postgre/schemas/*.sql
+    init_db(conn)
+
     # Download and convert the filtered files
     download_ride_data(args.start_date, args.end_date, download_jc=args.download_jc)
 
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances(force_download=args.force_download)
 
-    # Precompute daily aggregated stats over all downloaded rides
-    compute_and_save_daily_stats()
-
-    # Download hourly weather data for the requested date range
+    # Download hourly weather data before computing stats (weather_code is joined at precompute time)
     download_weather_data(args.start_date, args.end_date)
+
+    # Precompute stats for every downloaded month and load into Postgres
+    for year, month in list_rides_months_partitions(RIDES_DATA_DIR):
+        load_stats_for_month(conn, year, month)
+    update_dataset_coverage(conn)
+
+    # Close the database connection
+    conn.close()
 
     # Download and preprocess bike route data
     download_bike_routes(force_download=args.force_download)
+
+    #TODO: we can clean up old parquet files that are no longer needed after loading into Postgres to save disk space
 if __name__ == "__main__":
     main()
