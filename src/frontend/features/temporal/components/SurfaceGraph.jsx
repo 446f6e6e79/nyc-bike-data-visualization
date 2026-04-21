@@ -340,7 +340,6 @@ function SurfaceGraph({
                 />
             )}
             {(loading || error) && <StatusMessage loading={loading} error={error} onRefetch={onRefetch} />}
-
             <div className="surface-angle-indicator" onPointerDown={(event) => event.stopPropagation()}>
                 <div className="surface-angle-row">
                     <div

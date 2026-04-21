@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import useTemporalState from "./hooks/useTemporalState"
-import useCompareTemporalLayers from "./hooks/useCompareTemporalLayers"
-import MetricSelector from "./components/MetricSelector"
-import SurfaceGraph from "./components/SurfaceGraph"
-import SurfaceHistograms from "./components/SurfaceHistograms"
-import VisualizationGuide from "../../components/VisualizationGuide"
-import { FILTERS } from "../header/components/RiderBikeFilter.jsx"
+import { useEffect, useMemo, useRef, useState } from "react";
+import useTemporalState from "./hooks/useTemporalState";
+import useCompareTemporalLayers from "./hooks/useCompareTemporalLayers";
+import MetricSelector from "./components/MetricSelector";
+import SurfaceGraph from "./components/SurfaceGraph";
+import SurfaceHistograms from "./components/SurfaceHistograms";
+import VisualizationGuide from "../../components/VisualizationGuide";
+import { FILTERS } from "../header/components/RiderBikeFilter.jsx";
 
 const COMPARE_LAYER_COLORS = [
     "#1953d8",
@@ -13,61 +13,66 @@ const COMPARE_LAYER_COLORS = [
     "#2f7d4f",
     "#a7701e",
     "#6f52bf",
-]
+];
 
-const COMPARE_LAYER_SCALES = ["Blues", "Reds", "Greens", "Oranges", "Purples"]
+const COMPARE_LAYER_SCALES = ["Blues", "Reds", "Greens", "Oranges", "Purples"];
 
-const CLASS_FILTER_KEYS = ["user_type", "bike_type"]
+const CLASS_FILTER_KEYS = ["user_type", "bike_type"];
 
 function formatFilterValue(value) {
-    if (!value) return "All"
-    return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+    if (!value) return "All";
+    return value
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function buildLayerLabel(layerFilters = {}) {
-    const userLabel = formatFilterValue(layerFilters.user_type)
-    const bikeLabel = formatFilterValue(layerFilters.bike_type)
-    return `${userLabel} · ${bikeLabel}`
+    const userLabel = formatFilterValue(layerFilters.user_type);
+    const bikeLabel = formatFilterValue(layerFilters.bike_type);
+    return `${userLabel} · ${bikeLabel}`;
 }
 
 function buildLayerKey(layerFilters = {}) {
-    return `${layerFilters.user_type ?? "all"}|${layerFilters.bike_type ?? "all"}`
+    return `${layerFilters.user_type ?? "all"}|${layerFilters.bike_type ?? "all"}`;
 }
 
 function stripClassFilters(filters = {}) {
-    const { user_type, bike_type, ...rest } = filters
-    return rest
+    const { user_type, bike_type, ...rest } = filters;
+    return rest;
 }
 
 function CompareFilterDropdown({ value, options, onChange }) {
-    const [isOpen, setIsOpen] = useState(false)
-    const rootRef = useRef(null)
+    const [isOpen, setIsOpen] = useState(false);
+    const rootRef = useRef(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            const rootNode = rootRef.current
-            if (!rootNode) return
+            const rootNode = rootRef.current;
+            if (!rootNode) return;
             if (!rootNode.contains(event.target)) {
-                setIsOpen(false)
+                setIsOpen(false);
             }
-        }
+        };
 
-        document.addEventListener("mousedown", handleClickOutside)
+        document.addEventListener("mousedown", handleClickOutside);
 
         return () => {
-            document.removeEventListener("mousedown", handleClickOutside)
-        }
-    }, [])
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
-    const selectedLabel = value ? formatFilterValue(value) : "All"
+    const selectedLabel = value ? formatFilterValue(value) : "All";
 
     const handleSelect = (nextValue) => {
-        onChange(nextValue)
-        setIsOpen(false)
-    }
+        onChange(nextValue);
+        setIsOpen(false);
+    };
 
     return (
-        <div ref={rootRef} className={`surface-compare-select-wrap${isOpen ? " is-open" : ""}`}>
+        <div
+            ref={rootRef}
+            className={`surface-compare-select-wrap${isOpen ? " is-open" : ""}`}
+        >
             <button
                 type="button"
                 className="surface-compare-select"
@@ -75,8 +80,15 @@ function CompareFilterDropdown({ value, options, onChange }) {
                 aria-expanded={isOpen}
                 onClick={() => setIsOpen((prev) => !prev)}
             >
-                <span className={`surface-compare-select-value${value ? "" : " is-placeholder"}`}>{selectedLabel}</span>
-                <span className="surface-compare-select-chevron" aria-hidden="true">
+                <span
+                    className={`surface-compare-select-value${value ? "" : " is-placeholder"}`}
+                >
+                    {selectedLabel}
+                </span>
+                <span
+                    className="surface-compare-select-chevron"
+                    aria-hidden="true"
+                >
                     <i className="fa-solid fa-chevron-right" />
                 </span>
             </button>
@@ -103,7 +115,7 @@ function CompareFilterDropdown({ value, options, onChange }) {
                 </div>
             ) : null}
         </div>
-    )
+    );
 }
 
 /**
@@ -124,36 +136,39 @@ function TemporalPage({ filters, onCompareModeChange }) {
         loading,
         error,
         refetch,
-    } = useTemporalState(filters)
-    const [isCompareMode, setIsCompareMode] = useState(false)
-    const [isCompareHovered, setIsCompareHovered] = useState(false)
+    } = useTemporalState(filters);
+    const [isCompareMode, setIsCompareMode] = useState(false);
+    const [isCompareHovered, setIsCompareHovered] = useState(false);
     const [pendingLayerFilters, setPendingLayerFilters] = useState({
         user_type: "",
         bike_type: "",
-    })
-    const [compareLayers, setCompareLayers] = useState([])
-    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
-    const [showTooltip, setShowTooltip] = useState(false)
-    const previousFiltersRef = useRef(filters)
-    const overlayRef = useRef(null)
-    const compareButtonRef = useRef(null)
-    const comparePanelRef = useRef(null)
-    const compareHoverCloseTimeoutRef = useRef(null)
-    const addLayerButtonRef = useRef(null)
-    const addLayerTooltipRef = useRef(null)
-    const tooltipAnimationFrameRef = useRef(null)
-    const hasPinnedCompareLayers = compareLayers.length > 0
-    const isComparePanelOpen = isCompareMode || isCompareHovered
+    });
+    const [compareLayers, setCompareLayers] = useState([]);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+    const [showTooltip, setShowTooltip] = useState(false);
+    const previousFiltersRef = useRef(filters);
+    const overlayRef = useRef(null);
+    const compareButtonRef = useRef(null);
+    const comparePanelRef = useRef(null);
+    const compareHoverCloseTimeoutRef = useRef(null);
+    const addLayerButtonRef = useRef(null);
+    const addLayerTooltipRef = useRef(null);
+    const tooltipAnimationFrameRef = useRef(null);
+    const hasPinnedCompareLayers = compareLayers.length > 0;
+    const isComparePanelOpen = isCompareMode || isCompareHovered;
 
     const baseClassFilters = useMemo(
         () => ({
             user_type: filters?.user_type,
             bike_type: filters?.bike_type,
         }),
-        [filters]
-    )
+        [filters],
+    );
 
-    const baseLayerKey = useMemo(() => buildLayerKey(baseClassFilters), [baseClassFilters])
+    const baseLayerKey = useMemo(
+        () => buildLayerKey(baseClassFilters),
+        [baseClassFilters],
+    );
 
     const {
         layerData: comparedLayerData,
@@ -164,21 +179,24 @@ function TemporalPage({ filters, onCompareModeChange }) {
         filters: stripClassFilters(filters),
         layers: compareLayers,
         enabled: hasPinnedCompareLayers,
-    })
+    });
 
     const comparedLayers = useMemo(
-        () => compareLayers.map((layer) => ({
-            ...layer,
-            ...(comparedLayerData.find((entry) => entry.id === layer.id) ?? {
-                dayHourStats: [],
-                dayStats: [],
-                hourStats: [],
-                loading: false,
-                error: null,
-            }),
-        })),
-        [compareLayers, comparedLayerData]
-    )
+        () =>
+            compareLayers.map((layer) => ({
+                ...layer,
+                ...(comparedLayerData.find(
+                    (entry) => entry.id === layer.id,
+                ) ?? {
+                    dayHourStats: [],
+                    dayStats: [],
+                    hourStats: [],
+                    loading: false,
+                    error: null,
+                }),
+            })),
+        [compareLayers, comparedLayerData],
+    );
 
     const baseLayer = useMemo(
         () => ({
@@ -193,95 +211,103 @@ function TemporalPage({ filters, onCompareModeChange }) {
             loading,
             error,
         }),
-        [baseClassFilters, dayHourStats, dayStats, hourStats, loading, error]
-    )
+        [baseClassFilters, dayHourStats, dayStats, hourStats, loading, error],
+    );
 
     const activeLayers = useMemo(() => {
-        if (!hasPinnedCompareLayers) return [baseLayer]
-        return [baseLayer, ...comparedLayers.filter((layer) => layer.visible)]
-    }, [hasPinnedCompareLayers, baseLayer, comparedLayers])
+        if (!hasPinnedCompareLayers) return [baseLayer];
+        return [baseLayer, ...comparedLayers.filter((layer) => layer.visible)];
+    }, [hasPinnedCompareLayers, baseLayer, comparedLayers]);
 
-    const mergedLoading = loading || (hasPinnedCompareLayers && compareLoading)
-    const mergedError = error || (hasPinnedCompareLayers ? compareError : null)
-    const isActionsDisabled = mergedLoading || mergedError
+    const mergedLoading = loading || (hasPinnedCompareLayers && compareLoading);
+    const mergedError = error || (hasPinnedCompareLayers ? compareError : null);
+    const isActionsDisabled = mergedLoading || mergedError;
 
-    const handleRefetchAll = () => Promise.all([
-        refetch(),
-        hasPinnedCompareLayers ? refetchCompare() : Promise.resolve(),
-    ])
+    const handleRefetchAll = () =>
+        Promise.all([
+            refetch(),
+            hasPinnedCompareLayers ? refetchCompare() : Promise.resolve(),
+        ]);
 
     const handleCompareToggle = () => {
         // Se il pannello era aperto solo per hovering, fissalo aperto
         if (!isCompareMode && isCompareHovered) {
             if (compareHoverCloseTimeoutRef.current) {
-                clearTimeout(compareHoverCloseTimeoutRef.current)
-                compareHoverCloseTimeoutRef.current = null
+                clearTimeout(compareHoverCloseTimeoutRef.current);
+                compareHoverCloseTimeoutRef.current = null;
             }
-            setIsCompareMode(true)
-            setIsCompareHovered(false)
+            setIsCompareMode(true);
+            setIsCompareHovered(false);
         } else {
             // Altrimenti toggle il compare mode
-            setIsCompareMode((prev) => !prev)
+            setIsCompareMode((prev) => !prev);
         }
-    }
+    };
 
     const handleCompareHoverEnter = () => {
         if (compareHoverCloseTimeoutRef.current) {
-            clearTimeout(compareHoverCloseTimeoutRef.current)
-            compareHoverCloseTimeoutRef.current = null
+            clearTimeout(compareHoverCloseTimeoutRef.current);
+            compareHoverCloseTimeoutRef.current = null;
         }
 
-        setIsCompareHovered(true)
-    }
+        setIsCompareHovered(true);
+    };
 
     const closeCompareHoverWithDelay = () => {
         if (compareHoverCloseTimeoutRef.current) {
-            clearTimeout(compareHoverCloseTimeoutRef.current)
+            clearTimeout(compareHoverCloseTimeoutRef.current);
         }
 
         compareHoverCloseTimeoutRef.current = setTimeout(() => {
-            setIsCompareHovered(false)
-            compareHoverCloseTimeoutRef.current = null
-        }, 120)
-    }
+            setIsCompareHovered(false);
+            compareHoverCloseTimeoutRef.current = null;
+        }, 120);
+    };
 
     const handleCompareHoverLeave = (event) => {
-        const nextTarget = event.relatedTarget
-        const buttonNode = compareButtonRef.current
-        const panelNode = comparePanelRef.current
+        const nextTarget = event.relatedTarget;
+        const buttonNode = compareButtonRef.current;
+        const panelNode = comparePanelRef.current;
 
         if (!(nextTarget instanceof Node)) {
-            closeCompareHoverWithDelay()
-            return
+            closeCompareHoverWithDelay();
+            return;
         }
 
-        const isInsideButton = buttonNode ? buttonNode.contains(nextTarget) : false
-        const isInsidePanel = panelNode ? panelNode.contains(nextTarget) : false
+        const isInsideButton = buttonNode
+            ? buttonNode.contains(nextTarget)
+            : false;
+        const isInsidePanel = panelNode
+            ? panelNode.contains(nextTarget)
+            : false;
 
         if (isInsideButton || isInsidePanel) {
-            return
+            return;
         }
 
-        closeCompareHoverWithDelay()
-    }
+        closeCompareHoverWithDelay();
+    };
 
     const handlePendingFilterChange = (key, value) => {
-        setPendingLayerFilters((prev) => ({ ...prev, [key]: value }))
-    }
+        setPendingLayerFilters((prev) => ({ ...prev, [key]: value }));
+    };
 
     const handleAddLayer = () => {
         const normalizedFilters = {
             user_type: pendingLayerFilters.user_type || undefined,
             bike_type: pendingLayerFilters.bike_type || undefined,
-        }
-        const candidateKey = buildLayerKey(normalizedFilters)
+        };
+        const candidateKey = buildLayerKey(normalizedFilters);
 
-        if (candidateKey === baseLayerKey) return
+        if (candidateKey === baseLayerKey) return;
 
-        const hasDuplicate = compareLayers.some((layer) => buildLayerKey(layer.filters) === candidateKey)
-        if (hasDuplicate) return
+        const hasDuplicate = compareLayers.some(
+            (layer) => buildLayerKey(layer.filters) === candidateKey,
+        );
+        if (hasDuplicate) return;
 
-        const colorIndex = (compareLayers.length + 1) % COMPARE_LAYER_COLORS.length
+        const colorIndex =
+            (compareLayers.length + 1) % COMPARE_LAYER_COLORS.length;
 
         setCompareLayers((prev) => [
             ...prev,
@@ -293,170 +319,191 @@ function TemporalPage({ filters, onCompareModeChange }) {
                 colorscale: COMPARE_LAYER_SCALES[colorIndex],
                 visible: true,
             },
-        ])
+        ]);
 
         if (compareHoverCloseTimeoutRef.current) {
-            clearTimeout(compareHoverCloseTimeoutRef.current)
-            compareHoverCloseTimeoutRef.current = null
+            clearTimeout(compareHoverCloseTimeoutRef.current);
+            compareHoverCloseTimeoutRef.current = null;
         }
-        setIsCompareMode(false)
-        setIsCompareHovered(false)
-    }
+        setIsCompareMode(false);
+        setIsCompareHovered(false);
+    };
 
     const handleResetCompare = () => {
-        setCompareLayers([])
-        setPendingLayerFilters({ user_type: "", bike_type: "" })
-    }
+        setCompareLayers([]);
+        setPendingLayerFilters({ user_type: "", bike_type: "" });
+    };
 
     const handleRemoveLayer = (layerId) => {
-        setCompareLayers((prev) => prev.filter((layer) => layer.id !== layerId))
-    }
+        setCompareLayers((prev) =>
+            prev.filter((layer) => layer.id !== layerId),
+        );
+    };
 
     const handleToggleLayerVisibility = (layerId) => {
-        setCompareLayers((prev) => prev.map((layer) => (
-            layer.id === layerId ? { ...layer, visible: !layer.visible } : layer
-        )))
-    }
+        setCompareLayers((prev) =>
+            prev.map((layer) =>
+                layer.id === layerId
+                    ? { ...layer, visible: !layer.visible }
+                    : layer,
+            ),
+        );
+    };
 
     const pendingCandidateKey = useMemo(
-        () => buildLayerKey({
-            user_type: pendingLayerFilters.user_type || undefined,
-            bike_type: pendingLayerFilters.bike_type || undefined,
-        }),
-        [pendingLayerFilters]
-    )
+        () =>
+            buildLayerKey({
+                user_type: pendingLayerFilters.user_type || undefined,
+                bike_type: pendingLayerFilters.bike_type || undefined,
+            }),
+        [pendingLayerFilters],
+    );
 
     const isPendingSelectionDuplicate = useMemo(() => {
-        if (pendingCandidateKey === baseLayerKey) return true
-        return compareLayers.some((layer) => buildLayerKey(layer.filters) === pendingCandidateKey)
-    }, [baseLayerKey, compareLayers, pendingCandidateKey])
+        if (pendingCandidateKey === baseLayerKey) return true;
+        return compareLayers.some(
+            (layer) => buildLayerKey(layer.filters) === pendingCandidateKey,
+        );
+    }, [baseLayerKey, compareLayers, pendingCandidateKey]);
 
     useEffect(() => {
-        if (!onCompareModeChange) return
+        if (!onCompareModeChange) return;
 
-        onCompareModeChange(hasPinnedCompareLayers)
+        onCompareModeChange(hasPinnedCompareLayers);
 
         return () => {
-            onCompareModeChange(false)
-        }
-    }, [hasPinnedCompareLayers, onCompareModeChange])
+            onCompareModeChange(false);
+        };
+    }, [hasPinnedCompareLayers, onCompareModeChange]);
 
     useEffect(() => {
-        const previousFilters = previousFiltersRef.current ?? {}
-        const filtersChanged = JSON.stringify(previousFilters) !== JSON.stringify(filters ?? {})
+        const previousFilters = previousFiltersRef.current ?? {};
+        const filtersChanged =
+            JSON.stringify(previousFilters) !== JSON.stringify(filters ?? {});
 
-        if (!filtersChanged) return
+        if (!filtersChanged) return;
 
-        previousFiltersRef.current = filters
+        previousFiltersRef.current = filters;
 
-        if (!isCompareMode && compareLayers.length === 0) return
+        if (!isCompareMode && compareLayers.length === 0) return;
 
-        setIsCompareMode(false)
-        setCompareLayers([])
-        setPendingLayerFilters({ user_type: "", bike_type: "" })
-    }, [filters, isCompareMode, compareLayers.length])
+        setIsCompareMode(false);
+        setCompareLayers([]);
+        setPendingLayerFilters({ user_type: "", bike_type: "" });
+    }, [filters, isCompareMode, compareLayers.length]);
 
     useEffect(() => {
-        if (!isCompareMode) return
+        if (!isCompareMode) return;
 
         const handleClickOutsideOverlay = (event) => {
-            const overlayNode = overlayRef.current
-            if (!overlayNode) return
+            const overlayNode = overlayRef.current;
+            if (!overlayNode) return;
 
             if (!overlayNode.contains(event.target)) {
-                setIsCompareMode(false)
+                setIsCompareMode(false);
             }
-        }
+        };
 
-        document.addEventListener("mousedown", handleClickOutsideOverlay)
+        document.addEventListener("mousedown", handleClickOutsideOverlay);
 
         return () => {
-            document.removeEventListener("mousedown", handleClickOutsideOverlay)
-        }
-    }, [isCompareMode])
+            document.removeEventListener(
+                "mousedown",
+                handleClickOutsideOverlay,
+            );
+        };
+    }, [isCompareMode]);
 
-    useEffect(() => () => {
-        if (compareHoverCloseTimeoutRef.current) {
-            clearTimeout(compareHoverCloseTimeoutRef.current)
-        }
+    useEffect(
+        () => () => {
+            if (compareHoverCloseTimeoutRef.current) {
+                clearTimeout(compareHoverCloseTimeoutRef.current);
+            }
 
-        if (tooltipAnimationFrameRef.current) {
-            cancelAnimationFrame(tooltipAnimationFrameRef.current)
-            tooltipAnimationFrameRef.current = null
-        }
-    }, [])
+            if (tooltipAnimationFrameRef.current) {
+                cancelAnimationFrame(tooltipAnimationFrameRef.current);
+                tooltipAnimationFrameRef.current = null;
+            }
+        },
+        [],
+    );
 
     const positionAddLayerTooltip = (clientX, clientY) => {
-        const overlayRect = overlayRef.current?.getBoundingClientRect()
-        const tooltipNode = addLayerTooltipRef.current
-        if (!overlayRect || !tooltipNode) return
+        const overlayRect = overlayRef.current?.getBoundingClientRect();
+        const tooltipNode = addLayerTooltipRef.current;
+        if (!overlayRect || !tooltipNode) return;
 
-        const nextX = clientX - overlayRect.left
-        const nextY = clientY - overlayRect.top - 12
+        const nextX = clientX - overlayRect.left;
+        const nextY = clientY - overlayRect.top - 12;
 
         if (tooltipAnimationFrameRef.current) {
-            cancelAnimationFrame(tooltipAnimationFrameRef.current)
+            cancelAnimationFrame(tooltipAnimationFrameRef.current);
         }
 
         tooltipAnimationFrameRef.current = requestAnimationFrame(() => {
-            tooltipNode.style.left = `${nextX}px`
-            tooltipNode.style.top = `${nextY}px`
-            tooltipAnimationFrameRef.current = null
-        })
-    }
+            tooltipNode.style.left = `${nextX}px`;
+            tooltipNode.style.top = `${nextY}px`;
+            tooltipAnimationFrameRef.current = null;
+        });
+    };
 
     const handleAddLayerMouseEnter = (event) => {
         if (!isPendingSelectionDuplicate) {
-            setShowTooltip(false)
-            return
+            setShowTooltip(false);
+            return;
         }
 
-        const overlayRect = overlayRef.current?.getBoundingClientRect()
+        const overlayRect = overlayRef.current?.getBoundingClientRect();
         if (overlayRect) {
             setTooltipPosition({
                 x: event.clientX - overlayRect.left,
                 y: event.clientY - overlayRect.top - 12,
-            })
+            });
         }
-        setShowTooltip(true)
-    }
+        setShowTooltip(true);
+    };
 
     const handleAddLayerMouseMove = (event) => {
         if (!isPendingSelectionDuplicate) {
-            setShowTooltip(false)
-            return
+            setShowTooltip(false);
+            return;
         }
 
-        positionAddLayerTooltip(event.clientX, event.clientY)
-    }
+        positionAddLayerTooltip(event.clientX, event.clientY);
+    };
 
     const handleAddLayerMouseLeave = () => {
         if (tooltipAnimationFrameRef.current) {
-            cancelAnimationFrame(tooltipAnimationFrameRef.current)
-            tooltipAnimationFrameRef.current = null
+            cancelAnimationFrame(tooltipAnimationFrameRef.current);
+            tooltipAnimationFrameRef.current = null;
         }
-        setShowTooltip(false)
-    }
+        setShowTooltip(false);
+    };
 
     const getAddLayerTooltipText = () => {
         if (isPendingSelectionDuplicate) {
-            return "This surface is already present. Change User Type or Bike Type."
+            return "This surface is already present. Change User Type or Bike Type.";
         }
-        return null
-    }
+        return null;
+    };
 
     return (
         <section className="page-card">
             <header className="page-card__header">
                 <div className="page-card__heading">
                     <span className="page-card__eyebrow">02 — Rhythms</span>
-                    <h2 className="page-card__title">The week, hour by hour.</h2>
+                    <h2 className="page-card__title">
+                        The week, hour by hour.
+                    </h2>
                     <p className="page-card__subtitle">
                         How ridership swells and recedes across days of the week
                         and hours of the day.
                     </p>
                 </div>
-                <div className={`page-card__actions${isActionsDisabled ? ' surface-actions--disabled' : ''}`} aria-disabled={isActionsDisabled}>
+                <div
+                    className={`page-card__actions${isActionsDisabled ? " surface-actions--disabled" : ""}`}
+                    aria-disabled={isActionsDisabled}
+                >
                     <MetricSelector
                         activeMetric={activeMetric}
                         setActiveMetric={setActiveMetric}
@@ -477,10 +524,8 @@ function TemporalPage({ filters, onCompareModeChange }) {
                         layers={activeLayers}
                     />
 
-                    <div
-                        ref={overlayRef}
-                        className="surface-plot-overlay"
-                    >
+                    
+                    <div ref={overlayRef} className={"surface-plot-overlay"}>
                         <button
                             ref={compareButtonRef}
                             type="button"
@@ -490,28 +535,39 @@ function TemporalPage({ filters, onCompareModeChange }) {
                             onMouseLeave={handleCompareHoverLeave}
                             disabled={mergedLoading || mergedError}
                         >
-                            <span className="surface-compare-btn__icon" aria-hidden="true">
+                            <span
+                                className="surface-compare-btn__icon"
+                                aria-hidden="true"
+                            >
                                 <i className="fa-solid fa-code-compare" />
                             </span>
                             Compare
                         </button>
 
-                            <div
-                                ref={comparePanelRef}
-                                className={`surface-compare-panel${isComparePanelOpen ? " is-open" : ""}`}
-                                role="dialog"
-                                aria-label="Compare surfaces"
-                                onMouseEnter={handleCompareHoverEnter}
-                                onMouseLeave={handleCompareHoverLeave}
-                            >
+                        <div
+                            ref={comparePanelRef}
+                            className={`surface-compare-panel${isComparePanelOpen ? " is-open" : ""}`}
+                            role="dialog"
+                            aria-label="Compare surfaces"
+                            onMouseEnter={handleCompareHoverEnter}
+                            onMouseLeave={handleCompareHoverLeave}
+                        >
                             <div className="surface-compare-panel__controls">
                                 {CLASS_FILTER_KEYS.map((key) => (
-                                    <label key={key} className="surface-compare-field">
+                                    <label
+                                        key={key}
+                                        className="surface-compare-field"
+                                    >
                                         <span>{FILTERS[key].label}</span>
                                         <CompareFilterDropdown
                                             value={pendingLayerFilters[key]}
                                             options={FILTERS[key].options}
-                                            onChange={(nextValue) => handlePendingFilterChange(key, nextValue)}
+                                            onChange={(nextValue) =>
+                                                handlePendingFilterChange(
+                                                    key,
+                                                    nextValue,
+                                                )
+                                            }
                                         />
                                     </label>
                                 ))}
@@ -527,7 +583,10 @@ function TemporalPage({ filters, onCompareModeChange }) {
                                         onClick={handleAddLayer}
                                         disabled={isPendingSelectionDuplicate}
                                     >
-                                        <span className="surface-btn-icon" aria-hidden="true">
+                                        <span
+                                            className="surface-btn-icon"
+                                            aria-hidden="true"
+                                        >
                                             <i className="fa-solid fa-plus" />
                                         </span>
                                         Add Surface
@@ -539,7 +598,10 @@ function TemporalPage({ filters, onCompareModeChange }) {
                                     onClick={handleResetCompare}
                                     disabled={compareLayers.length === 0}
                                 >
-                                    <span className="surface-btn-icon" aria-hidden="true">
+                                    <span
+                                        className="surface-btn-icon"
+                                        aria-hidden="true"
+                                    >
                                         <i className="fa-solid fa-rotate-left" />
                                     </span>
                                     Reset
@@ -548,41 +610,88 @@ function TemporalPage({ filters, onCompareModeChange }) {
 
                             <details className="surface-layer-list" open>
                                 <summary>
-                                    <span className="surface-layer-list__title">Surfaces ({1 + compareLayers.length})</span>
-                                    <span className="surface-layer-list__hint" aria-hidden="true">
-                                        <span className="surface-layer-list__hint-open">Collapse</span>
-                                        <span className="surface-layer-list__hint-closed">Expand</span>
+                                    <span className="surface-layer-list__title">
+                                        Surfaces ({1 + compareLayers.length})
                                     </span>
-                                    <span className="surface-layer-list__chevron" aria-hidden="true">
+                                    <span
+                                        className="surface-layer-list__hint"
+                                        aria-hidden="true"
+                                    >
+                                        <span className="surface-layer-list__hint-open">
+                                            Collapse
+                                        </span>
+                                        <span className="surface-layer-list__hint-closed">
+                                            Expand
+                                        </span>
+                                    </span>
+                                    <span
+                                        className="surface-layer-list__chevron"
+                                        aria-hidden="true"
+                                    >
                                         <i className="fa-solid fa-chevron-right" />
                                     </span>
                                 </summary>
                                 <div className="surface-layer-list__items">
                                     <div className="surface-layer-item is-base">
-                                        <span className="surface-layer-swatch" style={{ backgroundColor: baseLayer.color }} />
-                                        <span className="surface-layer-name">{baseLayer.label}</span>
+                                        <span
+                                            className="surface-layer-swatch"
+                                            style={{
+                                                backgroundColor:
+                                                    baseLayer.color,
+                                            }}
+                                        />
+                                        <span className="surface-layer-name">
+                                            {baseLayer.label}
+                                        </span>
                                     </div>
 
                                     {comparedLayers.map((layer) => (
-                                        <div key={layer.id} className="surface-layer-item">
-                                            <span className="surface-layer-swatch" style={{ backgroundColor: layer.color }} />
-                                            <span className="surface-layer-name">{layer.label}</span>
+                                        <div
+                                            key={layer.id}
+                                            className="surface-layer-item"
+                                        >
+                                            <span
+                                                className="surface-layer-swatch"
+                                                style={{
+                                                    backgroundColor:
+                                                        layer.color,
+                                                }}
+                                            />
+                                            <span className="surface-layer-name">
+                                                {layer.label}
+                                            </span>
                                             <button
                                                 type="button"
                                                 className={`surface-layer-toggle${layer.visible ? " is-on" : ""}`}
-                                                onClick={() => handleToggleLayerVisibility(layer.id)}
+                                                onClick={() =>
+                                                    handleToggleLayerVisibility(
+                                                        layer.id,
+                                                    )
+                                                }
                                             >
-                                                <span className="surface-btn-icon" aria-hidden="true">
-                                                    <i className={`fa-solid ${layer.visible ? "fa-eye-slash" : "fa-eye"}`} />
+                                                <span
+                                                    className="surface-btn-icon"
+                                                    aria-hidden="true"
+                                                >
+                                                    <i
+                                                        className={`fa-solid ${layer.visible ? "fa-eye-slash" : "fa-eye"}`}
+                                                    />
                                                 </span>
-                                                {layer.visible ? "Hide" : "Show"}
+                                                {layer.visible
+                                                    ? "Hide"
+                                                    : "Show"}
                                             </button>
                                             <button
                                                 type="button"
                                                 className="surface-layer-delete"
-                                                onClick={() => handleRemoveLayer(layer.id)}
+                                                onClick={() =>
+                                                    handleRemoveLayer(layer.id)
+                                                }
                                             >
-                                                <span className="surface-btn-icon" aria-hidden="true">
+                                                <span
+                                                    className="surface-btn-icon"
+                                                    aria-hidden="true"
+                                                >
                                                     <i className="fa-solid fa-trash" />
                                                 </span>
                                                 Remove
@@ -627,22 +736,22 @@ function TemporalPage({ filters, onCompareModeChange }) {
                     summary="The 3D surface maps your metric across every day-hour cell. In Compare mode, you can overlay multiple surfaces to inspect how rhythms shift between user and bike groups, while histograms help verify aggregate day/hour effects."
                     hints={[
                         {
-                            title: 'Start from the baseline',
-                            text: 'Read the Current surface first, then add comparison surfaces one at a time so differences in ridges and peaks remain interpretable.',
+                            title: "Start from the baseline",
+                            text: "Read the Current surface first, then add comparison surfaces one at a time so differences in ridges and peaks remain interpretable.",
                         },
                         {
-                            title: 'Use Compare as context',
-                            text: 'Add multiple user/bike combinations from Compare, then use Hide/Show to isolate one layer at a time and confirm whether a pattern is global or segment-specific.',
+                            title: "Use Compare as context",
+                            text: "Add multiple user/bike combinations from Compare, then use Hide/Show to isolate one layer at a time and confirm whether a pattern is global or segment-specific.",
                         },
                         {
-                            title: 'Cross-check with histograms',
-                            text: 'When a surface appears higher in one region, confirm if the gap is driven by specific days or hours using the aligned histogram panels.',
+                            title: "Cross-check with histograms",
+                            text: "When a surface appears higher in one region, confirm if the gap is driven by specific days or hours using the aligned histogram panels.",
                         },
                     ]}
                 />
             </div>
         </section>
-    )
+    );
 }
 
-export default TemporalPage
+export default TemporalPage;

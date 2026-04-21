@@ -144,7 +144,8 @@ function MapPage({ filters }) {
         hasTripFlowSelection,
     } = useBuildLayers({ filters, currentTime, activeLayer, showBikeRoutes })
     const shouldShowMapUi = !loading && !error
-    const shouldShowStatusOverlay = showInitialLoadingOverlay || loading || error
+    const hasLayersData = layers.length > 0 && layers.some(layer => Array.isArray(layer.data) && layer.data.length > 0)
+    const shouldShowStatusOverlay = showInitialLoadingOverlay || loading || error || !hasLayersData
     const guide = MAP_LAYER_GUIDES[activeLayer] ?? MAP_LAYER_GUIDES.station_usage
 
     return (
