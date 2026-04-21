@@ -1,129 +1,90 @@
-import polars as pl
-from datetime import date, datetime, time
-from src.backend.loaders.rides_loader import RideFrame
-from src.backend.models.stats import (
-    StatsGroupBy,
-    RideCountGroupBy
-)
+from datetime import date, timedelta
 
-def to_lazy(df: RideFrame | pl.DataFrame | pl.LazyFrame) -> pl.LazyFrame:
-    """Helper to convert a DataFrame to LazyFrame if needed"""
-    return df.lazy() if isinstance(df, pl.DataFrame) else df
+from src.backend.models.stats import RideCountGroupBy
 
-def build_time_dimension(
-    start_date: date,
-    end_date: date,
-    weather_df: pl.DataFrame | None = None,
-    base_for_group_by: StatsGroupBy | None = None,
-) -> pl.DataFrame:
-    """
-    Create a time dimension DataFrame with hourly timestamps between start_date and end_date.
-    This allows us to group rides by time periods (day of week, hour) even if there are no rides
-    in certain periods, ensuring we get a complete set of time buckets in our stats results.
-    """
-    # Create a DataFrame with one row per hour in the date range
-    start_dt = datetime.combine(start_date, time.min)
-    end_dt = datetime.combine(end_date, time.max)
-    df = pl.DataFrame({
-        "started_at": pl.datetime_range(
-            start=start_dt,
-            end=end_dt,
-            interval="1h",
-            eager=True,
-        )
-    }).with_columns([
-        (pl.col("started_at").dt.weekday() - 1).alias("day_of_week"),
-        pl.col("started_at").dt.hour().alias("hour"),
-    ])
 
-    # If weather data is provided, join it onto the time dimension so each hour carries its weather_code
-    if weather_df is not None:
-        df = (
-            df
-            .sort("started_at")
-            .join_asof(
-                weather_df.sort("datetime"),
-                left_on="started_at",
-                right_on="datetime",
-                strategy="nearest",
-                tolerance="30m",
-            )
-        )
-    # If a time-dimension column is the base for grouping, return the unique values of that column to ensure all groups are represented
-    if base_for_group_by is None:
-        return df
+# ── cursor helpers ────────────────────────────────────────────────────────────
 
-    if base_for_group_by == StatsGroupBy.DAY_OF_WEEK:
-        return df.select("day_of_week").unique().sort("day_of_week")
+def _rows(cur) -> list[dict]:
+    cols = [d[0] for d in cur.description]
+    return [dict(zip(cols, row)) for row in cur.fetchall()]
 
-    if base_for_group_by == StatsGroupBy.HOUR:
-        return df.select("hour").unique().sort("hour")
 
-    if base_for_group_by == StatsGroupBy.DAY_OF_WEEK_AND_HOUR:
-        return (
-            df.select(["day_of_week", "hour"])
-            .unique()
-            .sort(["day_of_week", "hour"])
-        )
-    
-    if base_for_group_by == StatsGroupBy.WEATHER_CODE:
-        return df.select("weather_code").drop_nulls().unique().sort("weather_code")
+def _row(cur) -> dict:
+    cols = [d[0] for d in cur.description]
+    return dict(zip(cols, cur.fetchone()))
 
-    return pl.DataFrame()
 
-def hours_count_from_time_dimension(
-    start_date: date,
-    end_date: date,
-    group_by: StatsGroupBy | RideCountGroupBy,
-    weather_df: pl.DataFrame | None = None,
-) -> pl.DataFrame:
-    """
-    Compute the number of hours in the date range for each group bucket, derived from the time
-    dimension. This ensures that empty hours are still counted in the hours_count for each group.
-    """
-    time_dim = build_time_dimension(
-        start_date,
-        end_date,
-        weather_df=weather_df,
-    )
-    if group_by == StatsGroupBy.NONE:
-        return pl.DataFrame({"hours_count": [time_dim.height]})
+# ── hours_count spine helpers ─────────────────────────────────────────────────
 
-    if group_by == StatsGroupBy.DAY_OF_WEEK:
-        return time_dim.group_by("day_of_week").agg(pl.len().alias("hours_count"))
+def _total_hours(start: date, end: date) -> int:
+    return (end - start).days * 24 + 24
 
-    if group_by == StatsGroupBy.HOUR:
-        return time_dim.group_by("hour").agg(pl.len().alias("hours_count"))
 
-    if group_by == StatsGroupBy.DAY_OF_WEEK_AND_HOUR:
-        return time_dim.group_by(["day_of_week", "hour"]).agg(pl.len().alias("hours_count"))
+def _hours_by_dow(start: date, end: date) -> dict[int, int]:
+    """Returns {dow: hours_count} for every weekday present in [start, end]."""
+    counts: dict[int, int] = {}
+    d = start
+    while d <= end:
+        counts[d.weekday()] = counts.get(d.weekday(), 0) + 24
+        d += timedelta(days=1)
+    return counts
 
-    if group_by == StatsGroupBy.WEATHER_CODE:
-        return (
-            time_dim
-            .drop_nulls("weather_code")
-            .group_by("weather_code")
-            .agg(pl.len().alias("hours_count"))
-        )
 
-    return pl.DataFrame(schema={"hours_count": pl.UInt32})
+def _hours_per_day_in_range(start: date, end: date) -> int:
+    """Each of the 24 hour slots repeats once per day in the range."""
+    return (end - start).days + 1
 
-def attach_hours_count(
-    lf: pl.LazyFrame,
-    group_cols: list[str],
-    start_date: date,
-    end_date: date,
-    group_by: StatsGroupBy | RideCountGroupBy,
-    weather_df: pl.DataFrame | None = None,
-) -> pl.LazyFrame:
-    """Join the hours_count from the time dimension onto the grouped stats LazyFrame to ensure empty hours are counted correctly."""
-    hours_count = hours_count_from_time_dimension(
-        start_date=start_date,
-        end_date=end_date,
-        group_by=group_by,
-        weather_df=weather_df,
-    )
-    return (
-        lf.join(hours_count.lazy(), on=group_cols, how="left")
-        .with_columns(pl.col("hours_count").fill_null(0).cast(pl.Int64))
-    )
+
+def _hours_by_dow_and_hour(start: date, end: date) -> dict[tuple[int, int], int]:
+    """Returns {(dow, hour): count} — count = number of that weekday in range."""
+    counts: dict[tuple[int, int], int] = {}
+    d = start
+    while d <= end:
+        dow = d.weekday()
+        for h in range(24):
+            key = (dow, h)
+            counts[key] = counts.get(key, 0) + 1
+        d += timedelta(days=1)
+    return counts
+
+
+# ── shared station-query helpers ──────────────────────────────────────────────
+
+def _station_hours_count(group_by: RideCountGroupBy, start_date: date, end_date: date):
+    if group_by == RideCountGroupBy.NONE:
+        return _total_hours(start_date, end_date)
+    if group_by == RideCountGroupBy.DAY_OF_WEEK:
+        return _hours_by_dow(start_date, end_date)
+    if group_by == RideCountGroupBy.HOUR:
+        return _hours_per_day_in_range(start_date, end_date)
+    if group_by == RideCountGroupBy.DAY_OF_WEEK_AND_HOUR:
+        return _hours_by_dow_and_hour(start_date, end_date)
+
+
+def _lookup_hours_count(hc, r: dict, group_by: RideCountGroupBy) -> int:
+    if group_by == RideCountGroupBy.NONE:
+        return int(hc)
+    if group_by == RideCountGroupBy.DAY_OF_WEEK:
+        return int(hc.get(r["day_of_week"], 0))
+    if group_by == RideCountGroupBy.HOUR:
+        return int(hc)
+    if group_by == RideCountGroupBy.DAY_OF_WEEK_AND_HOUR:
+        return int(hc.get((r["day_of_week"], r["hour"]), 0))
+    return 0
+
+
+# ── dataset coverage ──────────────────────────────────────────────────────────
+
+from src.backend.db import get_conn
+from src.backend.models.stats import DatasetDateRange
+
+
+def get_data_range_coverage() -> DatasetDateRange:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT min_date, max_date FROM dataset_coverage WHERE id = 1")
+            row = cur.fetchone()
+    if row:
+        return DatasetDateRange(min_date=row[0], max_date=row[1])
+    return DatasetDateRange(min_date=None, max_date=None)

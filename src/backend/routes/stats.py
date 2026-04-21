@@ -10,12 +10,10 @@ from src.backend.models.stats import (
     StatsGroupBy,
     RideCountGroupBy,
 )
-from src.backend.services.stats.sql_stats import (
-    get_stats_data,
-    get_trips_between_stations_stats,
-    get_station_ride_counts_stats,
-    get_data_range_coverage,
-)
+from src.backend.services.stats.stats import get_stats_data
+from src.backend.services.stats.station_ride_counts import get_station_ride_counts_stats
+from src.backend.services.stats.station_flow_counts import get_trips_between_stations_stats
+from src.backend.services.stats.utils import get_data_range_coverage
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
