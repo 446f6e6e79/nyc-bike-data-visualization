@@ -234,6 +234,10 @@
                border border-ink transition-colors duration-150 hover:bg-accent;
     }
 
+    .surface-compare-add:hover {
+        @apply bg-ink/80;
+    }
+
     .surface-compare-add:disabled {
         @apply cursor-not-allowed opacity-45 hover:bg-ink;
     }
@@ -489,6 +493,11 @@
 
     .surface-plot-overlay {
         @apply absolute top-3 right-3 z-20 flex flex-col gap-0 items-end;
+        pointer-events: none;
+    }
+
+    .surface-compare-btn,
+    .surface-compare-panel {
         pointer-events: auto;
     }
 
