@@ -88,6 +88,10 @@ function SurfaceGraph({
     layers = [],
 }) {
     const safeData = Array.isArray(data) ? data : []
+    const isInteractionDisabled = Boolean(loading)
+    const hasSurfaceData = compareMode
+        ? layers.some((layer) => Array.isArray(layer.dayHourStats) && layer.dayHourStats.length > 0)
+        : safeData.length > 0
     const containerRef = useRef(null)
     const angleTrackRef = useRef(null)
     const dragPointerIdRef = useRef(null)
@@ -173,6 +177,7 @@ function SurfaceGraph({
 
     const traces = compareTraces.length > 0 ? compareTraces : [singleTrace]
     const hasTraces = traces.length > 0 && traces.some((trace) => Array.isArray(trace.z) && trace.z.length > 0)
+    const canSelectPoints = hasTraces && hasSurfaceData
 
     const maxZ = useMemo(() => {
         let zMax = 0
@@ -190,6 +195,7 @@ function SurfaceGraph({
     }, [traces])
 
     const handlePointerDown = useCallback((event) => {
+        if (isInteractionDisabled) return
         if (event.button !== 0) return
 
         const container = containerRef.current
@@ -200,7 +206,7 @@ function SurfaceGraph({
         dragStartAzimuthRef.current = azimuth
         setIsDragging(true)
         container.setPointerCapture(event.pointerId)
-    }, [azimuth])
+    }, [azimuth, isInteractionDisabled])
 
     const handlePointerMove = useCallback((event) => {
         if (dragPointerIdRef.current !== event.pointerId) return
@@ -297,7 +303,7 @@ function SurfaceGraph({
             onPointerMove={handlePointerMove}
             onPointerUp={stopDragging}
             onPointerCancel={stopDragging}
-            style={{ cursor: isDragging ? "grabbing" : "grab" }}
+            style={{ cursor: isInteractionDisabled ? "wait" : isDragging ? "grabbing" : "grab" }}
         >
             {hasTraces && (
                 <Plot
@@ -326,17 +332,17 @@ function SurfaceGraph({
                         font: { family: FONT_MONO, color: INK, size: 12 },
                         hoverlabel: { font: { family: FONT_MONO } },
                     }}
-                    onClick={handleSurfaceClick}
-                    onHover={handleSurfaceHover}
-                    onUnhover={handleSurfaceUnhover}
                     config={{
                         displayModeBar: false,
                         scrollZoom: false,
-                        staticPlot: false,
+                        staticPlot: !canSelectPoints,
                     }}
                     revision={traces.length}
                     useResizeHandler
                     className="w-full h-full"
+                    onClick={canSelectPoints ? handleSurfaceClick : undefined}
+                    onHover={canSelectPoints ? handleSurfaceHover : undefined}
+                    onUnhover={canSelectPoints ? handleSurfaceUnhover : undefined}
                 />
             )}
             {(loading || error) && <StatusMessage loading={loading} error={error} onRefetch={onRefetch} />}

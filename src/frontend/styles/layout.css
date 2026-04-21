@@ -1,7 +1,7 @@
 @layer components {
   /* ---------- App shell ---------- */
   .app-shell {
-    @apply font-sans min-h-screen bg-paper text-ink flex flex-col;
+    @apply font-sans min-h-screen bg-paper text-ink flex flex-col select-none;
   }
 
   .app-content {
@@ -189,7 +189,7 @@
   }
 
   .page-card__body {
-    @apply flex flex-col gap-12 px-6 md:px-8 py-6 md:py-8;
+    @apply flex flex-col gap-6 md:gap-8 px-6 md:px-8 py-6 md:py-8;
   }
 
   .viz-guide {
