@@ -362,46 +362,41 @@ def get_trips_between_stations_stats(
     group_by: RideCountGroupBy = RideCountGroupBy.NONE,
     limit: int = 100,
 ) -> list[TripsCountBetweenStations]:
-    if group_by in (RideCountGroupBy.HOUR, RideCountGroupBy.DAY_OF_WEEK_AND_HOUR):
+    if group_by in (RideCountGroupBy.HOUR, RideCountGroupBy.DAY_OF_WEEK_AND_HOUR, RideCountGroupBy.DAY_OF_WEEK):
         raise HTTPException(
             status_code=422,
-            detail="Hour-level grouping is not supported for station flow counts",
+            detail="Sub-monthly grouping is not supported for station flow counts",
         )
 
     user_val = user_type.value if user_type else None
     bike_val = bike_type.value if bike_type else None
 
-    if group_by == RideCountGroupBy.DAY_OF_WEEK:
-        time_select = ", EXTRACT(ISODOW FROM fad.date)::int - 1 AS day_of_week"
-        time_group  = ", EXTRACT(ISODOW FROM fad.date)"
-    else:
-        time_select = ""
-        time_group  = ""
+    start_ym = start_date.year * 100 + start_date.month
+    end_ym = end_date.year * 100 + end_date.month
 
-    sql = f"""
-        SELECT fad.station_a_id,
+    sql = """
+        SELECT fam.station_a_id,
                sm_a.station_name AS station_a_name,
                sm_a.lat AS station_a_lat, sm_a.lon AS station_a_lon,
-               fad.station_b_id,
+               fam.station_b_id,
                sm_b.station_name AS station_b_name,
-               sm_b.lat AS station_b_lat, sm_b.lon AS station_b_lon
-               {time_select},
-               SUM(fad.a_to_b_count) AS a_to_b_count,
-               SUM(fad.b_to_a_count) AS b_to_a_count,
-               SUM(fad.a_to_b_count + fad.b_to_a_count) AS total_rides
-        FROM flow_activity_daily fad
-        JOIN station_metadata sm_a ON sm_a.station_id = fad.station_a_id
-        JOIN station_metadata sm_b ON sm_b.station_id = fad.station_b_id
-        WHERE fad.date BETWEEN %s AND %s
-          AND (%s IS NULL OR fad.station_a_id = %s OR fad.station_b_id = %s)
-          AND (%s IS NULL OR fad.user_type = %s)
-          AND (%s IS NULL OR fad.bike_type = %s)
-        GROUP BY fad.station_a_id, fad.station_b_id,
+               sm_b.lat AS station_b_lat, sm_b.lon AS station_b_lon,
+               SUM(fam.a_to_b_count) AS a_to_b_count,
+               SUM(fam.b_to_a_count) AS b_to_a_count,
+               SUM(fam.a_to_b_count + fam.b_to_a_count) AS total_rides
+        FROM flow_activity_monthly fam
+        JOIN station_metadata sm_a ON sm_a.station_id = fam.station_a_id
+        JOIN station_metadata sm_b ON sm_b.station_id = fam.station_b_id
+        WHERE (fam.year * 100 + fam.month) BETWEEN %s AND %s
+          AND (%s IS NULL OR fam.station_a_id = %s OR fam.station_b_id = %s)
+          AND (%s IS NULL OR fam.user_type = %s)
+          AND (%s IS NULL OR fam.bike_type = %s)
+        GROUP BY fam.station_a_id, fam.station_b_id,
                  sm_a.station_name, sm_a.lat, sm_a.lon,
-                 sm_b.station_name, sm_b.lat, sm_b.lon{time_group}
+                 sm_b.station_name, sm_b.lat, sm_b.lon
     """
     params = (
-        start_date, end_date,
+        start_ym, end_ym,
         station_id, station_id, station_id,
         user_val, user_val,
         bike_val, bike_val,

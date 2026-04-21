@@ -77,19 +77,20 @@ def _insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
         )
     print(f"    station_activity_hourly: {len(rows)} rows")
 
-
-def _insert_flow_activity_daily(conn, rides: pl.DataFrame) -> None:
+def _insert_flow_activity_monthly(conn, rides: pl.DataFrame) -> None:
     flow = (
         rides
         .with_columns([
+            pl.col("date").dt.year().cast(pl.Int16).alias("year"),
+            pl.col("date").dt.month().cast(pl.Int16).alias("month"),
             pl.min_horizontal("start_station_id", "end_station_id").alias("station_a_id"),
             pl.max_horizontal("start_station_id", "end_station_id").alias("station_b_id"),
             (pl.col("start_station_id") <= pl.col("end_station_id")).alias("_is_a_to_b"),
         ])
-        .group_by(["date", "station_a_id", "station_b_id", "member_casual", "rideable_type", "_is_a_to_b"])
+        .group_by(["year", "month", "station_a_id", "station_b_id", "member_casual", "rideable_type", "_is_a_to_b"])
         .agg(pl.len().alias("count"))
     )
-    key_cols = ["date", "station_a_id", "station_b_id", "member_casual", "rideable_type"]
+    key_cols = ["year", "month", "station_a_id", "station_b_id", "member_casual", "rideable_type"]
     a_to_b = flow.filter(pl.col("_is_a_to_b")).drop("_is_a_to_b").rename({"count": "a_to_b_count"})
     b_to_a = flow.filter(~pl.col("_is_a_to_b")).drop("_is_a_to_b").rename({"count": "b_to_a_count"})
     merged = (
@@ -102,7 +103,7 @@ def _insert_flow_activity_daily(conn, rides: pl.DataFrame) -> None:
     )
     rows = [
         (
-            r["date"], r["station_a_id"], r["station_b_id"],
+            int(r["year"]), int(r["month"]), r["station_a_id"], r["station_b_id"],
             r["member_casual"], r["rideable_type"],
             int(r["a_to_b_count"]), int(r["b_to_a_count"]),
         )
@@ -111,37 +112,19 @@ def _insert_flow_activity_daily(conn, rides: pl.DataFrame) -> None:
     with conn.cursor() as cur:
         cur.executemany(
             """
-            INSERT INTO flow_activity_daily
-                (date, station_a_id, station_b_id, user_type, bike_type, a_to_b_count, b_to_a_count)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (date, station_a_id, station_b_id, user_type, bike_type) DO NOTHING
+            INSERT INTO flow_activity_monthly
+                (year, month, station_a_id, station_b_id, user_type, bike_type, a_to_b_count, b_to_a_count)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (year, month, station_a_id, station_b_id, user_type, bike_type) DO NOTHING
             """,
             rows,
         )
-    print(f"    flow_activity_daily: {len(rows)} rows")
+    print(f"    flow_activity_monthly: {len(rows)} rows")
 
-
-def _upsert_station_metadata(conn, rides: pl.DataFrame) -> None:
-    starts = rides.select([
-        pl.col("start_station_id").alias("station_id"),
-        pl.col("start_station_name").alias("station_name"),
-        pl.col("start_lat").alias("lat"),
-        pl.col("start_lng").alias("lon"),
-    ])
-    ends = rides.select([
-        pl.col("end_station_id").alias("station_id"),
-        pl.col("end_station_name").alias("station_name"),
-        pl.col("end_lat").alias("lat"),
-        pl.col("end_lng").alias("lon"),
-    ])
-    stations = (
-        pl.concat([starts, ends])
-        .unique(subset=["station_id"])
-        .drop_nulls(subset=["station_id"])
-    )
+def _upsert_station_metadata(conn, station_info: list[dict]) -> None:
     rows = [
-        (r["station_id"], r["station_name"], r["lat"], r["lon"])
-        for r in stations.iter_rows(named=True)
+        (s["short_name"], s["name"], s["lat"], s["lon"])
+        for s in station_info
     ]
     with conn.cursor() as cur:
         cur.executemany(

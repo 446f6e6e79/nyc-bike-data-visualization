@@ -1,7 +1,7 @@
 """
 Precompute per-month ride stats and bulk-load them into PostgreSQL.
 Replaces daily_stats.py — writes three tables:
-  stats_hourly, station_activity_hourly, flow_activity_daily
+  stats_hourly, station_activity_hourly, flow_activity_monthly
 plus station_metadata and dataset_coverage.
 """
 from datetime import date
@@ -9,9 +9,10 @@ from datetime import date
 import polars as pl
 
 from src.backend.config import RIDES_DATA_DIR, STATION_DISTANCES_PATH, WEATHER_DATA_DIR
+from src.backend.services.gbfs import fetch_station_data
 from utils.pg_loader_parts.enrichments import _enrich_with_distances, _enrich_with_weather_code
 from utils.pg_loader_parts.inserts import (
-	_insert_flow_activity_daily,
+	_insert_flow_activity_monthly,
 	_insert_station_activity_hourly,
 	_insert_stats_hourly,
 	_upsert_station_metadata,
@@ -23,7 +24,7 @@ def init_db(conn) -> None:
 	Args:
 		conn: psycopg2 connection object to the target database
 	"""
-	schema_dir = __import__("pathlib").Path(schema_dir).resolve().parents[1] / "postgre" / "schemas"
+	schema_dir = __import__("pathlib").Path(__file__).resolve().parents[1] / "postgre" / "schemas"
 	
     # Get all files in the schema directory, sorted alphabetically 
 	schema_files = sorted(schema_dir.glob("*.sql"))
@@ -74,10 +75,16 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 
 	_insert_stats_hourly(conn, rides)
 	_insert_station_activity_hourly(conn, rides)
-	_insert_flow_activity_daily(conn, rides)
-	_upsert_station_metadata(conn, rides)
+	_insert_flow_activity_monthly(conn, rides)
 	conn.commit()
 	print(f"  Done — {year}-{month:02d} committed.")
+
+
+def upsert_station_metadata_from_gbfs(conn) -> None:
+	"""Fetch current station list from GBFS and upsert into station_metadata."""
+	station_info, _ = fetch_station_data(force_refresh=True)
+	_upsert_station_metadata(conn, station_info)
+	conn.commit()
 
 
 def update_dataset_coverage(conn) -> None:

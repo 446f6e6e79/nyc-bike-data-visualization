@@ -13,7 +13,7 @@ from utils.distances import compute_and_save_station_distances
 from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
-from utils.pg_loader import init_db, load_stats_for_month, update_dataset_coverage
+from utils.pg_loader import init_db, load_stats_for_month, update_dataset_coverage, upsert_station_metadata_from_gbfs
 from src.backend.config import (
     DATA_DIR,
     RIDES_DATA_DIR,
@@ -88,7 +88,8 @@ def main():
     conn = psycopg2.connect(os.environ["DATABASE_URL"])
     # Initialise the database schema from scripts/postgre/schemas/*.sql
     init_db(conn)
-
+    upsert_station_metadata_from_gbfs(conn)
+    """
     # Download and convert the filtered files
     download_ride_data(args.start_date, args.end_date, download_jc=args.download_jc)
 
@@ -97,7 +98,7 @@ def main():
 
     # Download hourly weather data before computing stats (weather_code is joined at precompute time)
     download_weather_data(args.start_date, args.end_date)
-
+    """
     # Precompute stats for every downloaded month and load into Postgres
     for year, month in list_rides_months_partitions(RIDES_DATA_DIR):
         load_stats_for_month(conn, year, month)
@@ -107,7 +108,7 @@ def main():
     conn.close()
 
     # Download and preprocess bike route data
-    download_bike_routes(force_download=args.force_download)
+    #download_bike_routes(force_download=args.force_download)
 
     #TODO: we can clean up old parquet files that are no longer needed after loading into Postgres to save disk space
 if __name__ == "__main__":
