@@ -624,19 +624,19 @@ function TemporalPage({ filters, onCompareModeChange }) {
                 <VisualizationGuide
                     mapName="Weekly Rhythm"
                     title="How To Read It"
-                    summary="The 3D surface shows how your selected metric changes at every day-hour intersection, while the two histograms break the same signal into simpler one-dimensional views."
+                    summary="The 3D surface maps your metric across every day-hour cell. In Compare mode, you can overlay multiple surfaces to inspect how rhythms shift between user and bike groups, while histograms help verify aggregate day/hour effects."
                     hints={[
                         {
-                            title: 'Read shape before numbers',
-                            text: 'Ridges and valleys on the surface reveal recurring cycles. Focus on where the terrain rises consistently before inspecting exact values.',
+                            title: 'Start from the baseline',
+                            text: 'Read the Current surface first, then add comparison surfaces one at a time so differences in ridges and peaks remain interpretable.',
                         },
                         {
-                            title: 'Compare user and bike types',
-                            text: 'Use the header filter to compare how the same rhythms change across different user types or bike type behavior.',
+                            title: 'Use Compare as context',
+                            text: 'Add multiple user/bike combinations from Compare, then use Hide/Show to isolate one layer at a time and confirm whether a pattern is global or segment-specific.',
                         },
                         {
-                            title: 'Validate with histograms',
-                            text: 'After spotting a hotspot on the surface, verify if it is mostly a day effect or an hour effect using the corresponding histogram.',
+                            title: 'Cross-check with histograms',
+                            text: 'When a surface appears higher in one region, confirm if the gap is driven by specific days or hours using the aligned histogram panels.',
                         },
                     ]}
                 />
