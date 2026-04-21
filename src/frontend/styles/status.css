@@ -23,7 +23,7 @@
   }
 
   .status-text {
-    @apply text-[11px];
+    @apply text-[11px] select-none;
   }
 
   .status-refetch-btn {

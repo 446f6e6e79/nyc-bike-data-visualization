@@ -46,7 +46,7 @@
 
     .surface-compare-btn__icon,
     .surface-btn-icon {
-        @apply inline-flex items-center justify-center w-4 h-4 text-[13px];
+        @apply inline-flex items-center justify-center w-4 h-4 text-[11px];
     }
 
     .surface-compare-btn:hover {
@@ -65,8 +65,8 @@
 
     .surface-compare-panel {
         @apply border border-rule p-4 flex flex-col gap-3;
-        margin-top: .5rem;
-        width: min(520px, calc(100vw - 4.5rem));
+        margin-top: 0.5rem;
+        /* width: min(700px, calc(100vw - 4.5rem)); */
         background: linear-gradient(
             180deg,
             rgba(251, 248, 242, 0.76) 0%,
@@ -99,8 +99,12 @@
         @apply grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end;
     }
 
+    .surface-compare-panel__controls-row-2 {
+        @apply col-span-1 md:col-span-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end;
+    }
+
     .surface-compare-field {
-        @apply flex flex-col gap-1;
+        @apply flex flex-col gap-1 w-28 select-none;
     }
 
     .surface-compare-field span {
@@ -192,7 +196,9 @@
                text-ellipsis whitespace-nowrap;
         background: transparent;
         cursor: pointer;
-        transition: background-color 140ms ease, color 140ms ease;
+        transition:
+            background-color 140ms ease,
+            color 140ms ease;
     }
 
     .surface-compare-select-option:last-child {
@@ -441,7 +447,7 @@
 
     .surface-angle-track.is-disabled {
         cursor: not-allowed;
-        opacity: 0.45;
+        opacity: 0.55;
     }
 
     .surface-angle-track:focus {
@@ -460,7 +466,8 @@
     }
 
     .surface-angle-track__thumb {
-        @apply absolute top-1/2;
+        position: absolute;
+        top: 50%;
         width: 2px;
         height: 14px;
         background: rgba(22, 20, 18, 0.84);
@@ -472,11 +479,11 @@
     }
 
     .surface-angle-ticks {
-        @apply flex items-center justify-between;
+        @apply flex items-center justify-between select-none;
     }
 
     .surface-angle-tick {
-        @apply font-mono text-[9px] text-ink-muted;
+        @apply font-mono text-[9px] text-ink-muted select-none;
         line-height: 1;
     }
 

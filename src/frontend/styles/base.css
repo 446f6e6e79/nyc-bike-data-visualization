@@ -22,4 +22,8 @@
   ::selection {
     @apply bg-accent text-white;
   }
+
+  button {
+    @apply select-none;
+  }
 }

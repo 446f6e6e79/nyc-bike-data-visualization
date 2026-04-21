@@ -83,6 +83,12 @@
   .app-title {
     @apply font-display text-white text-[28px] md:text-[32px]
            font-semibold tracking-display leading-none m-0;
+    transition: transform .18s ease;
+    transform-origin: left bottom;
+  }
+
+  .app-title:hover {
+    transform: skewX(-12deg);
   }
 
   .app-header__nav {
@@ -187,7 +193,7 @@
   }
 
   .viz-guide {
-    @apply border border-rule bg-paper p-4 md:p-5 pb-6 md:pb-7 flex flex-col gap-8;
+    @apply border border-rule bg-paper p-4 md:p-5 pb-4 md:pb-5 flex flex-col gap-8;
     background-image: linear-gradient(180deg, rgba(25, 83, 216, 0.04) 0%, rgba(25, 83, 216, 0) 70%);
   }
 
