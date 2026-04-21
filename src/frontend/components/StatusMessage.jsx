@@ -1,8 +1,13 @@
 function StatusMessage({ loading, error, onRefetch }) {
     if (loading) {
         return (
-            <div className="status-wrap">
-                <div className="status-spinner" />
+            <div className="status-wrap status-wrap--loading">
+                <div className="status-loading-rings" aria-hidden="true">
+                    <span className="status-loading-ring" />
+                    <span className="status-loading-ring" />
+                    <span className="status-loading-ring" />
+                </div>
+                <div className="status-loading-blur-layer" aria-hidden="true" />
                 <span className="status-text">Fetching bike data...</span>
             </div>
         )
