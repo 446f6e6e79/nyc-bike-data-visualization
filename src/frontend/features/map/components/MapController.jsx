@@ -24,6 +24,7 @@ export default function MapController({
     setShowBikeRoutes,
     resetSelectedStationIds,
     hasTripFlowSelection,
+    disabled = false,
 }) {
     return (
         <div className="map-controls">
@@ -31,6 +32,7 @@ export default function MapController({
                 <SpeedController
                     setCurrentTime={setCurrentTime}
                     currentTime={currentTime}
+                    disabled={disabled}
                 />
             )}
 

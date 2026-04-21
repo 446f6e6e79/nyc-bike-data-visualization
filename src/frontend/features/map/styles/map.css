@@ -136,7 +136,6 @@
 
   .map-toggle-button__icon {
     @apply inline-flex items-center justify-center w-4 h-4 text-[13px] text-current;
-    border: 1px solid currentColor;
     opacity: 0.8;
   }
 
@@ -149,6 +148,10 @@
   .map-speed-controls {
     @apply w-full px-4 py-3 text-xs text-ink pointer-events-auto
            bg-paper-raised backdrop-blur-sm border border-rule;
+  }
+
+  .map-speed-controls.is-disabled {
+    opacity: 0.72;
   }
 
   .map-speed-controls__header {
@@ -192,6 +195,10 @@
     border-radius: 0;
   }
 
+  .map-speed-controls__play-btn:disabled {
+    @apply cursor-not-allowed opacity-45;
+  }
+
   .map-speed-controls__speed-selector {
     @apply relative inline-flex h-full w-[3rem] flex-col items-center justify-center overflow-hidden
            border border-rule bg-paper-raised py-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-ink
@@ -206,6 +213,29 @@
   .map-speed-controls__speed-selector:focus-within {
     width: 150px;
     border-color: rgba(11, 12, 14, 0.22);
+  }
+
+  .map-speed-controls__speed-selector:hover,
+  .map-speed-controls__speed-selector:focus-within {
+    cursor: ew-resize;
+  }
+
+  .map-speed-controls__speed-selector.is-disabled,
+  .map-speed-controls__speed-selector.is-disabled:hover,
+  .map-speed-controls__speed-selector.is-disabled:focus-within {
+    width: 3rem;
+    cursor: not-allowed;
+    border-color: rgba(11, 12, 14, 0.16);
+  }
+
+  .map-speed-controls__speed-selector.is-disabled .map-speed-controls__speed-wheel {
+    opacity: 0;
+    transform: scaleY(0.92);
+    pointer-events: none;
+  }
+
+  .map-time-wheel.is-disabled {
+    cursor: not-allowed;
   }
 
   .map-speed-controls__speed-value {
@@ -234,6 +264,13 @@
     opacity: 1;
     transform: scaleY(1);
     pointer-events: auto;
+  }
+
+  .map-speed-controls__speed-selector.is-disabled:hover .map-speed-controls__speed-wheel,
+  .map-speed-controls__speed-selector.is-disabled:focus-within .map-speed-controls__speed-wheel {
+    opacity: 0;
+    transform: scaleY(0.92);
+    pointer-events: none;
   }
 
   .map-speed-controls__speed-wheel-rail {
@@ -361,7 +398,6 @@
 
   .map-reset-button-icon {
     @apply inline-flex items-center justify-center w-4 h-4 text-[13px] text-white;
-    border: 1px solid rgba(255, 255, 255, 0.5);
   }
 
   .map-reset-button-text {
