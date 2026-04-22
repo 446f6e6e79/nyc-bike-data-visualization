@@ -81,7 +81,7 @@ def fetch_station_data(force_refresh: bool = False) -> tuple[list, dict]:
 
     return info, status_map
 
-def _build_station_info(station_data: dict) -> StationInfo:
+def build_station_info(station_data: dict) -> StationInfo:
     """Build a StationInfo response model with static station information only."""
     return StationInfo(
         id=str(station_data["short_name"]),
@@ -91,7 +91,7 @@ def _build_station_info(station_data: dict) -> StationInfo:
         capacity=station_data["capacity"],
     )
 
-def _find_station_by_id(station_data: list[dict], station_id: str) -> dict:
+def find_station_by_id(station_data: list[dict], station_id: str) -> dict:
     """Find a station by its public short_name identifier."""
     for station in station_data:
         if station["short_name"] == station_id:
@@ -99,7 +99,7 @@ def _find_station_by_id(station_data: list[dict], station_id: str) -> dict:
 
     raise HTTPException(status_code=404, detail="Station not found")
 
-def _merge_station(station_data: dict, station_status_data: dict) -> Station:
+def merge_station(station_data: dict, station_status_data: dict) -> Station:
     """Build a Station response model from raw info + status data."""
     # Retrieve the status for this station, defaulting to empty dict if not found
     st = station_status_data.get(station_data["station_id"], {})

@@ -31,6 +31,15 @@ def upsert_bike_routes(conn, df: pl.DataFrame) -> None:
             INSERT INTO bike_routes
                 (segmentid, bikeid, the_geom, street, fromstreet, tostreet, facilitycl, instdate, boro)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (segmentid) DO UPDATE SET
+                bikeid     = EXCLUDED.bikeid,
+                the_geom   = EXCLUDED.the_geom,
+                street     = EXCLUDED.street,
+                fromstreet = EXCLUDED.fromstreet,
+                tostreet   = EXCLUDED.tostreet,
+                facilitycl = EXCLUDED.facilitycl,
+                instdate   = EXCLUDED.instdate,
+                boro       = EXCLUDED.boro
             """,
             rows,
         )

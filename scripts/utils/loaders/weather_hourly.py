@@ -51,6 +51,7 @@ def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
             INSERT INTO weather_hourly
                 (date, hour, weather_code, temperature_2m, precipitation, wind_speed_10m)
             VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (date, hour) DO NOTHING
             """,
             rows,
         )

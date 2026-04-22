@@ -53,6 +53,7 @@ def insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
             INSERT INTO station_activity_hourly
                 (year, month, day_of_week, hour, station_id, user_type, bike_type, outgoing_rides, incoming_rides)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (year, month, day_of_week, hour, station_id, user_type, bike_type) DO NOTHING
             """,
             rows,
         )

@@ -50,6 +50,7 @@ def insert_flow_activity_monthly(conn, rides: pl.DataFrame) -> None:
             INSERT INTO flow_activity_monthly
                 (year, month, station_a_id, station_b_id, user_type, bike_type, a_to_b_count, b_to_a_count)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (year, month, station_a_id, station_b_id, user_type, bike_type) DO NOTHING
             """,
             rows,
         )

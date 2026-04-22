@@ -42,6 +42,7 @@ def insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
                 (date, hour, day_of_week, user_type, bike_type,
                  total_rides, total_duration_seconds, total_distance_km)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (date, hour, user_type, bike_type) DO NOTHING
             """,
             rows,
         )

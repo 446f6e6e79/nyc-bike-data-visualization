@@ -18,6 +18,7 @@ def upsert_station_metadata(conn, station_info: list[dict]) -> None:
             """
             INSERT INTO station_metadata (station_id, station_name, lat, lon)
             VALUES (%s, %s, %s, %s)
+            ON CONFLICT (station_id) DO NOTHING
             """,
             rows,
         )

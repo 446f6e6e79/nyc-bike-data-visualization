@@ -17,7 +17,7 @@ def init_pool() -> None:
 
 
 @contextmanager
-def get_conn():
+def get_conn() -> 'psycopg2.extensions.connection':
     """Get a database connection from the pool, yielding it for use, and ensuring it's returned to the pool afterwards."""
     assert _pool is not None, "DB pool not initialised — call init_pool() first"
     conn = _pool.getconn()
