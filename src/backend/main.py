@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.backend.routes import stations, stats, bike_routes
 from src.backend.db import init_pool
-from src.backend.config import TEST_ENV_VAR, LOG_FILE_PATH, LOG_LEVEL
+from src.backend.config import LOG_FILE_PATH, LOG_LEVEL
 
 logger = logging.getLogger("backend.request")
 if not logger.handlers:
@@ -29,19 +29,9 @@ if not logger.handlers:
 logger.setLevel(LOG_LEVEL)
 logger.propagate = False
 
-def _is_historical_test_mode_enabled() -> bool:
-    """
-    Determine whether historical data should load in test mode from env var.
-
-    Accepted truthy values: 1, true, yes, on (case-insensitive).
-    """
-    raw_value = os.getenv(TEST_ENV_VAR, "false")
-    return raw_value.strip().lower() in {"1", "true", "yes", "on"}
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_pool()
-    test = _is_historical_test_mode_enabled()
     yield
 
 app = FastAPI(lifespan=lifespan)

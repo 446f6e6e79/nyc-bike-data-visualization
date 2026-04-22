@@ -58,7 +58,6 @@ jobs:
 
       - name: Run backend integration tests
         env:
-          TEST_MODE: "true"
           DATABASE_URL: postgresql://citibike:citibike@localhost:5432/citibike
         run: |
           python -m uvicorn src.backend.main:app --host 127.0.0.1 --port 8000 &

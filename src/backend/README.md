@@ -54,7 +54,6 @@ docker compose stop postgres
 To start the backend server, run the following command in your terminal:
 
 ```bash
-unset TEST_MODE # Ensure TEST_MODE is not set to load production data by default
 uvicorn src.backend.main:app --reload
 ```
 
@@ -62,14 +61,15 @@ This will launch the FastAPI server with hot-reloading enabled, allowing you to 
 
 ## Running Backend Tests
 
-Run the backend integration tests against the committed mock dataset:
+Seed a local postgres instance with test fixtures, then run the server and tests:
 
 ```bash
-export TEST_MODE=true
+export DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike
+python scripts/load_test_data.py
 uvicorn src.backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-In a second terminal, run:
+In a second terminal:
 
 ```bash
 pytest src/backend/tests -q
