@@ -2,25 +2,40 @@ name: Backend Tests
 
 on:
   push:
-    # Only run this workflow when changes are pushed to the main branch, if changes are made to files in the src/backend directory
     branches:
       - main
     paths:
       - "src/backend/**"
+      - "scripts/**"
       - "requirements.txt"
       - ".github/workflows/backend-tests.yml"
   pull_request:
-    # Run on pull requests targeting the main branch, with the same path filters
     branches:
       - main
     paths:
       - "src/backend/**"
+      - "scripts/**"
       - "requirements.txt"
       - ".github/workflows/backend-tests.yml"
 
 jobs:
   test-backend:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: citibike
+          POSTGRES_PASSWORD: citibike
+          POSTGRES_DB: citibike
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
       - name: Checkout repository
@@ -36,11 +51,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Seed test database
+        env:
+          DATABASE_URL: postgresql://citibike:citibike@localhost:5432/citibike
+        run: python scripts/load_test_data.py
+
       - name: Run backend integration tests
         env:
           TEST_MODE: "true"
+          DATABASE_URL: postgresql://citibike:citibike@localhost:5432/citibike
         run: |
-          # Start the backend server in the background
           python -m uvicorn src.backend.main:app --host 127.0.0.1 --port 8000 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID' EXIT
@@ -48,7 +68,6 @@ jobs:
           python - <<'PY'
           import time
           import urllib.request
-          # Check that the backend server is up and running by trying to access the docs endpoint
           for _ in range(30):
               try:
                   with urllib.request.urlopen("http://127.0.0.1:8000/docs", timeout=2):
@@ -58,6 +77,6 @@ jobs:
           else:
               raise SystemExit("Backend server did not become ready in time.")
           PY
-          # Run the tests
+
           cd src/backend
           pytest tests -q
