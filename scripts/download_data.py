@@ -13,7 +13,7 @@ from utils.distances import compute_and_save_station_distances
 from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
-from utils.pg_loader import init_db, load_stats_for_month, update_dataset_coverage, upsert_station_metadata_from_gbfs
+from utils.pg_loader import assert_no_coverage_gaps, init_db, load_stats_for_month, update_dataset_coverage, upsert_station_metadata_from_gbfs
 from src.backend.config import (
     DATA_DIR,
     RIDES_DATA_DIR,
@@ -61,6 +61,45 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--force-download", action="store_true", help="Force re-download of all files, even if they already exist")
     return parser.parse_args()
 
+def _effective_date_range(conn, requested_start: str, requested_end: str) -> tuple[str, str]:
+    """Expand the date range in either direction to avoid gaps with existing DB coverage.
+
+    - If the DB max is M and requested start > M+1, start is pulled back to M+1.
+    - If the DB min is M and requested end < M-1, end is pushed forward to M-1.
+    """
+    with conn.cursor() as cur:
+        cur.execute("SELECT min_date, max_date FROM dataset_coverage WHERE id = 1")
+        row = cur.fetchone()
+
+    if not row or not row[0]:
+        return requested_start, requested_end
+
+    def _next(ym: int) -> int:
+        y, m = ym // 100, ym % 100
+        return (y + 1) * 100 + 1 if m == 12 else ym + 1
+
+    def _prev(ym: int) -> int:
+        y, m = ym // 100, ym % 100
+        return (y - 1) * 100 + 12 if m == 1 else ym - 1
+
+    min_date, max_date = row
+    db_min_ym = min_date.year * 100 + min_date.month
+    db_max_ym = max_date.year * 100 + max_date.month
+
+    effective_start = int(requested_start)
+    effective_end = int(requested_end)
+
+    if effective_start > _next(db_max_ym):
+        effective_start = _next(db_max_ym)
+        print(f"Expanding start date from {requested_start} to {effective_start} to fill coverage gap.")
+
+    if effective_end < _prev(db_min_ym):
+        effective_end = _prev(db_min_ym)
+        print(f"Expanding end date from {requested_end} to {effective_end} to fill coverage gap.")
+
+    return str(effective_start), str(effective_end)
+
+
 def main():
     # Parse and validate command-line arguments
     args = parse_args()
@@ -89,19 +128,25 @@ def main():
     # Initialise the database schema from scripts/postgre/schemas/*.sql
     init_db(conn)
     upsert_station_metadata_from_gbfs(conn)
+
+    # Expand date range if needed to fill any gap with existing DB coverage
+    start_date, end_date = _effective_date_range(conn, args.start_date, args.end_date)
+
     """
     # Download and convert the filtered files
-    download_ride_data(args.start_date, args.end_date, download_jc=args.download_jc)
+    download_ride_data(start_date, end_date, download_jc=args.download_jc)
 
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances(force_download=args.force_download)
 
     # Download hourly weather data before computing stats (weather_code is joined at precompute time)
-    download_weather_data(args.start_date, args.end_date)
+    download_weather_data(start_date, end_date)
     """
     # Precompute stats for every downloaded month and load into Postgres
     for year, month in list_rides_months_partitions(RIDES_DATA_DIR):
         load_stats_for_month(conn, year, month)
+    
+    assert_no_coverage_gaps(conn)
     update_dataset_coverage(conn)
 
     # Close the database connection
@@ -111,5 +156,6 @@ def main():
     #download_bike_routes(force_download=args.force_download)
 
     #TODO: we can clean up old parquet files that are no longer needed after loading into Postgres to save disk space
+
 if __name__ == "__main__":
     main()

@@ -63,8 +63,9 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Int16).alias("weather_code"))
 
 	rides_lf = rides_lf.with_columns([
-		pl.col("started_at").dt.date().alias("date"),
-		pl.col("started_at").dt.hour().cast(pl.Int16).alias("hour"),
+		# Use the end time for date/hour to reflect the provider's choice of when a ride counts towards usage stats
+		pl.col("ended_at").dt.date().alias("date"),
+		pl.col("ended_at").dt.hour().cast(pl.Int16).alias("hour"),
 		(pl.col("ended_at") - pl.col("started_at"))
 			.dt.total_seconds()
 			.alias("trip_duration_seconds"),
@@ -85,6 +86,39 @@ def upsert_station_metadata_from_gbfs(conn) -> None:
 	station_info, _ = fetch_station_data(force_refresh=True)
 	_upsert_station_metadata(conn, station_info)
 	conn.commit()
+
+
+def assert_no_coverage_gaps(conn) -> None:
+	"""Raise ValueError if stats_hourly has missing months between its min and max date."""
+	with conn.cursor() as cur:
+		cur.execute("""
+			SELECT EXTRACT(YEAR FROM date)::int, EXTRACT(MONTH FROM date)::int
+			FROM stats_hourly
+			GROUP BY 1, 2
+			ORDER BY 1, 2
+		""")
+		loaded = [(r[0], r[1]) for r in cur.fetchall()]
+
+	if len(loaded) < 2:
+		return
+
+	(min_y, min_m), (max_y, max_m) = loaded[0], loaded[-1]
+	loaded_set = set(loaded)
+
+	missing = []
+	y, m = min_y, min_m
+	while (y, m) <= (max_y, max_m):
+		if (y, m) not in loaded_set:
+			missing.append(f"{y}-{m:02d}")
+		m += 1
+		if m > 12:
+			y, m = y + 1, 1
+
+	if missing:
+		raise ValueError(
+			f"Dataset has gaps — missing months: {', '.join(missing)}. "
+			"Re-run the script with a wider date range to fill them."
+		)
 
 
 def update_dataset_coverage(conn) -> None:
