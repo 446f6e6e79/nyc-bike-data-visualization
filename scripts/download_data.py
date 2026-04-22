@@ -14,7 +14,7 @@ from utils.distances import compute_and_save_station_distances
 from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
-from utils.pg_loader import assert_no_coverage_gaps, init_db, load_stats_for_month, update_dataset_coverage, upsert_station_metadata_from_gbfs
+from utils.pg_loader import assert_no_coverage_gaps, get_loaded_months, init_db, load_stats_for_month, update_dataset_coverage, upsert_station_metadata_from_gbfs
 from src.backend.config import (
     DATA_DIR,
     RIDES_DATA_DIR,
@@ -25,7 +25,6 @@ from src.backend.config import (
     DOWNLOAD_JC,
     BIKE_ROUTES_DATA_DIR,
 )
-from src.backend.loaders.rides_loader import list_rides_months_partitions
 
 def validate_yyyymm(date_value: str, arg_name: str) -> None:
     """
@@ -131,15 +130,9 @@ def main():
     os.makedirs(WEATHER_DATA_DIR, exist_ok=True)
     os.makedirs(BIKE_ROUTES_DATA_DIR, exist_ok=True)
 
-     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
-    compute_and_save_station_distances(force_download=args.force_download)
-
-    # Download hourly weather data before computing stats (weather_code is joined at precompute time)
-    download_weather_data(start_date, end_date)
-
     # Connect to Postgres
     conn = psycopg2.connect(os.environ["DATABASE_URL"])
-    
+
     # Initialise the database schema from scripts/postgre/schemas/*.sql
     init_db(conn)
     upsert_station_metadata_from_gbfs(conn)
@@ -149,17 +142,21 @@ def main():
 
     # Download ride data and process each month into Postgres as soon as its parquet is ready,
     # overlapping DB loading with the download of the next month.
+    # DB coverage is used to skip months already fully loaded, avoiding redundant downloads.
+    current_coverage = get_loaded_months(conn)
     with ThreadPoolExecutor(max_workers=1) as executor:
         futures = []
-        for year, month in download_ride_data(start_date, end_date, download_jc=args.download_jc):
+        for year, month in download_ride_data(start_date, end_date, download_jc=args.download_jc, current_coverage=current_coverage):
             futures.append(executor.submit(_load_month, year, month))
         for f in futures:
             f.result()
 
-    # Precompute stats for any months already on disk that weren't part of this download run
-    for year, month in list_rides_months_partitions(RIDES_DATA_DIR):
-        load_stats_for_month(conn, year, month)
-    
+    # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
+    compute_and_save_station_distances(force_download=args.force_download)
+
+    # Download hourly weather data before computing stats (weather_code is joined at precompute time)
+    download_weather_data(start_date, end_date)
+
     assert_no_coverage_gaps(conn)
     update_dataset_coverage(conn)
 

@@ -260,14 +260,16 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
     print(f"Extracted {len(csv_frames)} CSV files from ZIP, combining into a single DataFrame...")
     return pl.concat(csv_frames, how="diagonal_relaxed")
 
-def download_ride_data(start_date: str, end_date: str, download_jc: bool):
+def download_ride_data(start_date: str, end_date: str, download_jc: bool, current_coverage: list[int]):
     """
     Download each filtered ZIP file from the S3 bucket and convert all CSV files
     inside it into a single parquet file. Yields (year, month) tuples for each
     partition written so callers can process months as they become available.
+
+    current_coverage: list of YYYYMM integers for months already in the DB —
+    files whose months are fully covered are skipped.
     """
     available_files = _find_available_files(BASE_URL_RIDE_DATA)
-    current_coverage = _find_current_coverage(RIDES_DATA_DIR)
     filtered_files = _filter_files(available_files, current_coverage, start_date, end_date, download_jc=download_jc)
 
     for f in filtered_files:

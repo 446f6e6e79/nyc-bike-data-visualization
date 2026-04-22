@@ -136,6 +136,17 @@ def update_dataset_coverage(conn) -> None:
 		""")
 	conn.commit()
 
+def get_loaded_months(conn) -> list[int]:
+    """Return all months already present in stats_hourly as a list of YYYYMM integers."""
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT EXTRACT(YEAR FROM date)::int, EXTRACT(MONTH FROM date)::int
+            FROM stats_hourly
+            GROUP BY 1, 2
+        """)
+        return [y * 100 + m for y, m in cur.fetchall()]
+
+
 def _is_month_loaded(conn, year: int, month: int) -> bool:
     with conn.cursor() as cur:
         cur.execute(
