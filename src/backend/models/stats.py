@@ -21,7 +21,6 @@ class StatsGroupBy(str, Enum):
     DAY_OF_WEEK = "day_of_week"
     HOUR = "hour"
     DAY_OF_WEEK_AND_HOUR = "day_of_week,hour"
-    WEATHER_CODE = "weather"
     DATE = "date"
 
 class RideCountGroupBy(str, Enum):
