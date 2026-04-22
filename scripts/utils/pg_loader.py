@@ -12,10 +12,10 @@ from src.backend.config import RIDES_DATA_DIR, STATION_DISTANCES_PATH, WEATHER_D
 from src.backend.services.gbfs import fetch_station_data
 from utils.pg_loader_parts.enrichments import _enrich_with_distances, _enrich_with_weather_code
 from utils.pg_loader_parts.inserts import (
-	_insert_flow_activity_monthly,
-	_insert_station_activity_hourly,
-	_insert_stats_hourly,
-	_upsert_station_metadata,
+	insert_flow_activity_monthly,
+	insert_station_activity_hourly,
+	insert_stats_hourly,
+	upsert_station_metadata,
 )
 
 def init_db(conn) -> None:
@@ -65,9 +65,9 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 	rides = rides_lf.collect()
 	print(f"  {len(rides)} rides — computing aggregations...")
 
-	_insert_stats_hourly(conn, rides)
-	_insert_station_activity_hourly(conn, rides)
-	_insert_flow_activity_monthly(conn, rides)
+	insert_stats_hourly(conn, rides)
+	insert_station_activity_hourly(conn, rides)
+	insert_flow_activity_monthly(conn, rides)
 	conn.commit()
 	print(f"  Done — {year}-{month:02d} committed.")
 
@@ -75,7 +75,7 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 def upsert_station_metadata_from_gbfs(conn) -> None:
 	"""Fetch current station list from GBFS and upsert into station_metadata."""
 	station_info, _ = fetch_station_data(force_refresh=True)
-	_upsert_station_metadata(conn, station_info)
+	upsert_station_metadata(conn, station_info)
 	conn.commit()
 
 def assert_no_coverage_gaps(conn) -> None:

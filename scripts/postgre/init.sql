@@ -7,4 +7,5 @@
 \ir schemas/003_flow_activity_daily.sql
 \ir schemas/004_station_metadata.sql
 \ir schemas/005_dataset_coverage.sql
-\ir schemas/006_indexes.sql
+\ir schemas/006_bike_routes.sql
+\ir schemas/007_indexes.sql

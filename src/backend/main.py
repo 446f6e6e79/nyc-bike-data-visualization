@@ -6,13 +6,11 @@ import time
 # FastAPI imports
 from fastapi import FastAPI
 from fastapi import Request
-
 # Middleware to handle CORS for development with Vite
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.backend.routes import stations, stats, bike_routes
 from src.backend.db import init_pool
-
 from src.backend.config import TEST_ENV_VAR, LOG_FILE_PATH, LOG_LEVEL
 
 logger = logging.getLogger("backend.request")

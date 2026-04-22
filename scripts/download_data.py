@@ -16,6 +16,7 @@ from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
 from utils.pg_loader import assert_no_coverage_gaps, get_loaded_months, init_db, load_stats_for_month, update_dataset_coverage, upsert_station_metadata_from_gbfs
+from utils.pg_loader_parts.inserts import upsert_bike_routes
 from src.backend.config import (
     DATA_DIR,
     RIDES_DATA_DIR,
@@ -168,14 +169,16 @@ def main():
     # Update dataset_coverage with the new min/max dates after loading
     update_dataset_coverage(conn)
 
+    # Download and preprocess bike route data, then upsert into Postgres
+    df_routes = download_bike_routes(force_download=args.force_download)
+    upsert_bike_routes(conn, df_routes)
+    conn.commit()
+
     # Close the database connection
     conn.close()
 
     # Remove the downloaded parquet files to save space (optional, comment out if you want to keep them)
     shutil.rmtree(RIDES_DATA_DIR)
-    
-    # Download and preprocess bike route data
-    download_bike_routes(force_download=args.force_download)
 
 if __name__ == "__main__":
     main()

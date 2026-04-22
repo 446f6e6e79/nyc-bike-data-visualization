@@ -3,6 +3,9 @@ CREATE INDEX IF NOT EXISTS idx_sh_date
 ON stats_hourly (date);
 
 -- station_activity_hourly
+CREATE INDEX IF NOT EXISTS idx_sah_date
+ON station_activity_hourly (date);
+
 CREATE INDEX IF NOT EXISTS idx_sah_date_station 
 ON station_activity_hourly (date, station_id);
 

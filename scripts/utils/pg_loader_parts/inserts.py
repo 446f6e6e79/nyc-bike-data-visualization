@@ -1,12 +1,12 @@
 import polars as pl
 
-def _insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
+def insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
     """Aggregate rides by date, hour, user/bike type, and weather code, and insert into stats_hourly."""
     
     # Get the count, total duration, and total distance of rides for each date/hour/user_type/bike_type/weather_code combination
     agg = (
         rides
-        .group_by(["date", "hour", "member_casual", "rideable_type", "weather_code"])
+        .group_by(["date", "hour", "day_of_week", "member_casual", "rideable_type", "weather_code"])
         .agg([
             pl.len().alias("total_rides"),
             pl.col("trip_duration_seconds").sum().alias("total_duration_seconds"),
@@ -40,11 +40,10 @@ def _insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
         )
     print(f"    stats_hourly: {len(rows)} rows")
 
-
-def _insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
+def insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
     """Aggregate rides by date, hour, station, user/bike type, and insert outgoing/incoming counts into station_activity_hourly."""
     
-    key_cols = ["date", "hour", "member_casual", "rideable_type"]
+    key_cols = ["date", "hour", "day_of_week", "member_casual", "rideable_type"]
     outgoing = (
         rides
         .group_by([*key_cols, "start_station_id"])
@@ -86,7 +85,7 @@ def _insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
         )
     print(f"    station_activity_hourly: {len(rows)} rows")
 
-def _insert_flow_activity_monthly(conn, rides: pl.DataFrame) -> None:
+def insert_flow_activity_monthly(conn, rides: pl.DataFrame) -> None:
     """Aggregate rides by month, station pair, user/bike type, and insert flow counts into flow_activity_monthly."""
     flow = (
         rides
@@ -131,7 +130,7 @@ def _insert_flow_activity_monthly(conn, rides: pl.DataFrame) -> None:
         )
     print(f"    flow_activity_monthly: {len(rows)} rows")
 
-def _upsert_station_metadata(conn, station_info: list[dict]) -> None:
+def upsert_station_metadata(conn, station_info: list[dict]) -> None:
     """Upsert station metadata from GBFS feed into station_metadata table."""
     rows = [
         (s["short_name"], s["name"], s["lat"], s["lon"])
@@ -147,3 +146,33 @@ def _upsert_station_metadata(conn, station_info: list[dict]) -> None:
             rows,
         )
     print(f"    station_metadata: {len(rows)} stations upserted")
+
+def upsert_bike_routes(conn, df: pl.DataFrame) -> None:
+    """Upsert all current bike route segments into the bike_routes table."""
+    df = df.with_columns(
+        pl.col("instdate").str.strptime(pl.Date, "%m/%d/%Y", strict=False)
+    )
+    rows = [
+        (int(r["segmentid"]), int(r["bikeid"]), r["the_geom"], r["street"], r["fromstreet"],
+         r["tostreet"], r["facilitycl"], r["instdate"], r["boro"])
+        for r in df.iter_rows(named=True)
+    ]
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            INSERT INTO bike_routes
+                (segmentid, bikeid, the_geom, street, fromstreet, tostreet, facilitycl, instdate, boro)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (segmentid) DO UPDATE SET
+                bikeid     = EXCLUDED.bikeid,
+                the_geom   = EXCLUDED.the_geom,
+                street     = EXCLUDED.street,
+                fromstreet = EXCLUDED.fromstreet,
+                tostreet   = EXCLUDED.tostreet,
+                facilitycl = EXCLUDED.facilitycl,
+                instdate   = EXCLUDED.instdate,
+                boro       = EXCLUDED.boro
+            """,
+            rows,
+        )
+    print(f"    bike_routes: {len(rows)} rows upserted")
