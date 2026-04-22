@@ -40,24 +40,20 @@ def init_db(conn) -> None:
 
 
 def load_stats_for_month(conn, year: int, month: int) -> None:
-	"""Precompute and insert all stats tables for a single calendar month.
-	Skips the month if it is already present in stats_hourly."""
-	if _is_month_loaded(conn, year, month):
-		print(f"Stats for {year}-{month:02d} already loaded, skipping.")
-		return
-
+	"""Precompute and insert all stats tables for a single calendar month.."""
+	
 	print(f"Precomputing stats for {year}-{month:02d}...")
-    
 	partition_path = RIDES_DATA_DIR / f"year={year}" / f"month={month}"
 	rides_lf = pl.scan_parquet(str(partition_path / "*.parquet"))
 
-
+    # Check if the distance lf is present, join it to rides
 	if STATION_DISTANCES_PATH.exists():
 		rides_lf = _enrich_with_distances(rides_lf, pl.scan_parquet(str(STATION_DISTANCES_PATH)))
 	else:
 		print(f"Warning: {STATION_DISTANCES_PATH} not found, skipping distance enrichment.")
 		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Float32).alias("distance_km"))
 
+    # Check if the weather lz is present, join it to rides
 	if WEATHER_DATA_DIR.exists() and any(WEATHER_DATA_DIR.rglob("*.parquet")):
 		weather = pl.scan_parquet(str(WEATHER_DATA_DIR / "**/*.parquet"), hive_partitioning=True)
 		rides_lf = _enrich_with_weather_code(rides_lf, weather)
@@ -65,15 +61,16 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 		print(f"Warning: No weather data found in {WEATHER_DATA_DIR}, skipping weather enrichment.")
 		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Int16).alias("weather_code"))
 
+    # Compute trip duration
 	rides_lf = rides_lf.with_columns([
-		# Use the end time for date/hour to reflect the provider's choice of when a ride counts towards usage stats
-		pl.col("ended_at").dt.date().alias("date"),
-		pl.col("ended_at").dt.hour().cast(pl.Int16).alias("hour"),
+		pl.col("ended_at").dt.date().alias("date"),                  # Use ended_at for consistent date with provided data
+		pl.col("ended_at").dt.hour().cast(pl.Int16).alias("hour"),   # Use ended_at for consistent hour with provided data
 		(pl.col("ended_at") - pl.col("started_at"))
 			.dt.total_seconds()
 			.alias("trip_duration_seconds"),
 	])
-
+    
+    #
 	rides = rides_lf.collect()
 	print(f"  {len(rides)} rides — computing aggregations...")
 
@@ -90,7 +87,6 @@ def upsert_station_metadata_from_gbfs(conn) -> None:
 	_upsert_station_metadata(conn, station_info)
 	conn.commit()
 
-
 def assert_no_coverage_gaps(conn) -> None:
 	"""Raise ValueError if stats_hourly has missing months between its min and max date."""
 	with conn.cursor() as cur:
@@ -100,15 +96,15 @@ def assert_no_coverage_gaps(conn) -> None:
 			GROUP BY 1, 2
 			ORDER BY 1, 2
 		""")
+		# Create a sorted list of (year, month) tuples representing loaded months
 		loaded = [(r[0], r[1]) for r in cur.fetchall()]
 
-	if len(loaded) < 2:
-		return
-
+    # Get the min and max year-month
 	(min_y, min_m), (max_y, max_m) = loaded[0], loaded[-1]
 	loaded_set = set(loaded)
 
 	missing = []
+	# Iterate from min to max year-month, checking for any missing months in loaded_set
 	y, m = min_y, min_m
 	while (y, m) <= (max_y, max_m):
 		if (y, m) not in loaded_set:
@@ -122,7 +118,6 @@ def assert_no_coverage_gaps(conn) -> None:
 			f"Dataset has gaps — missing months: {', '.join(missing)}. "
 			"Re-run the script with a wider date range to fill them."
 		)
-
 
 def update_dataset_coverage(conn) -> None:
 	"""Derive min/max dates from stats_hourly and write to dataset_coverage."""
@@ -145,20 +140,3 @@ def get_loaded_months(conn) -> list[int]:
             GROUP BY 1, 2
         """)
         return [y * 100 + m for y, m in cur.fetchall()]
-
-
-def _is_month_loaded(conn, year: int, month: int) -> bool:
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT EXISTS(
-                SELECT 1
-                FROM stats_hourly
-                WHERE date >= %s
-                  AND date < %s
-                LIMIT 1
-            )
-            """,
-            (date(year, month, 1), date(year, month % 12 + 1, 1) if month < 12 else date(year + 1, 1, 1)),
-        )
-        return cur.fetchone()[0]

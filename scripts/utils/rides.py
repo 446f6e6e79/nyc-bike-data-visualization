@@ -127,33 +127,6 @@ def _find_available_files(base_data_url: str) -> list[str]:
     print(f"Found {len(files)} files")
     return files
 
-def _find_current_coverage(DIR_PATH: str) -> list[tuple[int, int]]:
-    """
-    Find the current coverage of already downloaded files to avoid unnecessary downloads.
-    Args:        
-        DIR_PATH (str): The directory path where the downloaded files are stored.
-    Returns:        
-        list: A list of tuples containing the start and end coverage periods in the format (YYYYMM, YYYYMM).
-    """
-    coverage = []
-    # Current files are stored in the format {DIR_PATH}/year=YYYY/month=MM/*.parquet
-    # We traverse the directory structure to find all parquet files and extract their coverage periods from their file paths
-    for year_dir in os.listdir(DIR_PATH):
-        for month_dir in os.listdir(os.path.join(DIR_PATH, year_dir)):
-            for file in os.listdir(os.path.join(DIR_PATH, year_dir, month_dir)):
-                if file.endswith(".parquet"):
-                    try:
-                        # Get last 4 digits of the year and last 2 digits of the month to reconstruct the YYYYMM format
-                        year = year_dir.split("=")[1]
-                        month = month_dir.split("=")[1]
-                        month = month.zfill(2)  # Ensure month is 2 digits
-
-                        file_coverage = year + month
-                        coverage.append(int(file_coverage))
-                    except ValueError:
-                        continue
-    return coverage
-
 def _clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
     """
     Perform basic cleaning on the historical data:
@@ -278,7 +251,7 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool, curren
         print("Starting data cleaning...")
         trip_data = _clean_rides_data(trip_data)
         print("Data cleaning completed.")
-
+        
         # Extract year and month from cleaned datetime column (REQUIRED for partitioning by year and month in parquet output)
         # Note: this information must be extracted from the ended_at column, not the started_at column, because some files are partitioned by end date rather than start date
         trip_data = trip_data.with_columns(

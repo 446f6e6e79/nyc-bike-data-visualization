@@ -1,5 +1,6 @@
 from pathlib import Path
 import logging
+from datetime import datetime, timedelta
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_ROOT = Path(__file__).resolve().parent
@@ -39,7 +40,9 @@ WEATHER_TIMEZONE = "America/New_York"
 
 # Default parameters for data processing and retrieval
 DEFAULT_START_DATE = "202601"
-DEFAULT_END_DATE = ""
+# The default end date is set to the YYYYMM of the previous month
+one_month_ago = datetime.now() - timedelta(days=30)
+DEFAULT_END_DATE = one_month_ago.strftime("%Y%m")
 DOWNLOAD_JC = False
 YEARLY_CUTOFF = 2023        # If a file name contains only a year <= this cutoff, we assume it covers the entire year
 PARQUET_COMPRESSION = "zstd"

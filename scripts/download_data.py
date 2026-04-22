@@ -71,29 +71,33 @@ def _effective_date_range(conn, requested_start: str, requested_end: str) -> tup
         cur.execute("SELECT min_date, max_date FROM dataset_coverage WHERE id = 1")
         row = cur.fetchone()
 
+    # If no coverage info is found, return the requested range as-is
     if not row or not row[0]:
         return requested_start, requested_end
 
     def _next(ym: int) -> int:
+        """Given a year-month in YYYYMM format, return the next month in YYYYMM format."""
         y, m = ym // 100, ym % 100
         return (y + 1) * 100 + 1 if m == 12 else ym + 1
 
     def _prev(ym: int) -> int:
+        """Given a year-month in YYYYMM format, return the previous month in YYYYMM format."""
         y, m = ym // 100, ym % 100
         return (y - 1) * 100 + 12 if m == 1 else ym - 1
 
+    # Extract the min and max year-month from the database coverage info
     min_date, max_date = row
     db_min_ym = min_date.year * 100 + min_date.month
     db_max_ym = max_date.year * 100 + max_date.month
 
     effective_start = int(requested_start)
     effective_end = int(requested_end)
-
+    
     if effective_start > _next(db_max_ym):
         effective_start = _next(db_max_ym)
         print(f"Expanding start date from {requested_start} to {effective_start} to fill coverage gap.")
 
-    if effective_end < _prev(db_min_ym):
+    if  effective_end < _prev(db_min_ym):
         effective_end = _prev(db_min_ym)
         print(f"Expanding end date from {requested_end} to {effective_end} to fill coverage gap.")
 
@@ -140,6 +144,12 @@ def main():
     # Expand date range if needed to fill any gap with existing DB coverage
     start_date, end_date = _effective_date_range(conn, args.start_date, args.end_date)
 
+    # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
+    compute_and_save_station_distances(force_download=args.force_download)
+
+    # Download hourly weather data before computing stats (weather_code is joined at precompute time)
+    download_weather_data(start_date, end_date)
+
     # Download ride data and process each month into Postgres as soon as its parquet is ready,
     # overlapping DB loading with the download of the next month.
     # DB coverage is used to skip months already fully loaded, avoiding redundant downloads.
@@ -151,13 +161,10 @@ def main():
         for f in futures:
             f.result()
 
-    # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
-    compute_and_save_station_distances(force_download=args.force_download)
-
-    # Download hourly weather data before computing stats (weather_code is joined at precompute time)
-    download_weather_data(start_date, end_date)
-
+    # Check for any coverage gaps
     assert_no_coverage_gaps(conn)
+
+    # Update dataset_coverage with the new min/max dates after loading
     update_dataset_coverage(conn)
 
     # Close the database connection
