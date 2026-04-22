@@ -18,15 +18,18 @@ def get_station_ride_counts_stats(
     user_val = user_type.value if user_type else None
     bike_val = bike_type.value if bike_type else None
 
+    start_ym = start_date.year * 100 + start_date.month
+    end_ym = end_date.year * 100 + end_date.month
+
     if group_by == RideCountGroupBy.DAY_OF_WEEK:
-        time_select = ", EXTRACT(ISODOW FROM sah.date)::int - 1 AS day_of_week"
-        time_group  = ", EXTRACT(ISODOW FROM sah.date)"
+        time_select = ", sah.day_of_week"
+        time_group  = ", sah.day_of_week"
     elif group_by == RideCountGroupBy.HOUR:
         time_select = ", sah.hour"
         time_group  = ", sah.hour"
     elif group_by == RideCountGroupBy.DAY_OF_WEEK_AND_HOUR:
-        time_select = ", EXTRACT(ISODOW FROM sah.date)::int - 1 AS day_of_week, sah.hour"
-        time_group  = ", EXTRACT(ISODOW FROM sah.date), sah.hour"
+        time_select = ", sah.day_of_week, sah.hour"
+        time_group  = ", sah.day_of_week, sah.hour"
     else:
         time_select = ""
         time_group  = ""
@@ -40,14 +43,14 @@ def get_station_ride_counts_stats(
                SUM(sah.outgoing_rides + sah.incoming_rides) AS total_rides
         FROM station_activity_hourly sah
         JOIN station_metadata sm ON sm.station_id = sah.station_id
-        WHERE sah.date BETWEEN %s AND %s
+        WHERE sah.year * 100 + sah.month BETWEEN %s AND %s
           AND (%s IS NULL OR sah.station_id = %s)
           AND (%s IS NULL OR sah.user_type = %s)
           AND (%s IS NULL OR sah.bike_type = %s)
         GROUP BY sah.station_id, sm.station_name, sm.lat, sm.lon{time_group}
     """
     params = (
-        start_date, end_date,
+        start_ym, end_ym,
         station_id, station_id,
         user_val, user_val,
         bike_val, bike_val,

@@ -1,12 +1,12 @@
 import polars as pl
 
 def insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
-    """Aggregate rides by date, hour, user/bike type, and weather code, and insert into stats_hourly."""
+    """Aggregate rides by date, hour, and user/bike type, then insert into stats_hourly."""
     
-    # Get the count, total duration, and total distance of rides for each date/hour/user_type/bike_type/weather_code combination
+    # Get the count, total duration, and total distance of rides for each date/hour/user_type/bike_type combination
     agg = (
         rides
-        .group_by(["date", "hour", "day_of_week", "member_casual", "rideable_type", "weather_code"])
+        .group_by(["date", "hour", "day_of_week", "member_casual", "rideable_type"])
         .agg([
             pl.len().alias("total_rides"),
             pl.col("trip_duration_seconds").sum().alias("total_duration_seconds"),
@@ -18,7 +18,6 @@ def insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
     rows = [
         (
             r["date"], r["hour"], r["day_of_week"], r["member_casual"], r["rideable_type"],
-            r["weather_code"],
             int(r["total_rides"]),
             float(r["total_duration_seconds"] or 0.0),
             float(r["total_distance_km"] or 0.0),
@@ -31,26 +30,80 @@ def insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
         cur.executemany(
             """
             INSERT INTO stats_hourly
-                (date, hour, day_of_week, user_type, bike_type, weather_code,
+                (date, hour, day_of_week, user_type, bike_type,
                  total_rides, total_duration_seconds, total_distance_km)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (date, hour, user_type, bike_type) DO NOTHING
             """,
             rows,
         )
     print(f"    stats_hourly: {len(rows)} rows")
 
+
+def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
+    """Upsert hourly weather into weather_hourly table."""
+    if weather_df.is_empty():
+        print("    weather_hourly: 0 rows upserted")
+        return
+
+    weather_hourly = (
+        weather_df
+        .with_columns([
+            pl.col("datetime").dt.date().alias("date"),
+            pl.col("datetime").dt.hour().cast(pl.Int16).alias("hour"),
+        ])
+        .select([
+            "date",
+            "hour",
+            pl.col("weather_code").cast(pl.Int16),
+            pl.col("temperature_2m").cast(pl.Float64),
+            pl.col("precipitation").cast(pl.Float64),
+            pl.col("wind_speed_10m").cast(pl.Float64),
+        ])
+        .unique(subset=["date", "hour"], keep="last")
+    )
+
+    rows = [
+        (
+            r["date"],
+            int(r["hour"]),
+            int(r["weather_code"]) if r["weather_code"] is not None else None,
+            float(r["temperature_2m"]) if r["temperature_2m"] is not None else None,
+            float(r["precipitation"]) if r["precipitation"] is not None else None,
+            float(r["wind_speed_10m"]) if r["wind_speed_10m"] is not None else None,
+        )
+        for r in weather_hourly.iter_rows(named=True)
+    ]
+
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            INSERT INTO weather_hourly
+                (date, hour, weather_code, temperature_2m, precipitation, wind_speed_10m)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (date, hour) DO UPDATE SET
+                weather_code   = EXCLUDED.weather_code,
+                temperature_2m = EXCLUDED.temperature_2m,
+                precipitation  = EXCLUDED.precipitation,
+                wind_speed_10m = EXCLUDED.wind_speed_10m
+            """,
+            rows,
+        )
+    print(f"    weather_hourly: {len(rows)} rows upserted")
+
 def insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
-    """Aggregate rides by date, hour, station, user/bike type, and insert outgoing/incoming counts into station_activity_hourly."""
-    
-    key_cols = ["date", "hour", "day_of_week", "member_casual", "rideable_type"]
+    """Aggregate rides by month, day-of-week, hour, and station, then insert into station_activity_hourly."""
+    rides = rides.with_columns([
+        pl.col("date").dt.year().cast(pl.Int16).alias("year"),
+        pl.col("date").dt.month().cast(pl.Int16).alias("month"),
+    ])
+    key_cols = ["year", "month", "day_of_week", "hour", "member_casual", "rideable_type"]
     outgoing = (
         rides
         .group_by([*key_cols, "start_station_id"])
         .agg(pl.len().alias("outgoing_rides"))
         .rename({"start_station_id": "station_id"})
     )
-
     incoming = (
         rides
         .group_by([*key_cols, "end_station_id"])
@@ -67,8 +120,8 @@ def insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
     )
     rows = [
         (
-            r["date"], r["hour"], r["day_of_week"], r["station_id"],
-            r["member_casual"], r["rideable_type"],
+            int(r["year"]), int(r["month"]), int(r["day_of_week"]), int(r["hour"]),
+            r["station_id"], r["member_casual"], r["rideable_type"],
             int(r["outgoing_rides"]), int(r["incoming_rides"]),
         )
         for r in activity.iter_rows(named=True)
@@ -77,9 +130,9 @@ def insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
         cur.executemany(
             """
             INSERT INTO station_activity_hourly
-                (date, hour, day_of_week, station_id, user_type, bike_type, outgoing_rides, incoming_rides)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (date, hour, station_id, user_type, bike_type) DO NOTHING
+                (year, month, day_of_week, hour, station_id, user_type, bike_type, outgoing_rides, incoming_rides)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (year, month, day_of_week, hour, station_id, user_type, bike_type) DO NOTHING
             """,
             rows,
         )

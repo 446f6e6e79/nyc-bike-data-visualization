@@ -15,7 +15,7 @@ from utils.distances import compute_and_save_station_distances
 from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
-from utils.pg_loader import assert_no_coverage_gaps, get_loaded_months, init_db, load_stats_for_month, update_dataset_coverage, upsert_station_metadata_from_gbfs
+from utils.pg_loader import assert_no_coverage_gaps, get_loaded_months, init_db, load_stats_for_month, load_weather_hourly, update_dataset_coverage, upsert_station_metadata_from_gbfs
 from utils.pg_loader_parts.inserts import upsert_bike_routes
 from src.backend.config import (
     DATA_DIR,
@@ -149,8 +149,9 @@ def main():
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances(force_download=args.force_download)
 
-    # Download hourly weather data before computing stats (weather_code is joined at precompute time)
+    # Download hourly weather data and load it into weather_hourly
     download_weather_data(start_date, end_date)
+    load_weather_hourly(conn)
 
     # Download ride data and process each month into Postgres as soon as its parquet is ready,
     # overlapping DB loading with the download of the next month.

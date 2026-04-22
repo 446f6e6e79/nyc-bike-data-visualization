@@ -5,8 +5,6 @@ from src.backend.models.ride import MemberCasual, RideableType
 from src.backend.models.stats import GroupedStats, Stats, StatsGroupBy
 from src.backend.services.stats.utils import (
     _hours_by_dow,
-    _hours_by_dow_and_hour,
-    _hours_per_day_in_range,
     _row,
     _rows,
     _total_hours,
@@ -79,50 +77,111 @@ def _query_stats(cur, group_by, start_date, end_date, params_filter):
 
     if group_by == StatsGroupBy.HOUR:
         cur.execute(f"""
-            SELECT hour,
-                   SUM(total_rides)            AS total_rides,
-                   SUM(total_duration_seconds) AS total_duration_seconds,
-                   SUM(total_distance_km)      AS total_distance_km
-            FROM stats_hourly WHERE {where}
-            GROUP BY hour ORDER BY hour
-        """, base_params)
-        hc = _hours_per_day_in_range(start_date, end_date)
-        sql_map = {r["hour"]: r for r in _rows(cur)}
-        return [
-            _to_grouped_stats(sql_map[h], hc) if h in sql_map
-            else _zero_grouped_stats(hc, hour=h)
-            for h in range(24)
-        ]
+            WITH weather AS (
+                SELECT hour,
+                       COUNT(*) AS hours_count,
+                       CASE
+                           WHEN COUNT(DISTINCT weather_code) = 1 THEN MAX(weather_code)
+                           ELSE NULL
+                       END AS weather_code
+                FROM weather_hourly
+                WHERE date BETWEEN %s AND %s
+                GROUP BY hour
+            ),
+            rides AS (
+                SELECT hour,
+                       SUM(total_rides)            AS total_rides,
+                       SUM(total_duration_seconds) AS total_duration_seconds,
+                       SUM(total_distance_km)      AS total_distance_km
+                FROM stats_hourly
+                WHERE {where}
+                GROUP BY hour
+            )
+            SELECT w.hour,
+                   w.weather_code,
+                   COALESCE(r.total_rides, 0)            AS total_rides,
+                   COALESCE(r.total_duration_seconds, 0) AS total_duration_seconds,
+                   COALESCE(r.total_distance_km, 0)      AS total_distance_km,
+                   w.hours_count
+            FROM weather w
+            LEFT JOIN rides r ON r.hour = w.hour
+            ORDER BY w.hour
+        """, (start_date, end_date, *base_params))
+        return [_to_grouped_stats(r, int(r["hours_count"])) for r in _rows(cur)]
 
     if group_by == StatsGroupBy.DAY_OF_WEEK_AND_HOUR:
         cur.execute(f"""
-            SELECT EXTRACT(ISODOW FROM date)::int - 1 AS day_of_week,
-                   hour,
-                   SUM(total_rides)            AS total_rides,
-                   SUM(total_duration_seconds) AS total_duration_seconds,
-                   SUM(total_distance_km)      AS total_distance_km
-            FROM stats_hourly WHERE {where}
-            GROUP BY 1, 2 ORDER BY 1, 2
-        """, base_params)
-        spine = _hours_by_dow_and_hour(start_date, end_date)
-        sql_map = {(r["day_of_week"], r["hour"]): r for r in _rows(cur)}
-        return [
-            _to_grouped_stats(sql_map[key], spine[key]) if key in sql_map
-            else _zero_grouped_stats(spine[key], day_of_week=key[0], hour=key[1])
-            for key in sorted(spine)
-        ]
+            WITH weather AS (
+                SELECT EXTRACT(ISODOW FROM date)::int - 1 AS day_of_week,
+                       hour,
+                       COUNT(*) AS hours_count,
+                       CASE
+                           WHEN COUNT(DISTINCT weather_code) = 1 THEN MAX(weather_code)
+                           ELSE NULL
+                       END AS weather_code
+                FROM weather_hourly
+                WHERE date BETWEEN %s AND %s
+                GROUP BY 1, 2
+            ),
+            rides AS (
+                SELECT EXTRACT(ISODOW FROM date)::int - 1 AS day_of_week,
+                       hour,
+                       SUM(total_rides)            AS total_rides,
+                       SUM(total_duration_seconds) AS total_duration_seconds,
+                       SUM(total_distance_km)      AS total_distance_km
+                FROM stats_hourly
+                WHERE {where}
+                GROUP BY 1, 2
+            )
+            SELECT w.day_of_week,
+                   w.hour,
+                   w.weather_code,
+                   COALESCE(r.total_rides, 0)            AS total_rides,
+                   COALESCE(r.total_duration_seconds, 0) AS total_duration_seconds,
+                   COALESCE(r.total_distance_km, 0)      AS total_distance_km,
+                   w.hours_count
+            FROM weather w
+            LEFT JOIN rides r
+              ON r.day_of_week = w.day_of_week
+             AND r.hour = w.hour
+            ORDER BY w.day_of_week, w.hour
+        """, (start_date, end_date, *base_params))
+        return [_to_grouped_stats(r, int(r["hours_count"])) for r in _rows(cur)]
 
     if group_by == StatsGroupBy.WEATHER_CODE:
         cur.execute(f"""
-            SELECT weather_code,
-                   SUM(total_rides)            AS total_rides,
-                   SUM(total_duration_seconds) AS total_duration_seconds,
-                   SUM(total_distance_km)      AS total_distance_km,
-                   COUNT(DISTINCT date::text || hour::text) AS hours_count
-            FROM stats_hourly
-            WHERE {where} AND weather_code IS NOT NULL
-            GROUP BY weather_code ORDER BY weather_code
-        """, base_params)
+            WITH weather AS (
+                SELECT weather_code,
+                       COUNT(*) AS hours_count
+                FROM weather_hourly
+                WHERE date BETWEEN %s AND %s
+                  AND weather_code IS NOT NULL
+                GROUP BY weather_code
+            ),
+            rides AS (
+                SELECT wh.weather_code,
+                       SUM(sh.total_rides)            AS total_rides,
+                       SUM(sh.total_duration_seconds) AS total_duration_seconds,
+                       SUM(sh.total_distance_km)      AS total_distance_km
+                FROM weather_hourly wh
+                LEFT JOIN stats_hourly sh
+                  ON sh.date = wh.date
+                 AND sh.hour = wh.hour
+                 AND (%s IS NULL OR sh.user_type = %s)
+                 AND (%s IS NULL OR sh.bike_type = %s)
+                WHERE wh.date BETWEEN %s AND %s
+                  AND wh.weather_code IS NOT NULL
+                GROUP BY wh.weather_code
+            )
+            SELECT w.weather_code,
+                   COALESCE(r.total_rides, 0)            AS total_rides,
+                   COALESCE(r.total_duration_seconds, 0) AS total_duration_seconds,
+                   COALESCE(r.total_distance_km, 0)      AS total_distance_km,
+                   w.hours_count
+            FROM weather w
+            LEFT JOIN rides r ON r.weather_code = w.weather_code
+            ORDER BY w.weather_code
+        """, (start_date, end_date, *params_filter, start_date, end_date))
         return [_to_grouped_stats(r, int(r["hours_count"])) for r in _rows(cur)]
 
     raise ValueError(f"Unsupported group_by: {group_by}")

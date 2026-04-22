@@ -78,6 +78,7 @@ def download_bike_routes(force_download: bool = False) -> pl.DataFrame:
     print("Downloading bike route data...")
     if not force_download and _check_bike_routes_cache():
         print(f"Bike routes data already exists at {BIKE_ROUTES_PATH} and is fresh, skipping download.")
+        return pl.read_parquet(BIKE_ROUTES_PATH)
 
     df = _fetch_bike_routes_csv()
     df = _clean_bike_data(df)

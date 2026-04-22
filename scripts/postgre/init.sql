@@ -8,4 +8,5 @@
 \ir schemas/004_station_metadata.sql
 \ir schemas/005_dataset_coverage.sql
 \ir schemas/006_bike_routes.sql
-\ir schemas/007_indexes.sql
+\ir schemas/007_weather_hourly.sql
+\ir schemas/008_indexes.sql

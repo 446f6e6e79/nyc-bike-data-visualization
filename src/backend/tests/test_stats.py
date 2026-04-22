@@ -79,12 +79,29 @@ def test_get_stats_grouped_by_hour():
     assert len(payload) == 24
     assert [row["hour"] for row in payload] == list(range(24))
     assert all(row["day_of_week"] is None for row in payload)
+    assert all("weather_code" in row for row in payload)
 
     hour_5 = next(row for row in payload if row["hour"] == 5)
     hour_15 = next(row for row in payload if row["hour"] == 15)
     assert hour_5["total_rides"] == 1
     assert hour_15["total_rides"] == 1
     assert sum(row["total_rides"] for row in payload) == 2
+
+
+def test_get_stats_grouped_by_weather():
+    """Test that weather grouping uses hourly weather coverage for hours_count."""
+    response = requests.get(
+        f"{BASE_URL}/stats/",
+        params={**DATE_PARAMS, "group_by": "weather"},
+        timeout=DEFAULT_TIMEOUT,
+    )
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert isinstance(payload, list)
+    assert payload
+    assert all("weather_code" in row for row in payload)
+    assert sum(row["hours_count"] for row in payload) == 24
 
 
 def test_get_stats_grouped_by_day_and_hour():

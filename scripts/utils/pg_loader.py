@@ -10,12 +10,13 @@ import polars as pl
 
 from src.backend.config import RIDES_DATA_DIR, STATION_DISTANCES_PATH, WEATHER_DATA_DIR
 from src.backend.services.gbfs import fetch_station_data
-from utils.pg_loader_parts.enrichments import _enrich_with_distances, _enrich_with_weather_code
+from utils.pg_loader_parts.enrichments import _enrich_with_distances
 from utils.pg_loader_parts.inserts import (
 	insert_flow_activity_monthly,
 	insert_station_activity_hourly,
 	insert_stats_hourly,
 	upsert_station_metadata,
+	upsert_weather_hourly,
 )
 
 def init_db(conn) -> None:
@@ -53,14 +54,6 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 		print(f"Warning: {STATION_DISTANCES_PATH} not found, skipping distance enrichment.")
 		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Float32).alias("distance_km"))
 
-    # Check if the weather lz is present, join it to rides
-	if WEATHER_DATA_DIR.exists() and any(WEATHER_DATA_DIR.rglob("*.parquet")):
-		weather = pl.scan_parquet(str(WEATHER_DATA_DIR / "**/*.parquet"), hive_partitioning=True)
-		rides_lf = _enrich_with_weather_code(rides_lf, weather)
-	else:
-		print(f"Warning: No weather data found in {WEATHER_DATA_DIR}, skipping weather enrichment.")
-		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Int16).alias("weather_code"))
-    
     # Collect the enriched rides data into memory for aggregation and insertion
 	rides = rides_lf.collect()
 	print(f"  {len(rides)} rides — computing aggregations...")
@@ -70,6 +63,17 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 	insert_flow_activity_monthly(conn, rides)
 	conn.commit()
 	print(f"  Done — {year}-{month:02d} committed.")
+
+
+def load_weather_hourly(conn) -> None:
+	"""Load hourly weather parquet data into weather_hourly table."""
+	if not WEATHER_DATA_DIR.exists() or not any(WEATHER_DATA_DIR.rglob("*.parquet")):
+		print(f"Warning: No weather data found in {WEATHER_DATA_DIR}, skipping weather_hourly load.")
+		return
+
+	weather_df = pl.scan_parquet(str(WEATHER_DATA_DIR / "**/*.parquet"), hive_partitioning=True).collect()
+	upsert_weather_hourly(conn, weather_df)
+	conn.commit()
 
 
 def upsert_station_metadata_from_gbfs(conn) -> None:
