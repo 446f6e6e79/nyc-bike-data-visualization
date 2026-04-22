@@ -17,7 +17,7 @@ def _insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
     # Convert the aggregated results to a list of tuples for insertion, ensuring proper types and handling nulls
     rows = [
         (
-            r["date"], r["hour"], r["member_casual"], r["rideable_type"],
+            r["date"], r["hour"], r["day_of_week"], r["member_casual"], r["rideable_type"],
             r["weather_code"],
             int(r["total_rides"]),
             float(r["total_duration_seconds"] or 0.0),
@@ -31,9 +31,9 @@ def _insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
         cur.executemany(
             """
             INSERT INTO stats_hourly
-                (date, hour, user_type, bike_type, weather_code,
+                (date, hour, day_of_week, user_type, bike_type, weather_code,
                  total_rides, total_duration_seconds, total_distance_km)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (date, hour, user_type, bike_type) DO NOTHING
             """,
             rows,
@@ -68,7 +68,7 @@ def _insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
     )
     rows = [
         (
-            r["date"], r["hour"], r["station_id"],
+            r["date"], r["hour"], r["day_of_week"], r["station_id"],
             r["member_casual"], r["rideable_type"],
             int(r["outgoing_rides"]), int(r["incoming_rides"]),
         )
@@ -78,8 +78,8 @@ def _insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
         cur.executemany(
             """
             INSERT INTO station_activity_hourly
-                (date, hour, station_id, user_type, bike_type, outgoing_rides, incoming_rides)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (date, hour, day_of_week, station_id, user_type, bike_type, outgoing_rides, incoming_rides)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (date, hour, station_id, user_type, bike_type) DO NOTHING
             """,
             rows,

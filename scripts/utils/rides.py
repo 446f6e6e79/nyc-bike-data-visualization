@@ -259,6 +259,7 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool, curren
             pl.col("ended_at").dt.year().alias("year"),
             pl.col("ended_at").dt.month().alias("month"),
             pl.col("ended_at").dt.hour().alias("hour"),
+            pl.col("ended_at").dt.weekday().alias("day_of_week"),
             (pl.col("ended_at") - pl.col("started_at"))
 			.dt.total_seconds()
 			.alias("trip_duration_seconds")

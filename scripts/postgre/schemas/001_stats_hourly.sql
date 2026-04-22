@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS stats_hourly (
     date                    DATE             NOT NULL,
     hour                    SMALLINT         NOT NULL,
+    day_of_week             SMALLINT         NOT NULL,
     user_type               VARCHAR(10)      NOT NULL,
     bike_type               VARCHAR(20)      NOT NULL,
     weather_code            SMALLINT,
