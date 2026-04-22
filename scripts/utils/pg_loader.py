@@ -60,17 +60,8 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 	else:
 		print(f"Warning: No weather data found in {WEATHER_DATA_DIR}, skipping weather enrichment.")
 		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Int16).alias("weather_code"))
-
-    # Compute trip duration
-	rides_lf = rides_lf.with_columns([
-		pl.col("ended_at").dt.date().alias("date"),                  # Use ended_at for consistent date with provided data
-		pl.col("ended_at").dt.hour().cast(pl.Int16).alias("hour"),   # Use ended_at for consistent hour with provided data
-		(pl.col("ended_at") - pl.col("started_at"))
-			.dt.total_seconds()
-			.alias("trip_duration_seconds"),
-	])
     
-    #
+    # Collect the enriched rides data into memory for aggregation and insertion
 	rides = rides_lf.collect()
 	print(f"  {len(rides)} rides — computing aggregations...")
 

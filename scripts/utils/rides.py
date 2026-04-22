@@ -251,13 +251,17 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool, curren
         print("Starting data cleaning...")
         trip_data = _clean_rides_data(trip_data)
         print("Data cleaning completed.")
-        
+
         # Extract year and month from cleaned datetime column (REQUIRED for partitioning by year and month in parquet output)
         # Note: this information must be extracted from the ended_at column, not the started_at column, because some files are partitioned by end date rather than start date
         trip_data = trip_data.with_columns(
-            pl.col("ended_at").dt.strftime("%Y%m").cast(pl.Int32).alias("year_month"),
+            pl.col("ended_at").dt.date().alias("date"),
             pl.col("ended_at").dt.year().alias("year"),
-            pl.col("ended_at").dt.month().alias("month")
+            pl.col("ended_at").dt.month().alias("month"),
+            pl.col("ended_at").dt.hour().alias("hour"),
+            (pl.col("ended_at") - pl.col("started_at"))
+			.dt.total_seconds()
+			.alias("trip_duration_seconds")
         )
 
         # Write the combined DataFrame to a parquet file, partitioned by year and month

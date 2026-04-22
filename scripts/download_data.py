@@ -8,6 +8,7 @@ import os
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
+import shutil
 import psycopg2
 
 from utils.distances import compute_and_save_station_distances
@@ -170,6 +171,9 @@ def main():
     # Close the database connection
     conn.close()
 
+    # Remove the downloaded parquet files to save space (optional, comment out if you want to keep them)
+    shutil.rmtree(RIDES_DATA_DIR)
+    
     # Download and preprocess bike route data
     download_bike_routes(force_download=args.force_download)
 
