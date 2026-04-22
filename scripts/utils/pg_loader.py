@@ -47,19 +47,22 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 		return
 
 	print(f"Precomputing stats for {year}-{month:02d}...")
-
+    
 	partition_path = RIDES_DATA_DIR / f"year={year}" / f"month={month}"
 	rides_lf = pl.scan_parquet(str(partition_path / "*.parquet"))
+
 
 	if STATION_DISTANCES_PATH.exists():
 		rides_lf = _enrich_with_distances(rides_lf, pl.scan_parquet(str(STATION_DISTANCES_PATH)))
 	else:
-		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Float64).alias("distance_km"))
+		print(f"Warning: {STATION_DISTANCES_PATH} not found, skipping distance enrichment.")
+		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Float32).alias("distance_km"))
 
 	if WEATHER_DATA_DIR.exists() and any(WEATHER_DATA_DIR.rglob("*.parquet")):
 		weather = pl.scan_parquet(str(WEATHER_DATA_DIR / "**/*.parquet"), hive_partitioning=True)
 		rides_lf = _enrich_with_weather_code(rides_lf, weather)
 	else:
+		print(f"Warning: No weather data found in {WEATHER_DATA_DIR}, skipping weather enrichment.")
 		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Int16).alias("weather_code"))
 
 	rides_lf = rides_lf.with_columns([

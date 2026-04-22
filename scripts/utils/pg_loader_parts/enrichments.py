@@ -1,6 +1,7 @@
 import polars as pl
 
 def _enrich_with_distances(rides: pl.LazyFrame, distances: pl.LazyFrame) -> pl.LazyFrame:
+    """Given a LazyFrame of rides and a LazyFrame of pairwise station distances, join to add distance_km to each ride."""
     rides_norm = rides.with_columns([
         pl.min_horizontal("start_station_id", "end_station_id").alias("_station_min"),
         pl.max_horizontal("start_station_id", "end_station_id").alias("_station_max"),
@@ -17,6 +18,7 @@ def _enrich_with_distances(rides: pl.LazyFrame, distances: pl.LazyFrame) -> pl.L
     )
 
 def _enrich_with_weather_code(rides: pl.LazyFrame, weather: pl.LazyFrame) -> pl.LazyFrame:
+    """Given the lazy rides and weather frames, join to add weather_code to each ride based on the hour of the ride."""
     weather_hourly = weather.select([
         pl.col("datetime").dt.truncate("1h").alias("_hour_ts"),
         pl.col("weather_code"),

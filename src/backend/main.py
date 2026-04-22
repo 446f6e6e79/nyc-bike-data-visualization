@@ -3,13 +3,14 @@ import logging
 import os
 import time
 
+# FastAPI imports
 from fastapi import FastAPI
 from fastapi import Request
+
 # Middleware to handle CORS for development with Vite
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.backend.routes import stations, stats, bike_routes
-from src.backend.loaders.bike_routes_loader import load_bike_routes_data
 from src.backend.db import init_pool
 
 from src.backend.config import TEST_ENV_VAR, LOG_FILE_PATH, LOG_LEVEL
@@ -43,12 +44,9 @@ def _is_historical_test_mode_enabled() -> bool:
 async def lifespan(app: FastAPI):
     init_pool()
     test = _is_historical_test_mode_enabled()
-    load_bike_routes_data(test=test)
     yield
 
-
 app = FastAPI(lifespan=lifespan)
-
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):

@@ -260,28 +260,19 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
     print(f"Extracted {len(csv_frames)} CSV files from ZIP, combining into a single DataFrame...")
     return pl.concat(csv_frames, how="diagonal_relaxed")
 
-def download_ride_data(start_date: str, end_date: str, download_jc: bool) -> None:
+def download_ride_data(start_date: str, end_date: str, download_jc: bool):
     """
     Download each filtered ZIP file from the S3 bucket and convert all CSV files
-    inside it into a single parquet file.
-
-    Args:
-        file_key (str): The key of the file to download.
-        base_data_url (str): The base URL of the S3 bucket.
-        output_dir (str): The directory to save the parquet files.
+    inside it into a single parquet file. Yields (year, month) tuples for each
+    partition written so callers can process months as they become available.
     """
-    # Check which files are available in the S3 bucket and filter them by date range and dataset type
     available_files = _find_available_files(BASE_URL_RIDE_DATA)
-    
-    # Check the current coverage of already downloaded files to avoid unnecessary downloads
     current_coverage = _find_current_coverage(RIDES_DATA_DIR)
-
-    # Filter files by date range and dataset type
     filtered_files = _filter_files(available_files, current_coverage, start_date, end_date, download_jc=download_jc)
-    
+
     for f in filtered_files:
         trip_data = _download_and_process_file(f, BASE_URL_RIDE_DATA)
-        
+
         print("Starting data cleaning...")
         trip_data = _clean_rides_data(trip_data)
         print("Data cleaning completed.")
@@ -301,5 +292,8 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool) -> Non
             statistics=True,           # enables min/max skipping
             partition_by=["year", "month"],
             compression=PARQUET_COMPRESSION)
-        
+
         print(f"Wrote {trip_data.height} rows to {RIDES_DATA_DIR} for file {f}")
+
+        for year, month in trip_data.select(["year", "month"]).unique().rows():
+            yield year, month

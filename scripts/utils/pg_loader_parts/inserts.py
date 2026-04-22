@@ -1,7 +1,9 @@
 import polars as pl
 
-
 def _insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
+    """Aggregate rides by date, hour, user/bike type, and weather code, and insert into stats_hourly."""
+    
+    # Get the count, total duration, and total distance of rides for each date/hour/user_type/bike_type/weather_code combination
     agg = (
         rides
         .group_by(["date", "hour", "member_casual", "rideable_type", "weather_code"])
@@ -11,6 +13,8 @@ def _insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
             pl.col("distance_km").sum().alias("total_distance_km"),
         ])
     )
+    
+    # Convert the aggregated results to a list of tuples for insertion, ensuring proper types and handling nulls
     rows = [
         (
             r["date"], r["hour"], r["member_casual"], r["rideable_type"],
@@ -21,6 +25,8 @@ def _insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
         )
         for r in agg.iter_rows(named=True)
     ]
+
+    # Insert the aggregated stats into the database
     with conn.cursor() as cur:
         cur.executemany(
             """
@@ -36,6 +42,8 @@ def _insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
 
 
 def _insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
+    """Aggregate rides by date, hour, station, user/bike type, and insert outgoing/incoming counts into station_activity_hourly."""
+    
     key_cols = ["date", "hour", "member_casual", "rideable_type"]
     outgoing = (
         rides
@@ -43,6 +51,7 @@ def _insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
         .agg(pl.len().alias("outgoing_rides"))
         .rename({"start_station_id": "station_id"})
     )
+
     incoming = (
         rides
         .group_by([*key_cols, "end_station_id"])
@@ -78,6 +87,7 @@ def _insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
     print(f"    station_activity_hourly: {len(rows)} rows")
 
 def _insert_flow_activity_monthly(conn, rides: pl.DataFrame) -> None:
+    """Aggregate rides by month, station pair, user/bike type, and insert flow counts into flow_activity_monthly."""
     flow = (
         rides
         .with_columns([
@@ -122,6 +132,7 @@ def _insert_flow_activity_monthly(conn, rides: pl.DataFrame) -> None:
     print(f"    flow_activity_monthly: {len(rows)} rows")
 
 def _upsert_station_metadata(conn, station_info: list[dict]) -> None:
+    """Upsert station metadata from GBFS feed into station_metadata table."""
     rows = [
         (s["short_name"], s["name"], s["lat"], s["lon"])
         for s in station_info
