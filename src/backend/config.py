@@ -50,9 +50,6 @@ STREET_CIRCUITY_FACTOR = 1.3
 
 TEST_DATA_DIR = BACKEND_ROOT / "tests" / "test_data"
 
-# Specify whether all data should be loaded into memory at startup for faster access, or loaded on demand with potential performance trade-offs
-IN_MEMORY_CACHE_ENABLED = False
-
 # Log file settings
 LOG_FILE_PATH = "logs/requests.log"
 LOG_LEVEL = logging.INFO            # To disable logging, set to logging.CRITICAL or higher
