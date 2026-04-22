@@ -1,14 +1,35 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: NYC-Bike-Visualisation-Postgres
+    environment:
+      POSTGRES_DB: citibike
+      POSTGRES_USER: citibike
+      POSTGRES_PASSWORD: citibike
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U citibike"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: .
       dockerfile: dockers/Dockerfile.backend
     container_name: NYC-Bike-Visualisation-Backend
     init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       HISTORICAL_DATA_DIR: /app/data/rides
       DISTANCES_DATA_DIR: /app/data/stations
       WEATHER_DATA_DIR: /app/data/weather
+      DATABASE_URL: postgresql://citibike:citibike@postgres:5432/citibike
     ports:
       - "8000:8000"
     stop_signal: SIGINT
@@ -26,3 +47,6 @@ services:
       - "5173:5173"
     stop_signal: SIGINT
     stop_grace_period: 5s
+
+volumes:
+  pg_data:

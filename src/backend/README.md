@@ -21,6 +21,34 @@ It offers endpoints to retrieve real-time and historical data about bike station
 
 3. **Run commands from the project root directory** (the directory containing `src/`):
 
+## Starting the PostgreSQL Server
+
+The project uses a PostgreSQL 16 database. The easiest way to run it is via Docker Compose from the project root:
+
+```bash
+docker compose up postgres -d
+```
+
+This starts a `postgres:16-alpine` container named `NYC-Bike-Visualisation-Postgres` on port `5432` with the following credentials:
+
+| Setting  | Value      |
+|----------|------------|
+| Database | `citibike` |
+| User     | `citibike` |
+| Password | `citibike` |
+
+Set the connection URL before running the backend or any scripts:
+
+```bash
+export DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike
+```
+
+To stop the server:
+
+```bash
+docker compose stop postgres
+```
+
 ## Starting the Server
 
 To start the backend server, run the following command in your terminal:

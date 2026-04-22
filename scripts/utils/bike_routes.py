@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 
 from src.backend.config import BIKE_ROUTES_URL, BIKE_ROUTES_PATH, PARQUET_COMPRESSION
 
-
 def _fetch_bike_routes_csv() -> pl.DataFrame:
     """Fetch bike routes CSV bytes over HTTPS and parse with Polars."""
     try:
@@ -32,7 +31,6 @@ def _clean_bike_data(df: pl.DataFrame) -> pl.DataFrame:
         'prevbikeid',
         'status',       # redundant after filtering
         'ret_date',     # null for all current records
-        'segmentid',    # only needed for LION joins
         'gwsys2',       # sparsely populated
         'spur',         # sparsely populated
         'ft2facilit',   # complex corridors only
@@ -72,21 +70,18 @@ def _check_bike_routes_cache() -> bool:
     # Consider the cache fresh if it's less than or equal to 30 days old
     return file_age_days <= 30
 
-def download_bike_routes(force_download: bool = False) -> None:
-    """Download and preprocess bike route data, storing it in a parquet file for fast access by the API."""
+def download_bike_routes(force_download: bool = False) -> pl.DataFrame:
+    """Download and preprocess bike route data, storing it in a parquet file for fast access.
+
+    Returns the cleaned DataFrame (from cache or fresh download) for DB insertion.
+    """
     print("Downloading bike route data...")
-    # If the file already exists and is fresh, skip downloading to save time and bandwidth
     if not force_download and _check_bike_routes_cache():
         print(f"Bike routes data already exists at {BIKE_ROUTES_PATH} and is fresh, skipping download.")
-        return
-    
-    # Download CSV with requests (uses certifi bundle) and parse from memory.
+        return pl.read_parquet(BIKE_ROUTES_PATH)
+
     df = _fetch_bike_routes_csv()
-
-    # Clean the bike data before saving
     df = _clean_bike_data(df)
-
-    # Write the DataFrame to a parquet file for faster future access
     df.write_parquet(
         BIKE_ROUTES_PATH,
         row_group_size=100_000,   # smaller = faster predicate pushdown
@@ -94,4 +89,5 @@ def download_bike_routes(force_download: bool = False) -> None:
         compression=PARQUET_COMPRESSION,
     )
     print(f"Downloaded and saved bike route data to {BIKE_ROUTES_PATH}")
+    return df
     

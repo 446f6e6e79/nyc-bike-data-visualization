@@ -3,18 +3,15 @@ import logging
 import os
 import time
 
+# FastAPI imports
 from fastapi import FastAPI
 from fastapi import Request
 # Middleware to handle CORS for development with Vite
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.backend.routes import stations, rides, stats, bike_routes
-from src.backend.loaders.distances_loader import load_distances_data
-from src.backend.loaders.rides_loader import load_ride_data
-from src.backend.loaders.weather_loader import load_weather_data 
-from src.backend.loaders.bike_routes_loader import load_bike_routes_data 
-
-from src.backend.config import IN_MEMORY_CACHE_ENABLED as IN_MEMORY, TEST_ENV_VAR, LOG_FILE_PATH, LOG_LEVEL
+from src.backend.routes import stations, stats, bike_routes
+from src.backend.db import init_pool
+from src.backend.config import TEST_ENV_VAR, LOG_FILE_PATH, LOG_LEVEL
 
 logger = logging.getLogger("backend.request")
 if not logger.handlers:
@@ -43,17 +40,11 @@ def _is_historical_test_mode_enabled() -> bool:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load historical data once on startup."""
+    init_pool()
     test = _is_historical_test_mode_enabled()
-    load_ride_data(inMemory=IN_MEMORY, test=test)
-    load_distances_data(inMemory=IN_MEMORY, test=test)
-    load_weather_data(inMemory=IN_MEMORY, test=test)
-    load_bike_routes_data(inMemory=IN_MEMORY, test=test)
     yield
 
-
 app = FastAPI(lifespan=lifespan)
-
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -63,9 +54,8 @@ async def log_requests(request: Request, call_next):
     except Exception:
         duration_ms = (time.perf_counter() - start_time) * 1000
         logger.exception(
-            "method=%s IN_memory=%s path=%s status=500 duration_ms=%.2f",
+            "method=%s path=%s status=500 duration_ms=%.2f",
             request.method,
-            IN_MEMORY,
             request.url.path,
             duration_ms,
         )
@@ -73,9 +63,8 @@ async def log_requests(request: Request, call_next):
 
     duration_ms = (time.perf_counter() - start_time) * 1000
     logger.info(
-        "method=%s IN_memory=%s path=%s status=%s duration_ms=%.2f",
+        "method=%s path=%s status=%s duration_ms=%.2f",
         request.method,
-        IN_MEMORY,
         request.url.path,
         response.status_code,
         duration_ms,
@@ -93,6 +82,5 @@ app.add_middleware(
 
 # Include the defined API routers
 app.include_router(stations.router)
-app.include_router(rides.router)
 app.include_router(stats.router)
 app.include_router(bike_routes.router)

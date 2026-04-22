@@ -6,13 +6,17 @@
 import argparse
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
+import shutil
+import psycopg2
 
 from utils.distances import compute_and_save_station_distances
 from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
-from utils.daily_stats import compute_and_save_daily_stats
+from utils.pg_loader import assert_no_coverage_gaps, get_loaded_months, init_db, load_stats_for_month, load_weather_hourly, update_dataset_coverage, upsert_station_metadata_from_gbfs
+from scripts.utils.loaders.bike_routes import upsert_bike_routes
 from src.backend.config import (
     DATA_DIR,
     RIDES_DATA_DIR,
@@ -23,8 +27,7 @@ from src.backend.config import (
     DOWNLOAD_JC,
     BIKE_ROUTES_DATA_DIR,
 )
-# TODO: should we remove the dataset outside the specified range?
-#Right now, there might be problems if we install different ranges of data at different times
+
 def validate_yyyymm(date_value: str, arg_name: str) -> None:
     """
     Validate that the provided date value is in the format YYYYMM and represents a valid month.
@@ -60,6 +63,56 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--force-download", action="store_true", help="Force re-download of all files, even if they already exist")
     return parser.parse_args()
 
+def _effective_date_range(conn, requested_start: str, requested_end: str) -> tuple[str, str]:
+    """Expand the date range in either direction to avoid gaps with existing DB coverage.
+
+    - If the DB max is M and requested start > M+1, start is pulled back to M+1.
+    - If the DB min is M and requested end < M-1, end is pushed forward to M-1.
+    """
+    with conn.cursor() as cur:
+        cur.execute("SELECT min_date, max_date FROM dataset_coverage WHERE id = 1")
+        row = cur.fetchone()
+
+    # If no coverage info is found, return the requested range as-is
+    if not row or not row[0]:
+        return requested_start, requested_end
+
+    def _next(ym: int) -> int:
+        """Given a year-month in YYYYMM format, return the next month in YYYYMM format."""
+        y, m = ym // 100, ym % 100
+        return (y + 1) * 100 + 1 if m == 12 else ym + 1
+
+    def _prev(ym: int) -> int:
+        """Given a year-month in YYYYMM format, return the previous month in YYYYMM format."""
+        y, m = ym // 100, ym % 100
+        return (y - 1) * 100 + 12 if m == 1 else ym - 1
+
+    # Extract the min and max year-month from the database coverage info
+    min_date, max_date = row
+    db_min_ym = min_date.year * 100 + min_date.month
+    db_max_ym = max_date.year * 100 + max_date.month
+
+    effective_start = int(requested_start)
+    effective_end = int(requested_end)
+    
+    if effective_start > _next(db_max_ym):
+        effective_start = _next(db_max_ym)
+        print(f"Expanding start date from {requested_start} to {effective_start} to fill coverage gap.")
+
+    if  effective_end < _prev(db_min_ym):
+        effective_end = _prev(db_min_ym)
+        print(f"Expanding end date from {requested_end} to {effective_end} to fill coverage gap.")
+
+    return str(effective_start), str(effective_end)
+
+def _load_month(year: int, month: int) -> None:
+    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    try:
+        load_stats_for_month(conn, year, month)
+        conn.commit()
+    finally:
+        conn.close()
+
 def main():
     # Parse and validate command-line arguments
     args = parse_args()
@@ -83,19 +136,50 @@ def main():
     os.makedirs(WEATHER_DATA_DIR, exist_ok=True)
     os.makedirs(BIKE_ROUTES_DATA_DIR, exist_ok=True)
 
-    # Download and convert the filtered files
-    download_ride_data(args.start_date, args.end_date, download_jc=args.download_jc)
+    # Connect to Postgres
+    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+
+    # Initialise the database schema from scripts/postgre/schemas/*.sql
+    init_db(conn)
+    upsert_station_metadata_from_gbfs(conn)
+
+    # Expand date range if needed to fill any gap with existing DB coverage
+    start_date, end_date = _effective_date_range(conn, args.start_date, args.end_date)
 
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances(force_download=args.force_download)
 
-    # Precompute daily aggregated stats over all downloaded rides
-    compute_and_save_daily_stats()
+    # Download hourly weather data and load it into weather_hourly
+    download_weather_data(start_date, end_date)
+    load_weather_hourly(conn)
 
-    # Download hourly weather data for the requested date range
-    download_weather_data(args.start_date, args.end_date)
+    # Download ride data and process each month into Postgres as soon as its parquet is ready,
+    # overlapping DB loading with the download of the next month.
+    # DB coverage is used to skip months already fully loaded, avoiding redundant downloads.
+    current_coverage = get_loaded_months(conn)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        futures = []
+        for year, month in download_ride_data(start_date, end_date, download_jc=args.download_jc, current_coverage=current_coverage):
+            futures.append(executor.submit(_load_month, year, month))
+        for f in futures:
+            f.result()
 
-    # Download and preprocess bike route data
-    download_bike_routes(force_download=args.force_download)
+    # Check for any coverage gaps
+    assert_no_coverage_gaps(conn)
+
+    # Update dataset_coverage with the new min/max dates after loading
+    update_dataset_coverage(conn)
+
+    # Download and preprocess bike route data, then upsert into Postgres
+    df_routes = download_bike_routes(force_download=args.force_download)
+    upsert_bike_routes(conn, df_routes)
+    conn.commit()
+
+    # Close the database connection
+    conn.close()
+
+    # Remove the downloaded parquet files to save space (optional, comment out if you want to keep them)
+    shutil.rmtree(RIDES_DATA_DIR)
+
 if __name__ == "__main__":
     main()

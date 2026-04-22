@@ -1,19 +1,16 @@
 from datetime import date
 from fastapi import APIRouter, Query
 from src.backend.models.ride import MemberCasual, RideableType
-from src.backend.models.stats import (
-    DatasetDateRange,
-    Stats,
-    GroupedStats,
-    StationRideCounts,
-    TripsCountBetweenStations,
-    StatsGroupBy,
-    RideCountGroupBy,
-)
-from src.backend.services.stats.baseStats import get_stats_data
-from src.backend.services.stats.flowCounts import get_trips_between_stations_stats
-from src.backend.services.stats.stationCounts import get_station_ride_counts_stats
-from src.backend.loaders.rides_loader import get_data_range_coverage
+
+from src.backend.models.stats.date_range import DatasetDateRange
+from src.backend.models.stats.stats import StatsGroupBy, Stats, GroupedStats
+from src.backend.models.stats.station_flow_counts import StationFlowCounts
+from src.backend.models.stats.station_ride_counts import StationRideCounts, StationRideGroupBy
+
+from src.backend.services.stats.stats import get_stats_data
+from src.backend.services.stats.station_ride_counts import get_station_ride_counts_stats
+from src.backend.services.stats.station_flow_counts import get_trips_between_stations_stats
+from src.backend.services.stats.coverage import get_data_range_coverage
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
@@ -24,8 +21,6 @@ def get_stats(
     bike_type: RideableType | None = Query(default=None),
     start_date: date = Query(...),
     end_date: date = Query(...),
-    start_station_id: str | None = Query(default=None),
-    end_station_id: str | None = Query(default=None)
 ):
     """Get historical rides stats, optionally grouped by day_of_week, hour, or both."""
     return get_stats_data(
@@ -34,13 +29,29 @@ def get_stats(
         bike_type=bike_type,
         start_date=start_date,
         end_date=end_date,
-        start_station_id=start_station_id,
-        end_station_id=end_station_id,
+    )
+
+@router.get("/stats_by_weather", response_model=list[GroupedStats])
+def get_stats_by_weather(
+    group_by: StatsGroupBy = Query(default=StatsGroupBy.NONE),
+    user_type: MemberCasual | None = Query(default=None),
+    bike_type: RideableType | None = Query(default=None),
+    start_date: date = Query(...),
+    end_date: date = Query(...),
+):
+    """Get historical rides stats joined with weather conditions, optionally grouped by day_of_week, hour, or both."""
+    return get_stats_data(
+        group_by=group_by,
+        user_type=user_type,
+        bike_type=bike_type,
+        start_date=start_date,
+        end_date=end_date,
+        group_by_weather=True,
     )
 
 @router.get("/station_usage_counts", response_model=list[StationRideCounts])
 def get_station_ride_counts(
-    group_by: RideCountGroupBy = Query(default=RideCountGroupBy.NONE),
+    group_by: StationRideGroupBy = Query(default=StationRideGroupBy.NONE),
     user_type: MemberCasual | None = Query(default=None),
     bike_type: RideableType | None = Query(default=None),
     start_date: date = Query(...), 
@@ -59,9 +70,8 @@ def get_station_ride_counts(
         limit=limit,
     )
 
-@router.get("/station_flow_counts", response_model=list[TripsCountBetweenStations])
+@router.get("/station_flow_counts", response_model=list[StationFlowCounts])
 def get_trips_between_stations(
-    group_by: RideCountGroupBy = Query(default=RideCountGroupBy.NONE),
     user_type: MemberCasual | None = Query(default=None),
     bike_type: RideableType | None = Query(default=None),
     start_date: date = Query(...), 
@@ -71,7 +81,6 @@ def get_trips_between_stations(
 ):
     """Get the count of rides between each station pair, optionally grouped by day_of_week, hour, or both."""
     return get_trips_between_stations_stats(
-        group_by=group_by,
         user_type=user_type,
         bike_type=bike_type,
         start_date=start_date,

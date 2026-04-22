@@ -127,33 +127,6 @@ def _find_available_files(base_data_url: str) -> list[str]:
     print(f"Found {len(files)} files")
     return files
 
-def _find_current_coverage(DIR_PATH: str) -> list[tuple[int, int]]:
-    """
-    Find the current coverage of already downloaded files to avoid unnecessary downloads.
-    Args:        
-        DIR_PATH (str): The directory path where the downloaded files are stored.
-    Returns:        
-        list: A list of tuples containing the start and end coverage periods in the format (YYYYMM, YYYYMM).
-    """
-    coverage = []
-    # Current files are stored in the format {DIR_PATH}/year=YYYY/month=MM/*.parquet
-    # We traverse the directory structure to find all parquet files and extract their coverage periods from their file paths
-    for year_dir in os.listdir(DIR_PATH):
-        for month_dir in os.listdir(os.path.join(DIR_PATH, year_dir)):
-            for file in os.listdir(os.path.join(DIR_PATH, year_dir, month_dir)):
-                if file.endswith(".parquet"):
-                    try:
-                        # Get last 4 digits of the year and last 2 digits of the month to reconstruct the YYYYMM format
-                        year = year_dir.split("=")[1]
-                        month = month_dir.split("=")[1]
-                        month = month.zfill(2)  # Ensure month is 2 digits
-
-                        file_coverage = year + month
-                        coverage.append(int(file_coverage))
-                    except ValueError:
-                        continue
-    return coverage
-
 def _clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
     """
     Perform basic cleaning on the historical data:
@@ -260,28 +233,21 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
     print(f"Extracted {len(csv_frames)} CSV files from ZIP, combining into a single DataFrame...")
     return pl.concat(csv_frames, how="diagonal_relaxed")
 
-def download_ride_data(start_date: str, end_date: str, download_jc: bool) -> None:
+def download_ride_data(start_date: str, end_date: str, download_jc: bool, current_coverage: list[int]):
     """
     Download each filtered ZIP file from the S3 bucket and convert all CSV files
-    inside it into a single parquet file.
+    inside it into a single parquet file. Yields (year, month) tuples for each
+    partition written so callers can process months as they become available.
 
-    Args:
-        file_key (str): The key of the file to download.
-        base_data_url (str): The base URL of the S3 bucket.
-        output_dir (str): The directory to save the parquet files.
+    current_coverage: list of YYYYMM integers for months already in the DB —
+    files whose months are fully covered are skipped.
     """
-    # Check which files are available in the S3 bucket and filter them by date range and dataset type
     available_files = _find_available_files(BASE_URL_RIDE_DATA)
-    
-    # Check the current coverage of already downloaded files to avoid unnecessary downloads
-    current_coverage = _find_current_coverage(RIDES_DATA_DIR)
-
-    # Filter files by date range and dataset type
     filtered_files = _filter_files(available_files, current_coverage, start_date, end_date, download_jc=download_jc)
-    
+
     for f in filtered_files:
         trip_data = _download_and_process_file(f, BASE_URL_RIDE_DATA)
-        
+
         print("Starting data cleaning...")
         trip_data = _clean_rides_data(trip_data)
         print("Data cleaning completed.")
@@ -289,9 +255,14 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool) -> Non
         # Extract year and month from cleaned datetime column (REQUIRED for partitioning by year and month in parquet output)
         # Note: this information must be extracted from the ended_at column, not the started_at column, because some files are partitioned by end date rather than start date
         trip_data = trip_data.with_columns(
-            pl.col("ended_at").dt.strftime("%Y%m").cast(pl.Int32).alias("year_month"),
+            pl.col("ended_at").dt.date().alias("date"),
             pl.col("ended_at").dt.year().alias("year"),
-            pl.col("ended_at").dt.month().alias("month")
+            pl.col("ended_at").dt.month().alias("month"),
+            pl.col("ended_at").dt.hour().alias("hour"),
+            pl.col("ended_at").dt.weekday().alias("day_of_week"),
+            (pl.col("ended_at") - pl.col("started_at"))
+			.dt.total_seconds()
+			.alias("trip_duration_seconds")
         )
 
         # Write the combined DataFrame to a parquet file, partitioned by year and month
@@ -301,5 +272,8 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool) -> Non
             statistics=True,           # enables min/max skipping
             partition_by=["year", "month"],
             compression=PARQUET_COMPRESSION)
-        
+
         print(f"Wrote {trip_data.height} rows to {RIDES_DATA_DIR} for file {f}")
+
+        for year, month in trip_data.select(["year", "month"]).unique().rows():
+            yield year, month
