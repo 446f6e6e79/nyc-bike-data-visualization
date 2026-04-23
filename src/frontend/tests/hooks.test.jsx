@@ -4,7 +4,7 @@ import { createQueryWrapper } from './testQueryClient.jsx'
 
 import { useDatasetDateRange } from '../features/header/hooks/useDatasetDateRange.js'
 import useDayHourStats from '../features/temporal/hooks/useDayHourStats.js'
-import useStationRideCounts from '../features/map/layers/station_usage_layer/useStationRideCounts.js'
+import useStationUsageCounts from '../features/map/layers/station_usage_layer/useStationUsageCounts.js'
 import useStationAvailability from '../features/map/layers/infrastructure_layer/stations/useStationAvailability.js'
 import useTripCounts from '../features/map/layers/trip_flow_layer/trips/useTripCounts.js'
 import useHourlyStats from '../features/temporal/hooks/useHourlyStats.js'
@@ -34,8 +34,8 @@ describe('hooks smoke tests', () => {
         await waitFor(() => expect(result.current).toBeDefined())
     })
 
-    it('useStationRideCounts resolves without throwing', async () => {
-        const { result } = renderHook(() => useStationRideCounts(TEST_FILTERS), { wrapper })
+    it('useStationUsageCounts resolves without throwing', async () => {
+        const { result } = renderHook(() => useStationUsageCounts(TEST_FILTERS), { wrapper })
         await waitFor(() => expect(result.current).toBeDefined())
     })
 
