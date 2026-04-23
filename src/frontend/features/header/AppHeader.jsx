@@ -98,7 +98,7 @@ function AppHeader({ onFiltersChange, forceDisableFilters = false }) {
                     <span className="app-header__kicker">{kicker}</span>
                     <h1 className="app-title">
                         Citi Bike,{" "}
-                        <span class="app-title__in-motion">
+                        <span className="app-title__in-motion">
                             <span>i</span>
                             <span>n</span>
                             <span>&nbsp;</span>
