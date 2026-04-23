@@ -4,7 +4,6 @@ import AppHeader from './features/header/AppHeader.jsx'
 import MapPage from './features/map/MapPage.jsx'
 import TemporalPage from './features/temporal/TemporalPage.jsx'
 import WeatherPage from './features/weather/WeatherPage.jsx'
-import prefetchData from './utils/prefetcher.js'
 
 /**
  * App component that sets up the main structure of the application, including routing and layout. 
@@ -14,8 +13,7 @@ import prefetchData from './utils/prefetcher.js'
 function App() {
     const [filters, setFilters] = useState({})
     const [isTemporalCompareActive, setIsTemporalCompareActive] = useState(false)
-    // Prefetch data for the current filters (this will be cached by the hooks)
-    prefetchData(filters)
+
     return (
         <BrowserRouter>
             <div className="app-shell">
