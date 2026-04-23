@@ -1,9 +1,9 @@
 @layer components {
   .scatter-plot-frame {
-    @apply relative w-full h-[520px];
+    @apply relative w-full h-[78vh];
   }
 
   .weather-histogram-frame {
-    @apply relative w-full h-[320px];
+    @apply relative w-full h-[39vh];
   }
 }

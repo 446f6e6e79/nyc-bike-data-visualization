@@ -26,17 +26,6 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
     const chartRef = useRef(null)
     const tooltipRef = useRef(null)
     const formattedData = useMemo(() => formatData(data), [data])
-    const pointSizeScale = useMemo(() => {
-        if (formattedData.length === 0) {
-            return { min: 0, max: 1 }
-        }
-
-        const values = formattedData.map((item) => item.ridesPerDay)
-        return {
-            min: Math.min(...values),
-            max: Math.max(...values),
-        }
-    }, [formattedData])
 
     const WEATHER_ICONS = {
         Clear: "☀",
@@ -224,18 +213,8 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                     backgroundColor: GROUPED_WEATHER_CODES[point.weatherGroup]?.[1],
                     borderColor: SCATTER_BORDER_COLOR,
                     borderWidth: SCATTER_BORDER_WIDTH,
-                    pointRadius: (ctx) => {
-                        const ridesPerDay = Number(ctx.raw?.ridesPerDay || 0)
-                        const { min, max } = pointSizeScale
-                        const ratio = max > min ? (ridesPerDay - min) / (max - min) : 0.5
-                        return SCATTER_POINT_RADIUS - 3 + ratio * 8
-                    },
-                    pointHoverRadius: (ctx) => {
-                        const ridesPerDay = Number(ctx.raw?.ridesPerDay || 0)
-                        const { min, max } = pointSizeScale
-                        const ratio = max > min ? (ridesPerDay - min) / (max - min) : 0.5
-                        return SCATTER_POINT_RADIUS + ratio * 10
-                    },
+                    pointRadius: SCATTER_POINT_RADIUS,
+                    pointHoverRadius: SCATTER_POINT_RADIUS * 1.5,
                     pointStyle: 'circle',
                 })),
             },
@@ -325,7 +304,7 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                 tooltipRef.current = null
             }
         }
-    }, [formattedData, pointSizeScale])
+    }, [formattedData])
 
     return (
         <div className="scatter-plot-frame">
