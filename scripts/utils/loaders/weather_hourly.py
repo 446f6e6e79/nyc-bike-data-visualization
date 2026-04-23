@@ -21,10 +21,12 @@ def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
         .with_columns([
             pl.col("datetime").dt.date().alias("date"),
             pl.col("datetime").dt.hour().cast(pl.Int16).alias("hour"),
+            (pl.col("datetime").dt.weekday() - 1).cast(pl.Int16).alias("day_of_week"),
         ])
         .select([
             "date",
             "hour",
+            "day_of_week",
             pl.col("weather_code").cast(pl.Int16),
             pl.col("temperature_2m").cast(pl.Float64),
             pl.col("precipitation").cast(pl.Float64),
@@ -37,6 +39,7 @@ def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
         (
             r["date"],
             int(r["hour"]),
+            int(r["day_of_week"]),
             int(r["weather_code"]) if r["weather_code"] is not None else None,
             float(r["temperature_2m"]) if r["temperature_2m"] is not None else None,
             float(r["precipitation"]) if r["precipitation"] is not None else None,
@@ -49,8 +52,8 @@ def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
         cur.executemany(
             """
             INSERT INTO weather_hourly
-                (date, hour, weather_code, temperature_2m, precipitation, wind_speed_10m)
-            VALUES (%s, %s, %s, %s, %s, %s)
+                (date, hour, day_of_week, weather_code, temperature_2m, precipitation, wind_speed_10m)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (date, hour) DO NOTHING
             """,
             rows,

@@ -1,4 +1,3 @@
-from datetime import date
 from fastapi import HTTPException
 
 from src.backend.db import get_conn
@@ -7,25 +6,27 @@ from src.backend.models.stats.station_flow_counts import GroupedStationFlowCount
 from src.backend.services.stats.utils import fetch_rows
 
 def get_trips_between_stations_stats(
-    start_date: date,
-    end_date: date,
+    start_year: int,
+    start_month: int,
+    end_year: int,
+    end_month: int,
     user_type: MemberCasual | None = None,
     bike_type: RideableType | None = None,
     station_id: str | None = None,
     limit: int = 100,
 ) -> list[StationFlowCounts]:
-    """Fetch aggregated counts of trips between station pairs in the given date range, optionally grouped by time dimensions."""
+    """Fetch aggregated counts of trips between station pairs in the given month range."""
     user_val = user_type.value if user_type else None
     bike_val = bike_type.value if bike_type else None
 
-    start_ym = start_date.year * 100 + start_date.month
-    end_ym = end_date.year * 100 + end_date.month
+    start_ym = start_year * 100 + start_month
+    end_ym = end_year * 100 + end_month
 
     sql = """
         WITH spine AS (
             SELECT COUNT(*) AS hours_count
             FROM weather_hourly
-            WHERE date BETWEEN %s AND %s
+            WHERE EXTRACT(YEAR FROM date) * 100 + EXTRACT(MONTH FROM date) BETWEEN %s AND %s
         )
         SELECT fam.station_a_id,
                sm_a.station_name AS station_a_name,
@@ -51,7 +52,7 @@ def get_trips_between_stations_stats(
                  s.hours_count
     """
     params = (
-        start_date, end_date,
+        start_ym, end_ym,
         start_ym, end_ym,
         station_id, station_id, station_id,
         user_val, user_val,

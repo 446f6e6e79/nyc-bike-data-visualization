@@ -51,15 +51,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Create test database
+        env:
+          PGPASSWORD: citibike
+        run: |
+          psql -h localhost -U citibike -c "CREATE DATABASE citibike_test;"
+          psql -h localhost -U citibike -d citibike_test -c "GRANT ALL ON SCHEMA public TO citibike;"
+
       - name: Seed test database
         env:
-          DATABASE_URL: postgresql://citibike:citibike@localhost:5432/citibike
+          DATABASE_URL: postgresql://citibike:citibike@localhost:5432/citibike_test
         run: python scripts/load_test_data.py
 
       - name: Run backend integration tests
         env:
-          TEST_MODE: "true"
-          DATABASE_URL: postgresql://citibike:citibike@localhost:5432/citibike
+          DATABASE_URL: postgresql://citibike:citibike@localhost:5432/citibike_test
         run: |
           python -m uvicorn src.backend.main:app --host 127.0.0.1 --port 8000 &
           SERVER_PID=$!

@@ -61,10 +61,10 @@ def _query_stats(
         time_join   = "r.date = s.date"
         order_base  = "s.date"
     elif group_by == StatsGroupBy.DAY_OF_WEEK:
-        time_sel    = "EXTRACT(ISODOW FROM date)::int - 1 AS day_of_week"
-        sh_time_sel = "EXTRACT(ISODOW FROM sh.date)::int - 1 AS day_of_week"
-        time_grp    = "EXTRACT(ISODOW FROM date)"
-        sh_time_grp = "EXTRACT(ISODOW FROM sh.date)"
+        time_sel    = "day_of_week"
+        sh_time_sel = "sh.day_of_week"
+        time_grp    = "day_of_week"
+        sh_time_grp = "sh.day_of_week"
         res_sel     = "s.day_of_week"
         time_join   = "r.day_of_week = s.day_of_week"
         order_base  = "s.day_of_week"
@@ -77,10 +77,10 @@ def _query_stats(
         time_join   = "r.hour = s.hour"
         order_base  = "s.hour"
     elif group_by == StatsGroupBy.DAY_OF_WEEK_AND_HOUR:
-        time_sel    = "EXTRACT(ISODOW FROM date)::int - 1 AS day_of_week, hour"
-        sh_time_sel = "EXTRACT(ISODOW FROM sh.date)::int - 1 AS day_of_week, sh.hour"
-        time_grp    = "EXTRACT(ISODOW FROM date), hour"
-        sh_time_grp = "EXTRACT(ISODOW FROM sh.date), sh.hour"
+        time_sel    = "day_of_week, hour"
+        sh_time_sel = "sh.day_of_week, sh.hour"
+        time_grp    = "day_of_week, hour"
+        sh_time_grp = "sh.day_of_week, sh.hour"
         res_sel     = "s.day_of_week, s.hour"
         time_join   = "r.day_of_week = s.day_of_week AND r.hour = s.hour"
         order_base  = "s.day_of_week, s.hour"
@@ -125,7 +125,10 @@ def _query_stats(
         LEFT JOIN rides r ON {_conds(time_join, w_join) or "TRUE"}
         ORDER BY {_cols(order_base, w_res)}
     """, (start_date, end_date, *base_params))
-    return [_to_grouped_stats(r, int(r["hours_count"])) for r in fetch_rows(cur)]
+    rows = [_to_grouped_stats(r, int(r["hours_count"])) for r in fetch_rows(cur)]
+    if group_by_weather and group_by != StatsGroupBy.NONE:
+        rows = _fill_weather_gaps(rows, group_by)
+    return rows
 
 def _to_stats(r: dict, hours_count: int) -> Stats:
     total_rides = int(r.get("total_rides") or 0)
@@ -159,9 +162,46 @@ def _to_grouped_stats(r: dict, hours_count: int) -> GroupedStats:
         average_speed_kmh=(total_dist / (total_dur / 3600)) if total_dur > 0 else 0.0,
     )
 
-def _cols(*parts):  
-        return ", ".join(p for p in parts if p)
-    
-def _conds(*conditions): 
+def _fill_weather_gaps(rows: list[GroupedStats], group_by: StatsGroupBy) -> list[GroupedStats]:
+    if group_by == StatsGroupBy.HOUR:
+        time_keys = [{"hour": h} for h in range(24)]
+        def key(r): return (r.weather_code, r.hour)
+        def mk(wc, tk): return GroupedStats(weather_code=wc, hour=tk["hour"], **_zero_stats())
+        def sort_key(r): return (r.weather_code, r.hour)
+    elif group_by == StatsGroupBy.DAY_OF_WEEK:
+        time_keys = [{"day_of_week": d} for d in range(7)]
+        def key(r): return (r.weather_code, r.day_of_week)
+        def mk(wc, tk): return GroupedStats(weather_code=wc, day_of_week=tk["day_of_week"], **_zero_stats())
+        def sort_key(r): return (r.weather_code, r.day_of_week)
+    elif group_by == StatsGroupBy.DAY_OF_WEEK_AND_HOUR:
+        time_keys = [{"day_of_week": d, "hour": h} for d in range(7) for h in range(24)]
+        def key(r): return (r.weather_code, r.day_of_week, r.hour)
+        def mk(wc, tk): return GroupedStats(weather_code=wc, day_of_week=tk["day_of_week"], hour=tk["hour"], **_zero_stats())
+        def sort_key(r): return (r.weather_code, r.day_of_week, r.hour)
+    else:
+        return rows
+
+    existing = {key(r): r for r in rows}
+    weather_codes = {r.weather_code for r in rows}
+    result = []
+    for wc in weather_codes:
+        for tk in time_keys:
+            k = (wc, *tk.values())
+            result.append(existing.get(k) or mk(wc, tk))
+    return sorted(result, key=sort_key)
+
+def _zero_stats() -> dict:
+    return dict(
+        total_rides=0, hours_count=0,
+        average_duration_seconds=0.0, average_distance_km=0.0,
+        total_duration_seconds=0.0, total_distance_km=0.0,
+        average_speed_kmh=0.0,
+    )
+
+def _cols(*parts):
+    """Helper to combine SQL select/group/order parts, skipping any that are empty."""
+    return ", ".join(p for p in parts if p)
+
+def _conds(*conditions):
     """Helper to combine SQL join conditions, skipping any that are empty."""
     return " AND ".join(condition for condition in conditions if condition)

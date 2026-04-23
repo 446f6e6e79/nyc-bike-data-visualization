@@ -48,12 +48,7 @@ YEARLY_CUTOFF = 2023        # If a file name contains only a year <= this cutoff
 PARQUET_COMPRESSION = "zstd"
 STREET_CIRCUITY_FACTOR = 1.3
 
-# Specify Path and ENV variable for test data and test mode
 TEST_DATA_DIR = BACKEND_ROOT / "tests" / "test_data"
-TEST_ENV_VAR = "TEST_MODE"
-
-# Specify whether all data should be loaded into memory at startup for faster access, or loaded on demand with potential performance trade-offs
-IN_MEMORY_CACHE_ENABLED = False
 
 # Log file settings
 LOG_FILE_PATH = "logs/requests.log"

@@ -3,6 +3,7 @@ import requests
 from test_helpers import BASE_URL, DEFAULT_TIMEOUT
 
 DATE_PARAMS = {"start_date": "2026-01-02", "end_date": "2026-01-02"}
+YM_PARAMS = {"start_year": 2026, "start_month": 1, "end_year": 2026, "end_month": 1}
 
 def test_get_stats_no_filters():
     """Test that /stats/ returns expected fields with no filters."""
@@ -130,7 +131,7 @@ def test_get_trips_between_stations():
     """Test that /stats/station_flow_counts returns expected fields."""
     response = requests.get(
         f"{BASE_URL}/stats/station_flow_counts",
-        params=DATE_PARAMS,
+        params=YM_PARAMS,
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
@@ -167,7 +168,7 @@ def test_get_trips_between_stations_with_invalid_station_id():
     """Test that /stats/station_flow_counts returns empty for unknown station_id."""
     response = requests.get(
         f"{BASE_URL}/stats/station_flow_counts",
-        params={**DATE_PARAMS, "station_id": "invalid_station_id"},
+        params={**YM_PARAMS, "station_id": "invalid_station_id"},
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
@@ -176,7 +177,7 @@ def test_get_trips_between_stations_with_invalid_station_id():
 
 def test_get_station_counts():
     """Test that /stats/station_usage_counts returns expected station counts."""
-    response = requests.get(f"{BASE_URL}/stats/station_usage_counts", params=DATE_PARAMS, timeout=DEFAULT_TIMEOUT)
+    response = requests.get(f"{BASE_URL}/stats/station_usage_counts", params=YM_PARAMS, timeout=DEFAULT_TIMEOUT)
     assert response.status_code == 200
     payload = response.json()
     assert len(payload) == 4
@@ -197,11 +198,32 @@ def test_get_station_counts():
         assert group["incoming_rides"] >= 0
 
 
+def test_get_station_counts_day_of_week_filter():
+    """Test that day_of_week filter correctly limits station counts."""
+    # 2026-01-02 is a Friday (day_of_week=4) — should return results
+    response_friday = requests.get(
+        f"{BASE_URL}/stats/station_usage_counts",
+        params={**YM_PARAMS, "day_of_week": 4},
+        timeout=DEFAULT_TIMEOUT,
+    )
+    assert response_friday.status_code == 200
+    assert len(response_friday.json()) == 4
+
+    # Monday (day_of_week=0) — no rides, should return empty
+    response_monday = requests.get(
+        f"{BASE_URL}/stats/station_usage_counts",
+        params={**YM_PARAMS, "day_of_week": 0},
+        timeout=DEFAULT_TIMEOUT,
+    )
+    assert response_monday.status_code == 200
+    assert response_monday.json() == []
+
+
 def test_get_station_counts_grouped_by_day_of_week():
     """Test that grouped station counts are returned in nested station-first shape."""
     response = requests.get(
         f"{BASE_URL}/stats/station_usage_counts",
-        params={**DATE_PARAMS, "group_by": "day_of_week"},
+        params={**YM_PARAMS, "group_by": "day_of_week"},
         timeout=DEFAULT_TIMEOUT,
     )
     assert response.status_code == 200
