@@ -28,8 +28,8 @@ def get_station_ride_counts_stats(
         sah_grp    = ", s.hours_count"
         spine_join = "CROSS JOIN spine s"
     elif group_by == StationRideGroupBy.DAY_OF_WEEK:
-        spine_dim  = "EXTRACT(ISODOW FROM date)::int - 1 AS day_of_week, "
-        spine_grp  = "GROUP BY 1"
+        spine_dim  = "day_of_week, "
+        spine_grp  = "GROUP BY day_of_week"
         sah_sel    = ", sah.day_of_week"
         sah_grp    = ", sah.day_of_week, s.hours_count"
         spine_join = "JOIN spine s ON s.day_of_week = sah.day_of_week"
@@ -40,8 +40,8 @@ def get_station_ride_counts_stats(
         sah_grp    = ", sah.hour, s.hours_count"
         spine_join = "JOIN spine s ON s.hour = sah.hour"
     elif group_by == StationRideGroupBy.DAY_OF_WEEK_AND_HOUR:
-        spine_dim  = "EXTRACT(ISODOW FROM date)::int - 1 AS day_of_week, hour, "
-        spine_grp  = "GROUP BY 1, 2"
+        spine_dim  = "day_of_week, hour, "
+        spine_grp  = "GROUP BY day_of_week, hour"
         sah_sel    = ", sah.day_of_week, sah.hour"
         sah_grp    = ", sah.day_of_week, sah.hour, s.hours_count"
         spine_join = "JOIN spine s ON s.day_of_week = sah.day_of_week AND s.hour = sah.hour"

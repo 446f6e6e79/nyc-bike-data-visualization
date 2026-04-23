@@ -41,7 +41,7 @@ def _build_rides(trips_path: Path, distances_path: Path) -> pl.DataFrame:
         .with_columns([
             pl.col("started_at").dt.date().alias("date"),
             pl.col("started_at").dt.hour().cast(pl.Int16).alias("hour"),
-            pl.col("started_at").dt.weekday().cast(pl.Int16).alias("day_of_week"),
+            (pl.col("started_at").dt.weekday() - 1).cast(pl.Int16).alias("day_of_week"),
             (
                 (pl.col("ended_at") - pl.col("started_at")).dt.total_seconds()
             ).cast(pl.Float64).alias("trip_duration_seconds"),

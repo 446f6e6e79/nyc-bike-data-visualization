@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS weather_hourly (
     date            DATE             NOT NULL,
     hour            SMALLINT         NOT NULL,
+    day_of_week     SMALLINT         NOT NULL,
     weather_code    SMALLINT,
     temperature_2m  DOUBLE PRECISION,
     precipitation   DOUBLE PRECISION,
