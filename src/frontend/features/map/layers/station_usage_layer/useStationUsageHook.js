@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import useStationRideCounts from './useStationRideCounts.js'
+import useStationUsageCounts from './useStationUsageCounts.js'
 import {
     selectStations,
     getStationForCurrentTime,
@@ -17,21 +17,21 @@ import { LIMIT_STATIONS } from '../../../../utils/config.jsx'
  */
 export function useStationUsageLayer({ filters, currentTime }) {
     // Build filters for station usage data
-    const stationRideCountFilters = {
+    const stationUsageCountFilters = {
         limit: LIMIT_STATIONS,
         group_by: 'hour',
         ...(filters ?? {})
     }
 
-    // Fetch station ride counts with the specified filters using the custom hook
-    const { stationRideCounts,
+    // Fetch station usage counts with the specified filters using the custom hook
+    const { stationUsageCounts,
         loading: loading,
         error: error,
         refetch,
-    } = useStationRideCounts(stationRideCountFilters)
+    } = useStationUsageCounts(stationUsageCountFilters)
 
     // Process station data to get the stations for the current time frame and calculate the maximum usage for scaling
-    const stations = useMemo(() => selectStations(stationRideCounts), [stationRideCounts])
+    const stations = useMemo(() => selectStations(stationUsageCounts), [stationUsageCounts])
     const frameStations = useMemo(() => getStationForCurrentTime(stations, currentTime), [stations, currentTime])
     const maxUsage = useMemo(() => getMaxUsage(stations), [stations])
     const maxDelta = useMemo(() => getMaxDelta(stations), [stations])

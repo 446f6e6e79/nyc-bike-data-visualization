@@ -2,13 +2,13 @@
 const HOURS_IN_DAY = 24
 
 /**
- * Transforms raw station ride count data into a format suitable for map visualization.
+ * Transforms raw station usage count data into a format suitable for map visualization.
  * Keeps an hourly usage array (index 0-23) on each station for animation frames.
- * @param {Array} stationRideCounts - An array of station ride count objects.
+ * @param {Array} stationUsageCounts - An array of station usage count objects.
  * @returns {Array} An array of transformed station objects suitable for map visualization.
  */
-export function selectStations(stationRideCounts) {
-    const stationRows = Array.isArray(stationRideCounts) ? stationRideCounts : []
+export function selectStations(stationUsageCounts) {
+    const stationRows = Array.isArray(stationUsageCounts) ? stationUsageCounts : []
     // For each station, create an hourly usage array based on the grouped data.
     return stationRows
         .map((station) => {
@@ -16,12 +16,16 @@ export function selectStations(stationRideCounts) {
             const hourlyUsage = Array.from({ length: HOURS_IN_DAY }, () => 0)
             if (Array.isArray(station.groups)) {
                 station.groups.forEach((group) => {
-                    // Extract hour and rides count
                     const hour = Number(group.hour)
-                    // Convert hours_count to days_count for daily average calculation
-                    const daysCount = Number(group.hours_count) / HOURS_IN_DAY 
                     const totalRides = Number(group.total_rides)
-                    // Add the average rides for this hour to the corresponding index in the hourly usage array
+                    const hoursCount = Number(group.hours_count)
+
+                    // Skip invalid buckets and avoid dividing by zero (0/0 => NaN).
+                    if (!Number.isInteger(hour) || hour < 0 || hour >= HOURS_IN_DAY) return
+                    if (!Number.isFinite(totalRides) || totalRides <= 0) return
+                    if (!Number.isFinite(hoursCount) || hoursCount <= 0) return
+
+                    const daysCount = hoursCount / HOURS_IN_DAY
                     hourlyUsage[hour] += totalRides / daysCount
                 }
                 )
@@ -31,16 +35,9 @@ export function selectStations(stationRideCounts) {
                 lat: station.lat,
                 lon: station.lon,
                 hourlyUsage,        // Array of average rides for each hour
-                meanUsagePerHour: hourlyUsage.reduce((sum, usage) => sum + usage, 0) / HOURS_IN_DAY, // Average usage across all hours
+                meanUsagePerHour: hourlyUsage.reduce((sum, usage) => sum + (Number.isFinite(usage) ? usage : 0), 0) / HOURS_IN_DAY, // Average usage across all hours
             }
         })
-        // Filter out stations that don't have valid latitude, longitude, or hourly usage data.
-        .filter(
-            (station) =>
-                Number.isFinite(station.lat) &&
-                Number.isFinite(station.lon) &&
-                Array.isArray(station.hourlyUsage)
-        )
 }
 
 /**
@@ -74,8 +71,8 @@ function interpolateStationUsage(station, time) {
     const lowerHour = Math.floor(normalizedHour)
     const higherHour = (lowerHour + 1) % HOURS_IN_DAY
     const t = normalizedHour - lowerHour // Fractional part for interpolation
-    const lowerUsageValue = station.hourlyUsage[lowerHour]
-    const higherUsageValue = station.hourlyUsage[higherHour]
+    const lowerUsageValue = Number.isFinite(station.hourlyUsage[lowerHour]) ? station.hourlyUsage[lowerHour] : 0
+    const higherUsageValue = Number.isFinite(station.hourlyUsage[higherHour]) ? station.hourlyUsage[higherHour] : 0
 
     // Linear interpolation between the two hours
     return lowerUsageValue + (higherUsageValue - lowerUsageValue) * t

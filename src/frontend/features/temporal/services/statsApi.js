@@ -1,5 +1,5 @@
-import apiClient from '../clients/apiClient.js'
-import { ENDPOINTS } from '../clients/apiConstants.js'
+import apiClient from '../../../clients/apiClient.js'
+import { ENDPOINTS } from '../../../clients/apiConstants.js'
 
 /**
  * Fetches stats grouped by day_of_week AND hour, used for surface graph rendering.

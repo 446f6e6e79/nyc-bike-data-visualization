@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { selectTrips, selectMaxFlow } from './tripArcsSelector.js'
-import { fetchTripsBetweenStations } from './tripCountsApi.js'
+import { fetchStationFlowCounts } from './stationFlowCountsApi.js'
 import { LIMIT_TRIPS } from '../../../../../utils/config.jsx'
 
 /**
@@ -28,8 +28,8 @@ export function useTripArcsLayer({ filters, selectedStationIds }) {
                 station_id: stationId,
             }
             return {
-                queryKey: ['trips-between-stations', stationFilters],
-                queryFn: () => fetchTripsBetweenStations(stationFilters),            }
+                queryKey: ['station-flow-counts', stationFilters],
+                queryFn: () => fetchStationFlowCounts(stationFilters),            }
         }),
     })
     // Combine and process the trip count data from all queries

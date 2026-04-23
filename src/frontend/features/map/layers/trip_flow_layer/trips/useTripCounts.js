@@ -1,15 +1,15 @@
-import { fetchTripsBetweenStations } from './tripCountsApi.js'
+import { fetchStationFlowCounts } from './stationFlowCountsApi.js'
 import useApiQueryWithFilters from '../../../../../clients/baseApiQuery.js'
 
 /**
- * Hook to fetch trip counts between station pairs with optional filters.
+ * Hook to fetch station flow counts with optional filters.
  * @param {*} filters 
- * @returns An object containing trips-between-stations data and loading/error states
+ * @returns An object containing station flow counts data and loading/error states
  */
-function useTripCounts(filters = {}) {
+function useStationFlowCounts(filters = {}) {
     const query = useApiQueryWithFilters({
-        queryKey: 'trips-between-stations',
-        fetcher: fetchTripsBetweenStations,
+        queryKey: 'station-flow-counts',
+        fetcher: fetchStationFlowCounts,
         filters,
     })
 
@@ -22,4 +22,4 @@ function useTripCounts(filters = {}) {
     }
 }
 
-export default useTripCounts
+export default useStationFlowCounts

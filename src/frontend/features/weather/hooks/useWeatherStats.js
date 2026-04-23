@@ -1,4 +1,4 @@
-import { fetchStats } from "../../../services/statsApi.js";
+import { fetchStatsByWeather } from "../services/statsByWeatherApi.js";
 import useApiQueryWithFilters from "../../../clients/baseApiQuery.js";
 
 /**
@@ -7,11 +7,11 @@ import useApiQueryWithFilters from "../../../clients/baseApiQuery.js";
  * @returns An object containing weather stats data and loading/error states
  */
 function useWeatherStats(filters={}) {
-    const params = { ...filters, group_by: 'weather' }
+    const params = { ...filters}
 
     const query = useApiQueryWithFilters({
         queryKey: 'weather-stats',
-        fetcher: fetchStats,
+        fetcher: fetchStatsByWeather,
         filters: params,
     })
 
