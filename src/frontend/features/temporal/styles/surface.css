@@ -427,7 +427,7 @@
     }
 
     .surface-plot-3d {
-        @apply relative w-full h-[560px] bg-paper-raised border border-rule;
+        @apply relative w-full h-[78vh] bg-paper-raised border border-rule;
     }
 
     .surface-plot-stack {
@@ -525,6 +525,33 @@
     }
 
     .surface-histogram-chart {
-        @apply h-[220px] w-full;
+        @apply h-[15vw] w-full;
+    }
+
+    .surface-card {
+        @apply h-[25vw] min-h-[250px] relative flex flex-col gap-4 bg-paper-raised border-t border-ink border-x border-b border-rule p-5;
+    }
+
+    .surface-card--hidden .surface-card__eyebrow,
+    .surface-card--hidden .surface-chart,
+    .surface-card--hidden .surface-empty {
+        visibility: hidden;
+    }
+
+    .surface-card__eyebrow {
+        @apply font-mono text-[11px] uppercase tracking-eyebrow text-ink-muted m-0;
+    }
+
+    .surface-chart {
+        @apply h-full w-full;
+    }
+
+    .surface-empty {
+        @apply w-full h-full border border-rule bg-paper text-ink-muted font-mono text-[11px] uppercase tracking-eyebrow;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0.75rem;
     }
 }

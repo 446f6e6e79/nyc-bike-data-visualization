@@ -38,12 +38,6 @@
     line-height: 1;
   }
 
-  .date-range-filter__header:hover .date-range-filter__eyebrow-icon,
-  .date-range-filter__header:focus-within .date-range-filter__eyebrow-icon {
-    @apply text-white;
-    opacity: 1;
-  }
-
   .date-range-filter__value {
     @apply font-mono text-[12px] font-medium text-white tabular-nums;
     letter-spacing: 0.02em;
