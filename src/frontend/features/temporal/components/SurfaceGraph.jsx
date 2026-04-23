@@ -110,8 +110,8 @@ function SurfaceGraph({
     const hoverTemplate = useMemo(
         () =>
             "<b>Weekly Pulse</b><br>" +
-            "Story Day: <b>%{y}</b><br>" +
-            "Story Hour: <b>%{x}</b><br>" +
+            "Day: <b>%{y}</b><br>" +
+            "Hour: <b>%{x}</b><br>" +
             `Rhythm: <b>%{z}</b> ${metric.unit}<extra></extra>`,
         [metric.label]
     )
@@ -148,8 +148,8 @@ function SurfaceGraph({
             const isBase = index === 0
             const layerHoverTemplate =
                 `<b>${layer.label}</b><br>` +
-                "Story Day: <b>%{y}</b><br>" +
-                "Story Hour: <b>%{x}</b><br>" +
+                "Day: <b>%{y}</b><br>" +
+                "Hour: <b>%{x}</b><br>" +
                 `Rhythm: <b>%{z}</b> ${metric.unit}<extra></extra>`
 
             return {

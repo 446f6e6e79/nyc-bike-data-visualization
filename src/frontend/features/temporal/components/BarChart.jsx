@@ -71,7 +71,7 @@ export default function BarChart({
     const tooltipAfterTitleCallback = (items) => {
         if (!isDayChart) return ""
         const dayLabel = String(items?.[0]?.label ?? "")
-        return `Story Day: ${dayLabel}`
+        return `Day: ${dayLabel}`
     }
     const yAxisTickCallback = formatYAxisTick.bind(null, unit)
 

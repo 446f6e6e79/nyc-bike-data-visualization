@@ -1,6 +1,61 @@
 @layer components {
   .scatter-plot-frame {
-    @apply relative w-full h-[78vh];
+    @apply relative border-t border-ink border-x border-b border-rule w-full;
+  }
+
+  .scatter-plot {
+    @apply w-full h-[78vh] min-h-[320px] bg-paper-raised p-8;
+  }
+
+  .weather-ridgeline-frame {
+    @apply relative w-full border-t border-ink border-x border-b border-rule bg-paper-raised p-5;
+  }
+
+  .weather-ridgeline-frame--hidden .weather-ridgeline-toolbar,
+  .weather-ridgeline-frame--hidden .weather-ridgeline-plot,
+  .weather-ridgeline-frame--hidden .weather-ridgeline-empty {
+    visibility: hidden;
+  }
+
+  .weather-ridgeline-toolbar {
+    @apply flex flex-wrap items-center justify-between gap-3 mb-4;
+  }
+
+  .weather-ridgeline-toolbar__title {
+    @apply m-0 font-mono text-[11px] uppercase tracking-eyebrow text-ink-muted;
+  }
+
+  .weather-ridgeline-toggle {
+    @apply inline-flex border border-rule border-[2px] bg-paper;
+  }
+
+  .weather-ridgeline-toggle__btn {
+    @apply h-[28px] py-[1px] px-3 font-mono text-[10px] uppercase tracking-eyebrow text-ink-muted border-r border-rule;
+  }
+
+  .weather-ridgeline-toggle__btn:last-child {
+    border-right: 0;
+  }
+
+  .weather-ridgeline-toggle__btn:hover {
+    @apply text-ink bg-paper-raised;
+  }
+
+  .weather-ridgeline-toggle__btn.is-active {
+    @apply text-white bg-ink;
+  }
+
+  .weather-ridgeline-plot {
+    @apply w-full h-[44vh] min-h-[320px];
+  }
+
+  .weather-ridgeline-empty {
+    @apply w-full h-full border border-rule bg-paper text-ink-muted font-mono text-[11px] uppercase tracking-eyebrow;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.75rem;
   }
 
   .weather-histogram-frame {

@@ -112,13 +112,13 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                     </div>
                     <div style="margin-bottom: 12px; padding: 8px 10px; border: 1px solid rgba(25, 83, 216, 0.28); background: rgba(25, 83, 216, 0.07);">
                         <div style="font-size: 9px; color: rgba(251, 248, 242, 0.5); font-family: ${FONT_MONO}; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; margin-bottom: 6px;">
-                            Tempo
+                            Activity
                         </div>
                         <div style="margin-bottom: 4px; font-family: ${FONT_MONO}; font-size: 11px;">
                             <span style="color: ${PAPER_RAISED}; font-weight: 600;">${point.ridesPerHour.toFixed(0)}</span><span style="color: rgba(251, 248, 242, 0.7);">/h</span>
                         </div>
                         <div style="margin-bottom: 4px; font-family: ${FONT_MONO}; font-size: 11px;">
-                            <span style="color: rgba(251, 248, 242, 0.7);">Story volume:</span>
+                            <span style="color: rgba(251, 248, 242, 0.7);">Volume:</span>
                             <span style="color: ${PAPER_RAISED}; font-weight: 600; margin-left: 4px;">${point.totalRides.toLocaleString()}</span>
                         </div>
                         <div style="font-family: ${FONT_MONO}; font-size: 11px;">
@@ -240,7 +240,6 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                             boxWidth: 12,
                             boxHeight: 12,
                             padding: 20,
-                            // Deduplicate weather groups in the legend
                             filter: (item, chart) => {
                                 const labels = chart.datasets.map(d => d.label)
                                 return labels.indexOf(item.text) === item.datasetIndex
@@ -275,7 +274,6 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                         },
                         ticks: { font: { family: FONT_MONO, size: 10 }, color: INK_MUTED },
                         grid: { color: RULE },
-                        border: { display: false },
                     },
                     y: {
                         title: {
@@ -291,7 +289,6 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                             callback: value => Number(value).toFixed(0),
                         },
                         grid: { color: RULE },
-                        border: { display: false },
                     },
                 },
             },
@@ -308,10 +305,12 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
 
     return (
         <div className="scatter-plot-frame">
-            <canvas ref={canvasRef} />
-            {(loading || error) && (
-                <StatusMessage loading={loading} error={error} onRefetch={onRefetch} />
-            )}
+            <div className="scatter-plot">
+                <canvas ref={canvasRef} />
+                {(loading || error) && (
+                    <StatusMessage loading={loading} error={error} onRefetch={onRefetch} />
+                )}
+            </div>
         </div>
     )
 }
