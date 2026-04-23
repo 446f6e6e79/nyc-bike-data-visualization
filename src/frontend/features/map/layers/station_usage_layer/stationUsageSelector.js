@@ -2,13 +2,13 @@
 const HOURS_IN_DAY = 24
 
 /**
- * Transforms raw station ride count data into a format suitable for map visualization.
+ * Transforms raw station usage count data into a format suitable for map visualization.
  * Keeps an hourly usage array (index 0-23) on each station for animation frames.
- * @param {Array} stationRideCounts - An array of station ride count objects.
+ * @param {Array} stationUsageCounts - An array of station usage count objects.
  * @returns {Array} An array of transformed station objects suitable for map visualization.
  */
-export function selectStations(stationRideCounts) {
-    const stationRows = Array.isArray(stationRideCounts) ? stationRideCounts : []
+export function selectStations(stationUsageCounts) {
+    const stationRows = Array.isArray(stationUsageCounts) ? stationUsageCounts : []
     // For each station, create an hourly usage array based on the grouped data.
     return stationRows
         .map((station) => {

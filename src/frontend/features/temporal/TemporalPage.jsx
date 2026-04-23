@@ -5,7 +5,7 @@ import MetricSelector from "./components/MetricSelector";
 import SurfaceGraph from "./components/SurfaceGraph";
 import SurfaceHistograms from "./components/SurfaceHistograms";
 import VisualizationGuide from "../../components/VisualizationGuide";
-import { fetchStats } from "../../services/statsApi.js";
+import { fetchStats } from "./services/statsApi.js";
 import { FILTERS } from "../header/components/RiderBikeFilter.jsx";
 
 const COMPARE_LAYER_COLORS = [

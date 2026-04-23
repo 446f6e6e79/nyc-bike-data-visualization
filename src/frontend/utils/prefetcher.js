@@ -2,9 +2,9 @@ import useDayHourStats from '../features/temporal/hooks/useDayHourStats';
 import useHourlyStats from '../features/temporal/hooks/useHourlyStats';
 import useWeeklyStats from '../features/temporal/hooks/useWeeklyStats';
 import useWeatherStats from '../features/weather/hooks/useWeatherStats';
-import useStationRideCounts from '../features/map/layers/station_usage_layer/useStationRideCounts';
+import useStationRideCounts from '../features/map/layers/station_usage_layer/useStationUsageCounts';
 
-import { LIMIT_STATIONS, LIMIT_TRIPS } from './config';
+import { LIMIT_STATIONS } from './config';
 
 /**
  * Call all default hooks to prefetch data for the current page. 
