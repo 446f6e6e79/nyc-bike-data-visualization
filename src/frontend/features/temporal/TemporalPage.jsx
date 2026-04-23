@@ -4,6 +4,7 @@ import useTemporalState from "./hooks/useTemporalState";
 import MetricSelector from "./components/MetricSelector";
 import SurfaceGraph from "./components/SurfaceGraph";
 import SurfaceHistograms from "./components/SurfaceHistograms";
+import SurfaceLineChart from "./components/SurfaceLineChart.jsx";
 import VisualizationGuide from "../../components/VisualizationGuide";
 import { fetchStats } from "./services/statsApi.js";
 import { FILTERS } from "../header/components/RiderBikeFilter.jsx";
@@ -71,6 +72,11 @@ function createLayerQueries(baseFilters, layer) {
             kind: "hourStats",
             params: { ...layerFilters, group_by: "hour" },
         },
+        {
+            layerId: layer.id,
+            kind: "dateStats",
+            params: { ...layerFilters, group_by: "date" },
+        },
     ];
 }
 
@@ -110,6 +116,7 @@ function useCompareTemporalLayers({ filters = {}, layers = [], enabled = false }
             dayHourStats: byLayer.get(layer.id)?.dayHourStats ?? [],
             dayStats: byLayer.get(layer.id)?.dayStats ?? [],
             hourStats: byLayer.get(layer.id)?.hourStats ?? [],
+            dateStats: byLayer.get(layer.id)?.dateStats ?? [],
             loading: byLayer.get(layer.id)?.loading ?? false,
             error: byLayer.get(layer.id)?.error ?? null,
         }));
@@ -220,6 +227,7 @@ function TemporalPage({ filters, onCompareModeChange }) {
         dayHourStats,
         dayStats,
         hourStats,
+        dateStats,
         loading,
         error,
         refetch,
@@ -278,6 +286,7 @@ function TemporalPage({ filters, onCompareModeChange }) {
                     dayHourStats: [],
                     dayStats: [],
                     hourStats: [],
+                    dateStats: [],
                     loading: false,
                     error: null,
                 }),
@@ -295,10 +304,11 @@ function TemporalPage({ filters, onCompareModeChange }) {
             dayHourStats,
             dayStats,
             hourStats,
+            dateStats,
             loading,
             error,
         }),
-        [baseClassFilters, dayHourStats, dayStats, hourStats, loading, error],
+        [baseClassFilters, dayHourStats, dayStats, hourStats, dateStats, loading, error],
     );
 
     const activeLayers = useMemo(() => {
@@ -810,6 +820,16 @@ function TemporalPage({ filters, onCompareModeChange }) {
                     dayData={baseLayer.dayStats}
                     activeMetric={activeMetric}
                     coordinates={coordinates}
+                    loading={mergedLoading}
+                    error={mergedError}
+                    onRefetch={handleRefetchAll}
+                    compareMode={hasPinnedCompareLayers}
+                    layers={activeLayers}
+                />
+
+                <SurfaceLineChart
+                    dateData={baseLayer.dateStats}
+                    activeMetric={activeMetric}
                     loading={mergedLoading}
                     error={mergedError}
                     onRefetch={handleRefetchAll}

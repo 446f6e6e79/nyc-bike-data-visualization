@@ -47,18 +47,18 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
             tooltipEl.id = 'chartjs-tooltip'
             tooltipEl.style.cssText = `
                 position: fixed;
-                background: ${INK};
-                border: 1px solid rgba(25, 83, 216, 0.3);
+                background: linear-gradient(165deg, rgba(17, 18, 20, 0.97) 0%, rgba(11, 12, 14, 0.95) 100%);
+                border: 1px solid rgba(25, 83, 216, 0.64);
                 border-radius: 0;
                 pointer-events: none;
-                padding: 12px 16px;
-                font-family: 'Courier New', monospace;
+                padding: 14px 16px;
+                font-family: ${FONT_MONO};
                 font-size: 11px;
                 color: ${PAPER_RAISED};
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                box-shadow: 0 12px 26px rgba(0, 0, 0, 0.34);
                 z-index: 9999;
                 max-width: 280px;
-                backdrop-filter: blur(4px);
+                backdrop-filter: blur(8px);
                 transition: opacity 120ms ease, left 100ms ease, top 100ms ease;
                 overflow: visible;
             `
@@ -101,7 +101,7 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
             if (point) {
                 const weatherIcon = getWeatherIcon(point.weatherGroup)
                 const html = `
-                    <div style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(25, 83, 216, 0.3);">
+                    <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(25, 83, 216, 0.38);">
                         <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: ${PAPER_RAISED}; font-family: ${FONT_MONO}; letter-spacing: 0.02em;">
                             <span style="font-size: 14px; line-height: 1;">${weatherIcon}</span>
                             <span>${point.weatherLabel}</span>
@@ -110,36 +110,36 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
                             ${point.weatherGroup}
                         </div>
                     </div>
-                    <div style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(25, 83, 216, 0.2);">
+                    <div style="margin-bottom: 12px; padding: 8px 10px; border: 1px solid rgba(25, 83, 216, 0.28); background: rgba(25, 83, 216, 0.07);">
                         <div style="font-size: 9px; color: rgba(251, 248, 242, 0.5); font-family: ${FONT_MONO}; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; margin-bottom: 6px;">
-                            Activity
+                            Tempo
                         </div>
                         <div style="margin-bottom: 4px; font-family: ${FONT_MONO}; font-size: 11px;">
                             <span style="color: ${PAPER_RAISED}; font-weight: 600;">${point.ridesPerHour.toFixed(0)}</span><span style="color: rgba(251, 248, 242, 0.7);">/h</span>
                         </div>
                         <div style="margin-bottom: 4px; font-family: ${FONT_MONO}; font-size: 11px;">
-                            <span style="color: rgba(251, 248, 242, 0.7);">Total:</span>
+                            <span style="color: rgba(251, 248, 242, 0.7);">Story volume:</span>
                             <span style="color: ${PAPER_RAISED}; font-weight: 600; margin-left: 4px;">${point.totalRides.toLocaleString()}</span>
                         </div>
                         <div style="font-family: ${FONT_MONO}; font-size: 11px;">
-                            <span style="color: rgba(251, 248, 242, 0.7);">Hours:</span>
+                            <span style="color: rgba(251, 248, 242, 0.7);">Observed hours:</span>
                             <span style="color: ${PAPER_RAISED}; font-weight: 600; margin-left: 4px;">${point.hoursCount}</span>
                         </div>
                     </div>
-                    <div>
+                    <div style="padding: 8px 10px; border: 1px solid rgba(25, 83, 216, 0.22);">
                         <div style="font-size: 9px; color: rgba(251, 248, 242, 0.5); font-family: ${FONT_MONO}; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; margin-bottom: 6px;">
-                            Trip Stats
+                            Journey feel
                         </div>
                         <div style="margin-bottom: 4px; font-family: ${FONT_MONO}; font-size: 11px;">
-                            <span style="color: rgba(251, 248, 242, 0.7);">Duration:</span>
+                            <span style="color: rgba(251, 248, 242, 0.7);">Typical duration:</span>
                             <span style="color: ${PAPER_RAISED}; font-weight: 600; margin-left: 4px;">${point.avgDurationMin.toFixed(2)}m</span>
                         </div>
                         <div style="margin-bottom: 4px; font-family: ${FONT_MONO}; font-size: 11px;">
-                            <span style="color: rgba(251, 248, 242, 0.7);">Distance:</span>
+                            <span style="color: rgba(251, 248, 242, 0.7);">Typical distance:</span>
                             <span style="color: ${PAPER_RAISED}; font-weight: 600; margin-left: 4px;">${point.avgDistanceKm.toFixed(2)}km</span>
                         </div>
                         <div style="font-family: ${FONT_MONO}; font-size: 11px;">
-                            <span style="color: rgba(251, 248, 242, 0.7);">Speed:</span>
+                            <span style="color: rgba(251, 248, 242, 0.7);">Typical speed:</span>
                             <span style="color: ${PAPER_RAISED}; font-weight: 600; margin-left: 4px;">${point.avgSpeed.toFixed(2)}km/h</span>
                         </div>
                     </div>
@@ -181,12 +181,12 @@ export default function ScatterPlot({ data, loading, error, onRefetch }) {
             if (isRightSide) {
                 arrowEl.style.left = '-7px'
                 arrowEl.style.right = 'auto'
-                arrowEl.style.borderRight = `7px solid ${INK}`
+                arrowEl.style.borderRight = '7px solid rgba(11, 12, 14, 0.95)'
                 arrowEl.style.borderLeft = 'none'
             } else {
                 arrowEl.style.left = 'auto'
                 arrowEl.style.right = '-7px'
-                arrowEl.style.borderLeft = `7px solid ${INK}`
+                arrowEl.style.borderLeft = '7px solid rgba(11, 12, 14, 0.95)'
                 arrowEl.style.borderRight = 'none'
             }
         }

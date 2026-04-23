@@ -2,6 +2,7 @@ import { useState } from "react";
 import useDayHourStats from "./useDayHourStats";
 import useWeeklyStats from "./useWeeklyStats";
 import useHourlyStats from "./useHourlyStats";
+import useDateStats from "./useDateStats";
 
 /**
  * Hook to manage the temporal state for the  page.
@@ -33,11 +34,22 @@ export default function useTemporalState(filters) {
         error: errorHourStats,
         refetch: refetchHourStats,
     } = useHourlyStats(filters)
+    const {
+        dateStats,
+        loading: loadingDateStats,
+        error: errorDateStats,
+        refetch: refetchDateStats,
+    } = useDateStats(filters)
 
     // Aggregate states
-    const loading = loadingDayHourStats || loadingDayStats || loadingHourStats
-    const error = errorDayHourStats || errorDayStats || errorHourStats
-    const refetch = () => Promise.all([refetchDayHourStats(), refetchDayStats(), refetchHourStats()])
+    const loading = loadingDayHourStats || loadingDayStats || loadingHourStats || loadingDateStats
+    const error = errorDayHourStats || errorDayStats || errorHourStats || errorDateStats
+    const refetch = () => Promise.all([
+        refetchDayHourStats(),
+        refetchDayStats(),
+        refetchHourStats(),
+        refetchDateStats(),
+    ])
 
     return {
         activeMetric,
@@ -47,6 +59,7 @@ export default function useTemporalState(filters) {
         dayHourStats,
         dayStats,
         hourStats,
+        dateStats,
         loading,
         error,
         refetch,

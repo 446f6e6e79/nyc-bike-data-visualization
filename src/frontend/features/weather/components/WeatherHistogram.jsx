@@ -80,10 +80,16 @@ export default function WeatherHistogram({ data, loading, error, onRefetch }) {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        borderWidth: 0,
-                        borderColor: "transparent",
+                        padding: { top: 12, right: 14, bottom: 12, left: 14 },
+                        titleSpacing: 4,
+                        bodySpacing: 5,
+                        displayColors: false,
                         callbacks: {
-                            label: (ctx) => ` ${ctx.parsed.y.toFixed(1)} rides/day`,
+                            title: (items) => {
+                                const group = String(items?.[0]?.label ?? "")
+                                return group ? `Weather Scene: ${group}` : "Weather Scene"
+                            },
+                            label: (ctx) => `Pulse of rides: ${ctx.parsed.y.toFixed(1)} rides/day`,
                         },
                     },
                 },

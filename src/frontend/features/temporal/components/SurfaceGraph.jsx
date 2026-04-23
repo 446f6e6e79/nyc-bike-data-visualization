@@ -109,9 +109,10 @@ function SurfaceGraph({
 
     const hoverTemplate = useMemo(
         () =>
-            "<b>%{y}</b><br>" +
-            "Hour: %{x}<br>" +
-            `${metric.label}: <b>%{z}</b><extra></extra>`,
+            "<b>Weekly Pulse</b><br>" +
+            "Story Day: <b>%{y}</b><br>" +
+            "Story Hour: <b>%{x}</b><br>" +
+            `Rhythm: <b>%{z}</b> ${metric.unit}<extra></extra>`,
         [metric.label]
     )
 
@@ -147,9 +148,9 @@ function SurfaceGraph({
             const isBase = index === 0
             const layerHoverTemplate =
                 `<b>${layer.label}</b><br>` +
-                "<b>%{y}</b><br>" +
-                "Hour: %{x}<br>" +
-                `${metric.label}: <b>%{z}</b><extra></extra>`
+                "Story Day: <b>%{y}</b><br>" +
+                "Story Hour: <b>%{x}</b><br>" +
+                `Rhythm: <b>%{z}</b> ${metric.unit}<extra></extra>`
 
             return {
                 type: "surface",
@@ -330,7 +331,13 @@ function SurfaceGraph({
                         },
                         margin: { l: 0, r: 0, b: 0, t: 24 },
                         font: { family: FONT_MONO, color: INK, size: 12 },
-                        hoverlabel: { font: { family: FONT_MONO } },
+                        hoverlabel: {
+                            bgcolor: "rgba(11, 12, 14, 0.94)",
+                            bordercolor: "rgba(25, 83, 216, 0.72)",
+                            align: "left",
+                            namelength: -1,
+                            font: { family: FONT_MONO, size: 11, color: PAPER_RAISED },
+                        },
                     }}
                     config={{
                         displayModeBar: false,

@@ -23,15 +23,20 @@ export function applyEditorialChartDefaults() {
     Chart.defaults.color = INK
 
     const tooltip = Chart.defaults.plugins.tooltip
-    tooltip.backgroundColor = INK
+    tooltip.backgroundColor = 'rgba(11, 12, 14, 0.94)'
     tooltip.titleColor = PAPER_RAISED
     tooltip.bodyColor = PAPER_RAISED
-    tooltip.borderColor = ACCENT
+    tooltip.borderColor = 'rgba(25, 83, 216, 0.72)'
     tooltip.borderWidth = 1
-    tooltip.cornerRadius = 0
-    tooltip.padding = 12
+    tooltip.cornerRadius = 2
+    tooltip.padding = { top: 12, right: 14, bottom: 12, left: 14 }
     tooltip.displayColors = true
-    tooltip.boxPadding = 6
-    tooltip.titleFont = { family: FONT_MONO, size: 10, weight: '600' }
+    tooltip.boxPadding = 5
+    tooltip.bodySpacing = 4
+    tooltip.titleMarginBottom = 7
+    tooltip.caretPadding = 10
+    tooltip.caretSize = 6
+    tooltip.usePointStyle = true
+    tooltip.titleFont = { family: FONT_MONO, size: 10 }
     tooltip.bodyFont = { family: FONT_MONO, size: 11 }
 }

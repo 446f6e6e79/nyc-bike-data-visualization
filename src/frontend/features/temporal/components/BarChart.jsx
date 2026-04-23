@@ -59,18 +59,19 @@ export default function BarChart({
     const isDayChart = xAxisTitle === "Day of Week"
     const tooltipLabelCallback = (ctx) => {
         const valueLabel = formatTooltipLabel(format, ctx)
-        if (!hasCompareDatasets) return valueLabel
-        return ` ${ctx.dataset.label}:${valueLabel}`
+        if (!hasCompareDatasets) return `Rhythm: ${valueLabel.trim()}`
+        return `${ctx.dataset.label} \u00b7 Rhythm: ${valueLabel.trim()}`
     }
     const tooltipTitleCallback = (items) => {
-        if (!isHourChart) return ""
+        if (!items?.length) return ""
         const hourLabel = String(items?.[0]?.label ?? "")
-        return `Hour: ${hourLabel.padStart(2, "0")}`
+        if (!isHourChart) return `Moment: ${hourLabel}`
+        return `Moment: Hour ${hourLabel.padStart(2, "0")}`
     }
     const tooltipAfterTitleCallback = (items) => {
         if (!isDayChart) return ""
         const dayLabel = String(items?.[0]?.label ?? "")
-        return `Day: ${dayLabel}`
+        return `Story Day: ${dayLabel}`
     }
     const yAxisTickCallback = formatYAxisTick.bind(null, unit)
 
@@ -130,9 +131,14 @@ export default function BarChart({
                         },
                     },
                     tooltip: {
+                        padding: { top: 12, right: 14, bottom: 12, left: 14 },
+                        displayColors: hasCompareDatasets,
+                        usePointStyle: true,
+                        borderRadius: 0,
+                        titleSpacing: 4,
+                        bodySpacing: 5,
                         callbacks: {
                             title: tooltipTitleCallback,
-                            afterTitle: tooltipAfterTitleCallback,
                             label: tooltipLabelCallback,
                         }
                     }
