@@ -125,13 +125,38 @@ This interactive documentation provides details about the available endpoints, r
 
 ## Project structure
 
-```src/backend/
-├── main.py                       # Main application entry point
-├── config.py                     # Configuration settings for the backend
-├── logs/                         # Directory for log files
-├── loaders/                      # Contains data loading from parquet files
-├── models/                       # Contains the model definitions for API responses
-├── services/                     # Contains the logic for data retrieval and processing
-├── routes/                       # Contains the API route definitions
-├── tests/                        # Contains integration tests for the backend
+```
+src/backend/
+├── main.py                       # Application entry point
+├── config.py                     # Environment-sensitive configuration
+├── db.py                         # Connection pool
+├── models/                       # API response models
+│   ├── bike_route.py
+│   ├── ride.py
+│   ├── station.py
+│   └── stats/
+│       ├── date_range.py
+│       ├── station_flow_counts.py
+│       ├── station_ride_counts.py
+│       └── stats.py
+├── routes/                       # Thin endpoint handlers
+│   ├── bike_routes.py
+│   ├── stations.py
+│   └── stats.py
+├── services/                     # Data retrieval and processing logic
+│   ├── bike_routes.py
+│   ├── gbfs.py                   # Real-time station status (Lyft GBFS feed)
+│   └── stats/
+│       ├── stats.py              # Orchestrator
+│       ├── utils.py              # Shared helpers
+│       ├── coverage.py
+│       ├── station_flow_counts.py
+│       └── station_ride_counts.py
+└── tests/                        # Integration tests
+    ├── test_data/                # Fixture CSVs
+    ├── test_bike_routes.py
+    ├── test_stations.py
+    ├── test_stats.py
+    ├── test_docs.py
+    └── test_helpers.py
 ```
