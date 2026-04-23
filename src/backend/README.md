@@ -23,13 +23,7 @@ It offers endpoints to retrieve real-time and historical data about bike station
 
 ## Starting the PostgreSQL Server
 
-The project uses a PostgreSQL 16 database. The easiest way to run it is via Docker Compose from the project root:
-
-```bash
-docker compose up postgres -d
-```
-
-This starts a `postgres:16-alpine` container named `NYC-Bike-Visualisation-Postgres` on port `5432` with the following credentials:
+The project uses a PostgreSQL 16 database. Both options below use the same credentials:
 
 | Setting  | Value      |
 |----------|------------|
@@ -37,11 +31,15 @@ This starts a `postgres:16-alpine` container named `NYC-Bike-Visualisation-Postg
 | User     | `citibike` |
 | Password | `citibike` |
 
-Set the connection URL before running the backend or any scripts:
+### Option A: Docker Compose (recommended)
+
+From the project root:
 
 ```bash
-export DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike
+docker compose up postgres -d
 ```
+
+This starts a `postgres:16-alpine` container named `NYC-Bike-Visualisation-Postgres` on port `5432`.
 
 To stop the server:
 
@@ -49,9 +47,36 @@ To stop the server:
 docker compose stop postgres
 ```
 
+### Option B: Manual Setup (without Docker)
+
+1. **Install PostgreSQL 16:**
+
+   - macOS: `brew install postgresql@16 && brew services start postgresql@16`
+   - Linux (Ubuntu/Debian): `sudo apt install postgresql-16 && sudo systemctl start postgresql`
+
+2. **Create the user and database:**
+
+   ```bash
+   psql postgres -c "CREATE USER citibike WITH PASSWORD 'citibike';"
+   psql postgres -c "CREATE DATABASE citibike OWNER citibike;"
+   ```
+
+3. **Initialize the schemas:**
+
+   ```bash
+   export DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike
+   psql "$DATABASE_URL" -f scripts/postgre/init.sql
+   ```
+
+Set the connection URL before running the backend or any scripts:
+
+```bash
+export DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike
+```
+
 ## Starting the Server
 
-To start the backend server, run the following command in your terminal:
+Make sure you have downloaded the dataset first — see [Downloading the datasets](../../README.md#downloading-the-datasets) in the root README.
 
 ```bash
 uvicorn src.backend.main:app --reload
@@ -61,23 +86,28 @@ This will launch the FastAPI server with hot-reloading enabled, allowing you to 
 
 ## Running Backend Tests
 
-Tests run against a dedicated `citibike_test` database, separate from the dev `citibike` DB.
+Tests run against a dedicated `citibike_test` database, separate from the development `citibike` DB.
 
-**First time setup** — if you already have the `pg_data` volume from a previous `docker compose up`, create the test DB manually (otherwise it's created automatically on first container start):
+**1. Create the test database** (one-time setup):
 
 ```bash
-docker compose exec postgres createdb -U citibike citibike_test
+psql postgres -c "CREATE DATABASE citibike_test OWNER citibike;"
 ```
 
-Seed the test DB and run the server and tests:
+**2. Point to the test database and seed it:**
 
 ```bash
 export DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike_test
 python scripts/load_test_data.py
+```
+
+**3. Start the server:**
+
+```bash
 uvicorn src.backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-In a second terminal:
+**4. In a second terminal, run the tests:**
 
 ```bash
 pytest src/backend/tests -q
