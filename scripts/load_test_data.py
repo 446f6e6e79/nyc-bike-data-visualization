@@ -21,7 +21,7 @@ from utils.loaders.flow_activity_monthly import insert_flow_activity_monthly
 from utils.loaders.station_metadata import upsert_station_metadata
 from utils.loaders.weather_hourly import upsert_weather_hourly
 from src.backend.config import TEST_DATA_DIR
-
+#TODO: add bike routes 
 
 def _build_rides(trips_path: Path, distances_path: Path) -> pl.DataFrame:
     trips = pl.read_csv(trips_path, try_parse_dates=True)
