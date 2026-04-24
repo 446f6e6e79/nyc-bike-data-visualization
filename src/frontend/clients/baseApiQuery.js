@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 
 /** Check if filters include a valid date range (start_date and end_date) to enable the query */
 function hasDateRange(filters = {}) {
@@ -53,4 +53,37 @@ function useApiQueryWithFilters({
     }
 }
 
+/**
+ * Batch variant of `useApiQueryWithFilters` used when a single hook needs to
+ * run many parallel requests (e.g. compare mode rendering one request per
+ * layer × breakdown). Keeps React Query's `useQueries` use-site inside the
+ * clients layer so features never import from `@tanstack/react-query` directly.
+ * @param {Array<object>} descriptors - Each descriptor must expose:
+ *   - queryKey: unique cache key for the request
+ *   - fetcher: function that accepts the descriptor's `filters` and returns data
+ *   - filters: filters passed to `fetcher`
+ *   - enabledWhen (optional): predicate called with `filters`; defaults to `hasDateRange`
+ *   - staleTime / gcTime (optional): forwarded to React Query when provided
+ * @returns {Array<object>} Array of React Query result objects, one per descriptor, in order.
+ */
+function useApiQueriesWithFilters(descriptors = []) {
+    return useQueries({
+        queries: descriptors.map(({
+            queryKey,
+            fetcher,
+            filters = {},
+            enabledWhen = hasDateRange,
+            staleTime,
+            gcTime,
+        }) => ({
+            queryKey: [queryKey, filters],
+            queryFn: () => fetcher(filters),
+            enabled: enabledWhen(filters),
+            ...(staleTime !== undefined ? { staleTime } : {}),
+            ...(gcTime !== undefined ? { gcTime } : {}),
+        })),
+    })
+}
+
+export { useApiQueriesWithFilters }
 export default useApiQueryWithFilters

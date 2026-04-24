@@ -1,101 +1,47 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSpeedHandler } from '../hooks/useSpeedHandler.js'
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSpeedHandler } from "../hooks/useSpeedHandler.js";
+import PlayIcon from "./PlayIcon.jsx";
+import PauseIcon from "./PauseIcon.jsx";
+import {
+    HOURS_IN_DAY,
+    BASE_FRAME_MS,
+    MINUTES_IN_HOUR,
+    MAX_MINUTE_INDEX,
+    TIME_DRAG_THRESHOLD_PX,
+    SPEED_DRAG_THRESHOLD_PX,
+    MIN_SPEED,
+    MAX_SPEED,
+    clamp,
+    speedToNonLinearPosition,
+    nonLinearPositionToSpeed,
+    normalizeTime,
+    formatTimeLabel,
+    formatSpeedLabel,
+    createHourMarks,
+} from "../utils/speed_controller.js";
 
-export const HOURS_IN_DAY = 24
-const BASE_FRAME_MS = 1000
-const MINUTES_IN_HOUR = 60
-const MINUTES_IN_DAY = HOURS_IN_DAY * MINUTES_IN_HOUR
-const MAX_MINUTE_INDEX = MINUTES_IN_DAY - 1
-const TIME_DRAG_THRESHOLD_PX = 4
-const SPEED_DRAG_THRESHOLD_PX = 4
-const MIN_SPEED = 0.5
-const MAX_SPEED = 4
-const SPEED_PIVOT = 2
-
-function PlayIcon() {
-    return (
-        <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true">
-            <path d="M1 1.5L9 6L1 10.5V1.5Z" />
-        </svg>
-    )
-}
-
-function PauseIcon() {
-    return (
-        <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true">
-            <rect x="1" y="1" width="3" height="10" rx="0.5" />
-            <rect x="6" y="1" width="3" height="10" rx="0.5" />
-        </svg>
-    )
-}
-
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
-
-const speedToNonLinearPosition = (value) => {
-    const clampedValue = clamp(value, MIN_SPEED, MAX_SPEED)
-
-    if (clampedValue <= SPEED_PIVOT) {
-        return ((clampedValue - MIN_SPEED) / (SPEED_PIVOT - MIN_SPEED)) * 50
-    }
-
-    const rightRatio = Math.log2(clampedValue / SPEED_PIVOT) / Math.log2(MAX_SPEED / SPEED_PIVOT)
-    return 50 + rightRatio * 50
-}
-
-const nonLinearPositionToSpeed = (ratio) => {
-    const clampedRatio = clamp(ratio, 0, 1)
-
-    if (clampedRatio <= 0.5) {
-        return MIN_SPEED + (clampedRatio / 0.5) * (SPEED_PIVOT - MIN_SPEED)
-    }
-
-    const rightRatio = (clampedRatio - 0.5) / 0.5
-    return SPEED_PIVOT * 2 ** (rightRatio * Math.log2(MAX_SPEED / SPEED_PIVOT))
-}
-
-const normalizeTime = (time) => ((time % HOURS_IN_DAY) + HOURS_IN_DAY) % HOURS_IN_DAY
-
-const formatTimeLabel = (time) => {
-    const normalizedTime = normalizeTime(time)
-    const totalMinutes = Math.floor(normalizedTime * MINUTES_IN_HOUR)
-    const hours = Math.floor(totalMinutes / MINUTES_IN_HOUR)
-    const minutes = totalMinutes % MINUTES_IN_HOUR
-
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-}
-
-const formatSpeedLabel = (value) => {
-    const rounded = Math.round(value * 10) / 10
-    return Number.isInteger(rounded) ? `${rounded}×` : `${rounded.toFixed(1)}×`
-}
-
-const createHourMarks = () => Array.from({ length: HOURS_IN_DAY + 1 }, (_, hour) => {
-    return {
-        hour,
-        label: String(hour).padStart(2, '0'),
-        position: hour === HOURS_IN_DAY ? 100 : ((hour * MINUTES_IN_HOUR) / MAX_MINUTE_INDEX) * 100,
-    }
-})
+export { HOURS_IN_DAY };
 
 /**
  * Horizontal draggable time wheel used to scrub the map time frame.
  * @param {Function} setCurrentTime - Function to update the current time in the parent component.
  * @param {number} currentTime - The current time in hours (can be a fractional value representing minutes).
- * @returns
+ * @param {boolean} [disabled=false] - When true, all pointer/keyboard interaction is suppressed.
+ * @returns {JSX.Element} The scrubbable time wheel + speed wheel controls.
  */
 export default function SpeedController({ setCurrentTime, currentTime, disabled = false }) {
-    const trackRef = useRef(null)
-    const speedTrackRef = useRef(null)
-    const activePointerIdRef = useRef(null)
-    const speedPointerIdRef = useRef(null)
-    const dragStartXRef = useRef(0)
-    const dragStartMinuteIndexRef = useRef(0)
-    const dragTrackWidthRef = useRef(0)
-    const speedDragStartXRef = useRef(0)
-    const hasDraggedRef = useRef(false)
-    const speedHasDraggedRef = useRef(false)
-    const [isDragging, setIsDragging] = useState(false)
-    const [isSpeedDragging, setIsSpeedDragging] = useState(false)
+    const trackRef = useRef(null);
+    const speedTrackRef = useRef(null);
+    const activePointerIdRef = useRef(null);
+    const speedPointerIdRef = useRef(null);
+    const dragStartXRef = useRef(0);
+    const dragStartMinuteIndexRef = useRef(0);
+    const dragTrackWidthRef = useRef(0);
+    const speedDragStartXRef = useRef(0);
+    const hasDraggedRef = useRef(false);
+    const speedHasDraggedRef = useRef(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [isSpeedDragging, setIsSpeedDragging] = useState(false);
     const {
         isPlaying,
         setIsPlaying,
@@ -106,254 +52,264 @@ export default function SpeedController({ setCurrentTime, currentTime, disabled 
         currentTime,
         hoursInDay: HOURS_IN_DAY,
         baseFrameMs: BASE_FRAME_MS,
-    })
+    });
 
     useEffect(() => {
         if (disabled) {
-            setIsPlaying(false)
+            setIsPlaying(false);
         }
-    }, [disabled, setIsPlaying])
+    }, [disabled, setIsPlaying]);
 
-    const hourMarks = useMemo(() => createHourMarks(), [])
-    const currentTimeLabel = useMemo(() => formatTimeLabel(currentTime), [currentTime])
+    const hourMarks = useMemo(() => createHourMarks(), []);
+    const currentTimeLabel = useMemo(() => formatTimeLabel(currentTime), [currentTime]);
     const currentMinuteIndex = useMemo(() => {
-        const normalizedTime = normalizeTime(currentTime)
-        return clamp(Math.floor(normalizedTime * MINUTES_IN_HOUR), 0, MAX_MINUTE_INDEX)
-    }, [currentTime])
+        const normalizedTime = normalizeTime(currentTime);
+        return clamp(Math.floor(normalizedTime * MINUTES_IN_HOUR), 0, MAX_MINUTE_INDEX);
+    }, [currentTime]);
 
-    const currentPosition = (currentMinuteIndex / MAX_MINUTE_INDEX) * 100
-    const stripTransform = `translateX(calc(50% - ${currentPosition}%))`
-    const currentSpeedLabel = useMemo(() => formatSpeedLabel(speed), [speed])
+    const currentPosition = (currentMinuteIndex / MAX_MINUTE_INDEX) * 100;
+    const stripTransform = `translateX(calc(50% - ${currentPosition}%))`;
+    const currentSpeedLabel = useMemo(() => formatSpeedLabel(speed), [speed]);
     const currentSpeedPosition = useMemo(() => {
-        return speedToNonLinearPosition(speed)
-    }, [speed])
-    const isInteractionDisabled = disabled
+        return speedToNonLinearPosition(speed);
+    }, [speed]);
+    const isInteractionDisabled = disabled;
     const speedMarks = useMemo(() => {
         const marks = [
-            { value: MIN_SPEED, label: '0.5×' },
-            { value: MAX_SPEED, label: '4×' },
-        ]
+            { value: MIN_SPEED, label: "0.5×" },
+            { value: MAX_SPEED, label: "4×" },
+        ];
 
         return marks.map((mark, index) => ({
             ...mark,
             position: (index / (marks.length - 1)) * 100,
-        }))
-    }, [])
-    const speedGuides = useMemo(() => ([1, 2, 3].map((value) => ({
-        value,
-        position: speedToNonLinearPosition(value),
-    }))), [])
+        }));
+    }, []);
+    const speedGuides = useMemo(
+        () =>
+            [1, 2, 3].map((value) => ({
+                value,
+                position: speedToNonLinearPosition(value),
+            })),
+        [],
+    );
 
-    const updateCurrentTimeFromClientX = useCallback((clientX) => {
-        if (isInteractionDisabled) {
-            return
-        }
+    const updateCurrentTimeFromClientX = useCallback(
+        (clientX) => {
+            if (isInteractionDisabled) {
+                return;
+            }
 
-        const track = trackRef.current
-        if (!track) {
-            return
-        }
+            const track = trackRef.current;
+            if (!track) {
+                return;
+            }
 
-        const { left, width } = track.getBoundingClientRect()
-        if (width <= 0) {
-            return
-        }
+            const { left, width } = track.getBoundingClientRect();
+            if (width <= 0) {
+                return;
+            }
 
-        const ratio = clamp((clientX - left) / width, 0, 1)
-        const minuteIndex = Math.round((1 - ratio) * MAX_MINUTE_INDEX)
-        setCurrentTime(minuteIndex / MINUTES_IN_HOUR)
-    }, [setCurrentTime, isInteractionDisabled])
+            const ratio = clamp((clientX - left) / width, 0, 1);
+            const minuteIndex = Math.round((1 - ratio) * MAX_MINUTE_INDEX);
+            setCurrentTime(minuteIndex / MINUTES_IN_HOUR);
+        },
+        [setCurrentTime, isInteractionDisabled],
+    );
 
-    const stopDragging = useCallback((event) => {
-        const track = trackRef.current
+    const stopDragging = useCallback(() => {
+        const track = trackRef.current;
         if (track != null && activePointerIdRef.current != null && track.hasPointerCapture(activePointerIdRef.current)) {
-            track.releasePointerCapture(activePointerIdRef.current)
+            track.releasePointerCapture(activePointerIdRef.current);
         }
-        activePointerIdRef.current = null
-        dragStartXRef.current = 0
-        dragStartMinuteIndexRef.current = 0
-        dragTrackWidthRef.current = 0
-        setIsDragging(false)
-        hasDraggedRef.current = false
-    }, [])
+        activePointerIdRef.current = null;
+        dragStartXRef.current = 0;
+        dragStartMinuteIndexRef.current = 0;
+        dragTrackWidthRef.current = 0;
+        setIsDragging(false);
+        hasDraggedRef.current = false;
+    }, []);
 
     const handlePointerDown = (event) => {
         if (isInteractionDisabled) {
-            return
+            return;
         }
 
         if (event.button !== 0) {
-            return
+            return;
         }
 
-        event.preventDefault()
+        event.preventDefault();
 
-        const track = trackRef.current
+        const track = trackRef.current;
         if (track == null) {
-            return
+            return;
         }
 
-        activePointerIdRef.current = event.pointerId
-        track.setPointerCapture(event.pointerId)
-        setIsDragging(true)
-        dragStartXRef.current = event.clientX
-        dragStartMinuteIndexRef.current = currentMinuteIndex
-        dragTrackWidthRef.current = track.getBoundingClientRect().width
-        hasDraggedRef.current = false
-    }
+        activePointerIdRef.current = event.pointerId;
+        track.setPointerCapture(event.pointerId);
+        setIsDragging(true);
+        dragStartXRef.current = event.clientX;
+        dragStartMinuteIndexRef.current = currentMinuteIndex;
+        dragTrackWidthRef.current = track.getBoundingClientRect().width;
+        hasDraggedRef.current = false;
+    };
 
     const handlePointerMove = (event) => {
         if (isInteractionDisabled) {
-            return
+            return;
         }
 
         if (!isDragging || activePointerIdRef.current !== event.pointerId) {
-            return
+            return;
         }
 
         if (!hasDraggedRef.current) {
-            const dragDelta = Math.abs(event.clientX - dragStartXRef.current)
+            const dragDelta = Math.abs(event.clientX - dragStartXRef.current);
             if (dragDelta < TIME_DRAG_THRESHOLD_PX) {
-                return
+                return;
             }
-            hasDraggedRef.current = true
+            hasDraggedRef.current = true;
         }
 
-        event.preventDefault()
-        const trackWidth = dragTrackWidthRef.current
+        event.preventDefault();
+        const trackWidth = dragTrackWidthRef.current;
         if (trackWidth <= 0) {
-            return
+            return;
         }
 
-        const deltaX = event.clientX - dragStartXRef.current
-        const minuteDelta = (deltaX / trackWidth) * MAX_MINUTE_INDEX
-        const nextMinuteIndex = clamp(dragStartMinuteIndexRef.current - minuteDelta, 0, MAX_MINUTE_INDEX)
-        setCurrentTime(nextMinuteIndex / MINUTES_IN_HOUR)
-    }
+        const deltaX = event.clientX - dragStartXRef.current;
+        const minuteDelta = (deltaX / trackWidth) * MAX_MINUTE_INDEX;
+        const nextMinuteIndex = clamp(dragStartMinuteIndexRef.current - minuteDelta, 0, MAX_MINUTE_INDEX);
+        setCurrentTime(nextMinuteIndex / MINUTES_IN_HOUR);
+    };
 
     const handlePointerUp = (event) => {
         if (isInteractionDisabled) {
-            return
+            return;
         }
 
         if (activePointerIdRef.current !== event.pointerId) {
-            return
+            return;
         }
-        stopDragging(event)
-    }
+        stopDragging();
+    };
 
     const handlePointerCancel = (event) => {
         if (isInteractionDisabled) {
-            return
+            return;
         }
 
         if (activePointerIdRef.current !== event.pointerId) {
-            return
+            return;
         }
-        stopDragging(event)
-    }
+        stopDragging();
+    };
 
-    const updateSpeedFromClientX = useCallback((clientX) => {
-        if (isInteractionDisabled) {
-            return
-        }
+    const updateSpeedFromClientX = useCallback(
+        (clientX) => {
+            if (isInteractionDisabled) {
+                return;
+            }
 
-        const track = speedTrackRef.current
-        if (!track) {
-            return
-        }
+            const track = speedTrackRef.current;
+            if (!track) {
+                return;
+            }
 
-        const { left, width } = track.getBoundingClientRect()
-        if (width <= 0) {
-            return
-        }
+            const { left, width } = track.getBoundingClientRect();
+            if (width <= 0) {
+                return;
+            }
 
-        const ratio = clamp((clientX - left) / width, 0, 1)
-        const nextSpeed = nonLinearPositionToSpeed(ratio)
-        setSpeed(Math.round(nextSpeed * 10) / 10)
-    }, [setSpeed, isInteractionDisabled])
+            const ratio = clamp((clientX - left) / width, 0, 1);
+            const nextSpeed = nonLinearPositionToSpeed(ratio);
+            setSpeed(Math.round(nextSpeed * 10) / 10);
+        },
+        [setSpeed, isInteractionDisabled],
+    );
 
-    const stopSpeedDragging = useCallback((event) => {
-        const track = speedTrackRef.current
+    const stopSpeedDragging = useCallback(() => {
+        const track = speedTrackRef.current;
         if (track != null && speedPointerIdRef.current != null && track.hasPointerCapture(speedPointerIdRef.current)) {
-            track.releasePointerCapture(speedPointerIdRef.current)
+            track.releasePointerCapture(speedPointerIdRef.current);
         }
-        speedPointerIdRef.current = null
-        speedDragStartXRef.current = 0
-        speedHasDraggedRef.current = false
-        setIsSpeedDragging(false)
-    }, [])
+        speedPointerIdRef.current = null;
+        speedDragStartXRef.current = 0;
+        speedHasDraggedRef.current = false;
+        setIsSpeedDragging(false);
+    }, []);
 
     const handleSpeedPointerDown = (event) => {
         if (isInteractionDisabled) {
-            return
+            return;
         }
 
         if (event.button !== 0) {
-            return
+            return;
         }
 
-        event.preventDefault()
+        event.preventDefault();
 
-        const track = speedTrackRef.current
+        const track = speedTrackRef.current;
         if (track == null) {
-            return
+            return;
         }
 
-        speedPointerIdRef.current = event.pointerId
-        track.setPointerCapture(event.pointerId)
-        setIsSpeedDragging(true)
-        speedDragStartXRef.current = event.clientX
-        speedHasDraggedRef.current = false
-        updateSpeedFromClientX(event.clientX)
-    }
+        speedPointerIdRef.current = event.pointerId;
+        track.setPointerCapture(event.pointerId);
+        setIsSpeedDragging(true);
+        speedDragStartXRef.current = event.clientX;
+        speedHasDraggedRef.current = false;
+        updateSpeedFromClientX(event.clientX);
+    };
 
     const handleSpeedPointerMove = (event) => {
         if (isInteractionDisabled) {
-            return
+            return;
         }
 
         if (!isSpeedDragging || speedPointerIdRef.current !== event.pointerId) {
-            return
+            return;
         }
 
         if (!speedHasDraggedRef.current) {
-            const dragDelta = Math.abs(event.clientX - speedDragStartXRef.current)
+            const dragDelta = Math.abs(event.clientX - speedDragStartXRef.current);
             if (dragDelta < SPEED_DRAG_THRESHOLD_PX) {
-                return
+                return;
             }
-            speedHasDraggedRef.current = true
+            speedHasDraggedRef.current = true;
         }
 
-        event.preventDefault()
-        updateSpeedFromClientX(event.clientX)
-    }
+        event.preventDefault();
+        updateSpeedFromClientX(event.clientX);
+    };
 
     const handleSpeedPointerUp = (event) => {
         if (isInteractionDisabled) {
-            return
+            return;
         }
 
         if (speedPointerIdRef.current !== event.pointerId) {
-            return
+            return;
         }
-        stopSpeedDragging(event)
-    }
+        stopSpeedDragging();
+    };
 
     const handleSpeedPointerCancel = (event) => {
         if (isInteractionDisabled) {
-            return
+            return;
         }
 
         if (speedPointerIdRef.current !== event.pointerId) {
-            return
+            return;
         }
-        stopSpeedDragging(event)
-    }
+        stopSpeedDragging();
+    };
 
     const handleSpeedKeyDown = (event) => {
         if (isInteractionDisabled) {
-            return
+            return;
         }
 
         const stepMap = {
@@ -363,32 +319,32 @@ export default function SpeedController({ setCurrentTime, currentTime, disabled 
             ArrowUp: 0.1,
             PageDown: -0.5,
             PageUp: 0.5,
+        };
+
+        if (event.key === "Home") {
+            event.preventDefault();
+            setSpeed(MIN_SPEED);
+            return;
         }
 
-        if (event.key === 'Home') {
-            event.preventDefault()
-            setSpeed(MIN_SPEED)
-            return
-        }
-
-        if (event.key === 'End') {
-            event.preventDefault()
-            setSpeed(MAX_SPEED)
-            return
+        if (event.key === "End") {
+            event.preventDefault();
+            setSpeed(MAX_SPEED);
+            return;
         }
 
         if (!(event.key in stepMap)) {
-            return
+            return;
         }
 
-        event.preventDefault()
-        const nextSpeed = clamp(speed + stepMap[event.key], MIN_SPEED, MAX_SPEED)
-        setSpeed(Math.round(nextSpeed * 10) / 10)
-    }
+        event.preventDefault();
+        const nextSpeed = clamp(speed + stepMap[event.key], MIN_SPEED, MAX_SPEED);
+        setSpeed(Math.round(nextSpeed * 10) / 10);
+    };
 
     const handleKeyDown = (event) => {
         if (isInteractionDisabled) {
-            return
+            return;
         }
 
         const stepMap = {
@@ -398,31 +354,31 @@ export default function SpeedController({ setCurrentTime, currentTime, disabled 
             ArrowUp: -1,
             PageDown: 15,
             PageUp: -15,
+        };
+
+        if (event.key === "Home") {
+            event.preventDefault();
+            setCurrentTime(0);
+            return;
         }
 
-        if (event.key === 'Home') {
-            event.preventDefault()
-            setCurrentTime(0)
-            return
-        }
-
-        if (event.key === 'End') {
-            event.preventDefault()
-            setCurrentTime(MAX_MINUTE_INDEX / MINUTES_IN_HOUR)
-            return
+        if (event.key === "End") {
+            event.preventDefault();
+            setCurrentTime(MAX_MINUTE_INDEX / MINUTES_IN_HOUR);
+            return;
         }
 
         if (!(event.key in stepMap)) {
-            return
+            return;
         }
 
-        event.preventDefault()
-        const nextMinuteIndex = clamp(currentMinuteIndex + stepMap[event.key], 0, MAX_MINUTE_INDEX)
-        setCurrentTime(nextMinuteIndex / MINUTES_IN_HOUR)
-    }
+        event.preventDefault();
+        const nextMinuteIndex = clamp(currentMinuteIndex + stepMap[event.key], 0, MAX_MINUTE_INDEX);
+        setCurrentTime(nextMinuteIndex / MINUTES_IN_HOUR);
+    };
 
     return (
-        <div className={`map-speed-controls${disabled ? ' is-disabled' : ''}`}>
+        <div className={`map-speed-controls${disabled ? " is-disabled" : ""}`}>
             <div className="map-speed-controls__header">
                 <div className="map-speed-controls__meta">
                     <span className="map-speed-clock">{currentTimeLabel}</span>
@@ -433,8 +389,8 @@ export default function SpeedController({ setCurrentTime, currentTime, disabled 
             <div className="map-time-wheel-layout">
                 <button
                     type="button"
-                    className={`map-speed-controls__play-btn${isPlaying ? ' is-playing' : ''}`}
-                    aria-label={isPlaying ? 'Pause animation' : 'Play animation'}
+                    className={`map-speed-controls__play-btn${isPlaying ? " is-playing" : ""}`}
+                    aria-label={isPlaying ? "Pause animation" : "Play animation"}
                     aria-pressed={isPlaying}
                     aria-disabled={disabled}
                     disabled={disabled}
@@ -445,7 +401,7 @@ export default function SpeedController({ setCurrentTime, currentTime, disabled 
 
                 <div
                     ref={trackRef}
-                    className={`map-time-wheel${isDragging ? ' is-dragging' : ''}${disabled ? ' is-disabled' : ''}`}
+                    className={`map-time-wheel${isDragging ? " is-dragging" : ""}${disabled ? " is-disabled" : ""}`}
                     role="slider"
                     tabIndex={disabled ? -1 : 0}
                     aria-label="Map time wheel"
@@ -492,14 +448,14 @@ export default function SpeedController({ setCurrentTime, currentTime, disabled 
                     </div>
                 </div>
 
-                <div className={`map-speed-controls__speed-selector${disabled ? ' is-disabled' : ''}`} role="group" aria-label="Playback speed" aria-disabled={disabled}>
+                <div className={`map-speed-controls__speed-selector${disabled ? " is-disabled" : ""}`} role="group" aria-label="Playback speed" aria-disabled={disabled}>
                     <div className="map-speed-controls__speed-summary">
                         <span className="map-speed-controls__speed-value">{currentSpeedLabel}</span>
                     </div>
 
                     <div
                         ref={speedTrackRef}
-                        className={`map-speed-controls__speed-wheel${isSpeedDragging ? ' is-dragging' : ''}`}
+                        className={`map-speed-controls__speed-wheel${isSpeedDragging ? " is-dragging" : ""}`}
                         role="slider"
                         tabIndex={disabled ? -1 : 0}
                         aria-label="Playback speed wheel"
@@ -544,5 +500,5 @@ export default function SpeedController({ setCurrentTime, currentTime, disabled 
                 </div>
             </div>
         </div>
-    )
+    );
 }

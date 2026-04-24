@@ -1,29 +1,17 @@
 import { useCallback, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-import { useIsFetching } from "@tanstack/react-query";
 import DateRangeFilter from "./components/DateRangeFilter.jsx";
 import useHeaderFilters from "./hooks/useHeaderFilters.js";
 import RiderBikeFilter from "./components/RiderBikeFilter.jsx";
 import { useDatasetDateRange } from "./hooks/useDatasetDateRange.js";
+import useSafeIsFetching from "./hooks/useSafeIsFetching.js";
 
 const PAGES = [
     { to: "/map", label: "Map", icon: "fa-solid fa-map-location-dot" },
     { to: "/temporal", label: "Temporal", icon: "fa-solid fa-clock" },
     { to: "/weather", label: "Weather", icon: "fa-solid fa-cloud-sun" },
 ];
-
-function useSafeIsFetching() {
-    try {
-        return useIsFetching({
-            predicate: (query) => query.queryKey?.[0] !== "dataset-date-range",
-        });
-    } catch (hookError) {
-        if (!String(hookError?.message).includes("No QueryClient set"))
-            throw hookError;
-        return 0;
-    }
-}
 
 /**
  * Header component for the application, containing the title, navigation links, and the date range filter.

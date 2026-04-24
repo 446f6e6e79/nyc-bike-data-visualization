@@ -1,216 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQueries } from "@tanstack/react-query";
 import useTemporalState from "./hooks/useTemporalState";
+import useCompareTemporalLayers from "./hooks/useCompareTemporalLayers.js";
 import MetricSelector from "./components/MetricSelector";
 import SurfaceGraph from "./components/SurfaceGraph";
 import SurfaceHistograms from "./components/SurfaceHistograms";
 import SurfaceLineChart from "./components/SurfaceLineChart.jsx";
+import CompareFilterDropdown from "./components/CompareFilterDropdown.jsx";
 import VisualizationGuide from "../../components/VisualizationGuide";
-import { fetchStats } from "./services/statsApi.js";
 import { FILTERS } from "../header/components/RiderBikeFilter.jsx";
-
-const COMPARE_LAYER_COLORS = [
-    "#1953d8",
-    "#c24747",
-    "#2f7d4f",
-    "#a7701e",
-    "#6f52bf",
-];
-
-const COMPARE_LAYER_SCALES = ["Blues", "Reds", "Greens", "Oranges", "Purples"];
-
-const CLASS_FILTER_KEYS = ["user_type", "bike_type"];
-
-function formatFilterValue(value) {
-    if (!value) return "All";
-    return value
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function buildLayerLabel(layerFilters = {}) {
-    const userLabel = formatFilterValue(layerFilters.user_type);
-    const bikeLabel = formatFilterValue(layerFilters.bike_type);
-    return `${userLabel} · ${bikeLabel}`;
-}
-
-function buildLayerKey(layerFilters = {}) {
-    return `${layerFilters.user_type ?? "all"}|${layerFilters.bike_type ?? "all"}`;
-}
-
-function stripClassFilters(filters = {}) {
-    const { user_type, bike_type, ...rest } = filters;
-    return rest;
-}
-
-function hasDateRange(filters = {}) {
-    return Boolean(filters.start_date && filters.end_date);
-}
-
-function compactFilters(filters = {}) {
-    return Object.fromEntries(
-        Object.entries(filters).filter(([, value]) => value !== undefined && value !== null && value !== ""),
-    );
-}
-
-function createLayerQueries(baseFilters, layer) {
-    const layerFilters = compactFilters({ ...baseFilters, ...(layer.filters ?? {}) });
-
-    return [
-        {
-            layerId: layer.id,
-            kind: "dayHourStats",
-            params: { ...layerFilters, group_by: "day_of_week,hour" },
-        },
-        {
-            layerId: layer.id,
-            kind: "dayStats",
-            params: { ...layerFilters, group_by: "day_of_week" },
-        },
-        {
-            layerId: layer.id,
-            kind: "hourStats",
-            params: { ...layerFilters, group_by: "hour" },
-        },
-        {
-            layerId: layer.id,
-            kind: "dateStats",
-            params: { ...layerFilters, group_by: "date" },
-        },
-    ];
-}
-
-function useCompareTemporalLayers({ filters = {}, layers = [], enabled = false }) {
-    const baseFilters = useMemo(() => stripClassFilters(filters), [filters]);
-
-    const queryDescriptors = useMemo(
-        () => layers.flatMap((layer) => createLayerQueries(baseFilters, layer)),
-        [layers, baseFilters],
-    );
-
-    const queryResults = useQueries({
-        queries: queryDescriptors.map(({ layerId, kind, params }) => ({
-            queryKey: ["temporal-compare", layerId, kind, params],
-            queryFn: () => fetchStats(params),
-            enabled: enabled && hasDateRange(params),
-            staleTime: 60_000,
-        })),
-    });
-
-    const layerData = useMemo(() => {
-        const byLayer = new Map();
-
-        for (let i = 0; i < queryDescriptors.length; i++) {
-            const descriptor = queryDescriptors[i];
-            const result = queryResults[i];
-            const layerBucket = byLayer.get(descriptor.layerId) ?? {};
-
-            layerBucket[descriptor.kind] = result?.data ?? [];
-            layerBucket.loading = Boolean(layerBucket.loading || result?.isLoading || result?.isFetching);
-            layerBucket.error = layerBucket.error ?? result?.error?.message ?? null;
-            byLayer.set(descriptor.layerId, layerBucket);
-        }
-
-        return layers.map((layer) => ({
-            id: layer.id,
-            dayHourStats: byLayer.get(layer.id)?.dayHourStats ?? [],
-            dayStats: byLayer.get(layer.id)?.dayStats ?? [],
-            hourStats: byLayer.get(layer.id)?.hourStats ?? [],
-            dateStats: byLayer.get(layer.id)?.dateStats ?? [],
-            loading: byLayer.get(layer.id)?.loading ?? false,
-            error: byLayer.get(layer.id)?.error ?? null,
-        }));
-    }, [layers, queryDescriptors, queryResults]);
-
-    const loading = queryResults.some((result) => result.isLoading || result.isFetching);
-    const error = queryResults.find((result) => result.error)?.error?.message ?? null;
-
-    const refetch = () => Promise.all(queryResults.map((result) => result.refetch?.()));
-
-    return {
-        layerData,
-        loading,
-        error,
-        refetch,
-    };
-}
-
-function CompareFilterDropdown({ value, options, onChange }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const rootRef = useRef(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            const rootNode = rootRef.current;
-            if (!rootNode) return;
-            if (!rootNode.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
-
-    const selectedLabel = value ? formatFilterValue(value) : "All";
-
-    const handleSelect = (nextValue) => {
-        onChange(nextValue);
-        setIsOpen(false);
-    };
-
-    return (
-        <div
-            ref={rootRef}
-            className={`surface-compare-select-wrap${isOpen ? " is-open" : ""}`}
-        >
-            <button
-                type="button"
-                className="surface-compare-select"
-                aria-haspopup="listbox"
-                aria-expanded={isOpen}
-                onClick={() => setIsOpen((prev) => !prev)}
-            >
-                <span
-                    className={`surface-compare-select-value${value ? "" : " is-placeholder"}`}
-                >
-                    {selectedLabel}
-                </span>
-                <span
-                    className="surface-compare-select-chevron"
-                    aria-hidden="true"
-                >
-                    <i className="fa-solid fa-chevron-right" />
-                </span>
-            </button>
-
-            {isOpen ? (
-                <div className="surface-compare-select-menu" role="listbox">
-                    <button
-                        type="button"
-                        className={`surface-compare-select-option${value ? "" : " is-selected"}`}
-                        onClick={() => handleSelect("")}
-                    >
-                        All
-                    </button>
-                    {options.map((option) => (
-                        <button
-                            key={option}
-                            type="button"
-                            className={`surface-compare-select-option${value === option ? " is-selected" : ""}`}
-                            onClick={() => handleSelect(option)}
-                        >
-                            {formatFilterValue(option)}
-                        </button>
-                    ))}
-                </div>
-            ) : null}
-        </div>
-    );
-}
+import {
+    CLASS_FILTER_KEYS,
+    COMPARE_LAYER_COLORS,
+    COMPARE_LAYER_SCALES,
+    buildLayerKey,
+    buildLayerLabel,
+    stripClassFilters,
+} from "./utils/compare_layers.js";
 
 /**
  * Component for the temporal stats page, which includes a metric selector, the surface graph itself, and accompanying histograms.
@@ -327,7 +132,7 @@ function TemporalPage({ filters, onCompareModeChange }) {
         ]);
 
     const handleCompareToggle = () => {
-        // Se il pannello era aperto solo per hovering, fissalo aperto
+        // If the panel is currently closed but hovered, open it without toggling (to prevent accidental close when moving mouse between button and panel)
         if (!isCompareMode && isCompareHovered) {
             if (compareHoverCloseTimeoutRef.current) {
                 clearTimeout(compareHoverCloseTimeoutRef.current);
@@ -336,7 +141,7 @@ function TemporalPage({ filters, onCompareModeChange }) {
             setIsCompareMode(true);
             setIsCompareHovered(false);
         } else {
-            // Altrimenti toggle il compare mode
+            // Otherwise, toggle the compare mode as usual
             setIsCompareMode((prev) => !prev);
         }
     };
@@ -621,7 +426,7 @@ function TemporalPage({ filters, onCompareModeChange }) {
                         layers={activeLayers}
                     />
 
-                    
+
                     <div ref={overlayRef} className={"surface-plot-overlay"}>
                         <button
                             ref={compareButtonRef}
