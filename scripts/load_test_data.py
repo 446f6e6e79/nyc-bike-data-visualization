@@ -15,11 +15,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from utils.pg_loader import init_db
-from utils.loaders.hourly_stats import insert_stats_hourly
-from utils.loaders.station_activity_hourly import insert_station_activity_hourly
-from utils.loaders.flow_activity_monthly import insert_flow_activity_monthly
-from utils.loaders.station_metadata import upsert_station_metadata
-from utils.loaders.weather_hourly import upsert_weather_hourly
+from utils.db_loaders.hourly_stats import insert_stats_hourly
+from utils.db_loaders.station_activity_hourly import insert_station_activity_hourly
+from utils.db_loaders.flow_activity_monthly import insert_flow_activity_monthly
+from utils.db_loaders.station_metadata import upsert_station_metadata
+from utils.db_loaders.weather_hourly import upsert_weather_hourly
 from src.backend.config import TEST_DATA_DIR
 #TODO: add bike routes 
 
