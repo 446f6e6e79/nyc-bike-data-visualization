@@ -9,11 +9,11 @@ import polars as pl
 from src.backend.config import RIDES_DATA_DIR, STATION_DISTANCES_PATH, WEATHER_DATA_DIR
 from src.backend.services.gbfs import fetch_station_data
 from utils.distances import enrich_with_distances
-from utils.loaders.flow_activity_monthly import insert_flow_activity_monthly
-from utils.loaders.hourly_stats import insert_stats_hourly
-from utils.loaders.station_activity_hourly import insert_station_activity_hourly
-from utils.loaders.station_metadata import upsert_station_metadata
-from utils.loaders.weather_hourly import upsert_weather_hourly
+from utils.db_loaders.flow_activity_monthly import insert_flow_activity_monthly
+from utils.db_loaders.hourly_stats import insert_stats_hourly
+from utils.db_loaders.station_activity_hourly import insert_station_activity_hourly
+from utils.db_loaders.station_metadata import upsert_station_metadata
+from utils.db_loaders.weather_hourly import upsert_weather_hourly
 
 def init_db(conn) -> None:
 	"""
