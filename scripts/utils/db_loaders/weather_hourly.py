@@ -58,4 +58,4 @@ def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
             """,
             rows,
         )
-    print(f"    weather_hourly: {len(rows)} rows upserted")
+    print(f"[DB-LOAD: weather_hourly] Inserted {len(rows)} rows")

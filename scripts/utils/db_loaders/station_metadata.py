@@ -22,4 +22,4 @@ def upsert_station_metadata(conn, station_info: list[dict]) -> None:
             """,
             rows,
         )
-    print(f"    station_metadata: {len(rows)} stations upserted")
+    print(f"[DB-LOAD: station_metadata] Upserted {len(rows)} stations")

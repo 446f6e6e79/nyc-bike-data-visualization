@@ -54,4 +54,4 @@ def insert_flow_activity_monthly(conn, rides: pl.DataFrame) -> None:
             """,
             rows,
         )
-    print(f"    flow_activity_monthly: {len(rows)} rows")
+    print(f"[DB-LOAD: flow_activity_monthly] Inserted {len(rows)} rows")

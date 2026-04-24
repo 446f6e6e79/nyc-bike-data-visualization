@@ -187,7 +187,7 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
                 downloaded_mb = downloaded_size / (1024 * 1024)
                 total_mb = total_size / (1024 * 1024)
                 print(
-                    f"\rDownload progress for {file_key}: {progress_pct:5.1f}% "
+                    f"\r[DOWNLOAD] Download progress for {file_key}: {progress_pct:5.1f}% "
                     f"({downloaded_mb:.1f}/{total_mb:.1f} MB)",
                     end="",
                     flush=True,
@@ -196,7 +196,7 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
             else:
                 downloaded_mb = downloaded_size / (1024 * 1024)
                 print(
-                    f"\rDownload progress for {file_key}: {downloaded_mb:.1f} MB",
+                    f"\r[DOWNLOAD] Download progress for {file_key}: {downloaded_mb:.1f} MB",
                     end="",
                     flush=True,
                 )

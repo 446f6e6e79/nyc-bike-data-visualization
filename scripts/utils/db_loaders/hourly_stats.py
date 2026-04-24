@@ -46,4 +46,4 @@ def insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
             """,
             rows,
         )
-    print(f"    stats_hourly: {len(rows)} rows")
+    print(f"[DB-LOAD: stats_hourly] Inserted {len(rows)} rows")

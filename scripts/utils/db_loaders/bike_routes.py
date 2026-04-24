@@ -43,4 +43,4 @@ def upsert_bike_routes(conn, df: pl.DataFrame) -> None:
             """,
             rows,
         )
-    print(f"    bike_routes: {len(rows)} rows upserted")
+    print(f"[DB-LOAD: bike_routes] Upserted {len(rows)} rows")
