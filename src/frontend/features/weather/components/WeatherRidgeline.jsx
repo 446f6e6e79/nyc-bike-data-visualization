@@ -9,119 +9,24 @@ import {
     RULE,
     FONT_DISPLAY,
     RULE_STRONG,
-} from "../../../utils/editorialTokens.js"
+} from "../../../utils/editorialTokens.js";
+import { WMO_WEATHER_CODES } from "../utils/wmo_code_handler.jsx";
 import {
-    GROUPED_WEATHER_CODES,
-    WMO_WEATHER_CODES,
-    getWeatherGroup,
-} from "../utils/wmo_code_handler.jsx";
+    toRgba,
+    buildRidgelineSeries,
+    buildTickText,
+    wrapLabel,
+} from "../utils/weather_ridgeline.js";
 
-const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-function toRgba(hexColor, alpha) {
-    if (!hexColor?.startsWith("#") || (hexColor.length !== 7 && hexColor.length !== 4)) {
-        return `rgba(25, 83, 216, ${alpha})`;
-    }
-
-    const expanded =
-        hexColor.length === 4
-            ? `#${hexColor[1]}${hexColor[1]}${hexColor[2]}${hexColor[2]}${hexColor[3]}${hexColor[3]}`
-            : hexColor;
-
-    const red = Number.parseInt(expanded.slice(1, 3), 16);
-    const green = Number.parseInt(expanded.slice(3, 5), 16);
-    const blue = Number.parseInt(expanded.slice(5, 7), 16);
-
-    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
-}
-
-function getWeatherColorByCode(code) {
-    const weatherGroup = getWeatherGroup(code);
-    return GROUPED_WEATHER_CODES[weatherGroup]?.[1] ?? "#6e6a62";
-}
-
-function buildRidgelineSeries(rows = [], dimension = "hour") {
-    const bins = dimension === "hour" ? Array.from({ length: 24 }, (_, index) => index) : Array.from({ length: 7 }, (_, index) => index);
-    const bucketKey = dimension === "hour" ? "hour" : "day_of_week";
-
-    const weatherBuckets = new Map();
-
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const weatherCode = Number(row?.weather_code);
-        const bucket = Number(row?.[bucketKey]);
-
-        if (!Number.isFinite(weatherCode) || !Number.isFinite(bucket) || !bins.includes(bucket)) {
-            continue;
-        }
-
-        const totalRides = Number(row?.total_rides ?? 0);
-        const hoursCount = Number(row?.hours_count ?? 0);
-        const ridesPerHour = hoursCount > 0 ? totalRides / hoursCount : 0;
-
-        if (!weatherBuckets.has(weatherCode)) {
-            weatherBuckets.set(weatherCode, new Map());
-        }
-
-        const bucketMap = weatherBuckets.get(weatherCode);
-        bucketMap.set(bucket, (bucketMap.get(bucket) ?? 0) + ridesPerHour);
-    }
-
-    const orderedCodes = [...weatherBuckets.keys()].sort((codeA, codeB) => {
-        const sumA = [...weatherBuckets.get(codeA).values()].reduce((sum, value) => sum + value, 0);
-        const sumB = [...weatherBuckets.get(codeB).values()].reduce((sum, value) => sum + value, 0);
-        return sumB - sumA;
-    });
-
-    const spacing = 1.2;
-    const amplitude = 0.9;
-
-    return orderedCodes.map((code, index) => {
-        const bucketMap = weatherBuckets.get(code);
-        const rawSeries = bins.map((bucket) => Number(bucketMap.get(bucket) ?? 0));
-        const localMax = rawSeries.reduce((max, value) => Math.max(max, value), 0);
-        const normalized = localMax > 0 ? rawSeries.map((value) => value / localMax) : rawSeries.map(() => 0);
-        const baseline = index * spacing;
-
-        return {
-            code,
-            label: WMO_WEATHER_CODES[code] ?? `WMO ${code}`,
-            color: getWeatherColorByCode(code),
-            x: bins,
-            rawSeries,
-            baseline,
-            y: normalized.map((value) => baseline + value * amplitude),
-        };
-    });
-}
-
-function buildTickText(dimension) {
-    if (dimension === "hour") {
-        return Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
-    }
-
-    return WEEKDAY_LABELS;
-}
-
-function wrapLabel(text, maxLen = 18) {
-    const words = text.split(" ");
-    let lines = [];
-    let current = "";
-
-    for (const word of words) {
-        if ((current + " " + word).trim().length > maxLen) {
-            lines.push(current);
-            current = word;
-        } else {
-            current = (current + " " + word).trim();
-        }
-    }
-
-    if (current) lines.push(current);
-
-    return lines.join("\n");
-}
-
+/**
+ * Ridgeline plot of rides-per-hour distributions broken down by WMO weather
+ * code, toggleable between hour-of-day and day-of-week dimensions.
+ * @param {Array<object>} data - Raw weather stats rows from the backend.
+ * @param {boolean} loading - Whether a refetch is currently in flight.
+ * @param {unknown} error - Error object from the query, if any.
+ * @param {Function} onRefetch - Handler invoked when the overlay requests a retry.
+ * @returns {JSX.Element} The ridgeline frame with toolbar and Plotly chart.
+ */
 function WeatherRidgeline({ data, loading, error, onRefetch }) {
     const [dimension, setDimension] = useState("hour");
     const showOverlay = loading || error;
@@ -147,11 +52,11 @@ function WeatherRidgeline({ data, loading, error, onRefetch }) {
                     x: ridge.x,
                     y: ridge.y,
                     name: ridge.label,
-                    line: { 
-                        color: ridge.color, 
+                    line: {
+                        color: ridge.color,
                         width: 1.5,
                         shape: "spline",
-                        smoothing: .5
+                        smoothing: 0.5,
                     },
                     fill: "tonexty",
                     fillcolor: toRgba(ridge.color, 0.24),
@@ -223,7 +128,7 @@ function WeatherRidgeline({ data, loading, error, onRefetch }) {
                                 title: {
                                     text: dimension === "hour" ? "Hour of Day" : "Day of Week",
                                     font: { family: FONT_DISPLAY, size: 13, weight: "500" },
-                                    standoff: 50 
+                                    standoff: 50,
                                 },
                                 tickmode: "array",
                                 tickvals: xTicks,
@@ -244,7 +149,7 @@ function WeatherRidgeline({ data, loading, error, onRefetch }) {
                                 showgrid: false,
                                 zeroline: false,
                                 fixedrange: true,
-                                automargin: true
+                                automargin: true,
                             },
                             hoverlabel: {
                                 bgcolor: "rgba(11, 12, 14, 0.94)",

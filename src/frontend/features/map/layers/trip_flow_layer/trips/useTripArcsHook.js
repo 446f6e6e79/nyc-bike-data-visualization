@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useQueries } from '@tanstack/react-query'
+import { useApiQueriesWithFilters } from '../../../../../clients/baseApiQuery.js'
 import { selectTrips, selectMaxFlow } from './tripArcsSelector.js'
 import { fetchStationFlowCounts } from './stationFlowCountsApi.js'
 import { LIMIT_TRIPS } from '../../../../../utils/config.jsx'
@@ -20,18 +20,15 @@ export function useTripArcsLayer({ filters, selectedStationIds }) {
         }),
         [filters],
     )
-    // Fetch trip counts for each selected station ID using useQueries for parallel fetching.
-    const tripCountQueries = useQueries({
-        queries: selectedStationIds.map((stationId) => {
-            const stationFilters = {
-                ...baseTripCountFilters,
-                station_id: stationId,
-            }
-            return {
-                queryKey: ['station-flow-counts', stationFilters],
-                queryFn: () => fetchStationFlowCounts(stationFilters),            }
-        }),
-    })
+    // Fetch trip counts for each selected station ID in parallel via the shared /clients query helper.
+    const tripCountQueries = useApiQueriesWithFilters(
+        selectedStationIds.map((stationId) => ({
+            queryKey: 'station-flow-counts',
+            fetcher: fetchStationFlowCounts,
+            filters: { ...baseTripCountFilters, station_id: stationId },
+            enabledWhen: () => true,
+        })),
+    )
     // Combine and process the trip count data from all queries
     const tripCount = useMemo(() => {
         // If no stations are selected, return an empty array to avoid unnecessary processing
