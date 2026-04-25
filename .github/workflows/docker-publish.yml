@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
@@ -43,9 +43,22 @@ jobs:
       - name: Extract release tag
         id: tag
         run: echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+       
+      - name: Build and push postgres image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockers/Dockerfile.postgres
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-postgres:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE_PREFIX }}-postgres:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push backend image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: dockers/Dockerfile.backend
@@ -58,7 +71,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push frontend image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: dockers/Dockerfile.frontend
@@ -87,6 +100,7 @@ jobs:
           image_map = {
               "dockers/Dockerfile.backend":  f"{prefix}-backend:{tag}",
               "dockers/Dockerfile.frontend": f"{prefix}-frontend:{tag}",
+              "dockers/Dockerfile.postgres": f"{prefix}-postgres:{tag}",
           }
 
           with open("docker-compose.yml") as f:

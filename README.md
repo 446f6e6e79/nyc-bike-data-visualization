@@ -101,7 +101,7 @@ docker compose down
 |---|---|---|
 | `DATA_START_DATE` | Start month in `YYYYMM` format | `202401` |
 | `DATA_END_DATE` | End month in `YYYYMM` format | `202412` |
-| `DOWNLOAD_JC` | Set to any value to include Jersey City data | `true` |
+| `DOWNLOAD_JC` | Set to true to include Jersey City data | `true` |
 
 Inline (Linux/macOS):
 
