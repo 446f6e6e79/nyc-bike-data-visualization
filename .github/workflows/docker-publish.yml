@@ -19,6 +19,8 @@ jobs:
     permissions:
       contents: write
       packages: write
+    outputs:
+      tag: ${{ steps.tag.outputs.value }}
 
     steps:
       - name: Checkout repository
@@ -131,3 +133,81 @@ jobs:
           name: Data Visualisation Docker Release ${{ steps.tag.outputs.value }}
           files: |
             docker-compose.release.yml
+
+  seed-and-push-postgres:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ${{ env.PLATFORMS }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Compute data end date (month before release)
+        id: dates
+        run: |
+          DATA_END=$(date -d "$(date +%Y-%m-01) -1 month" +%Y%m)
+          echo "end=$DATA_END" >> "$GITHUB_OUTPUT"
+          echo "Seeding data from 202601 to $DATA_END"
+
+      - name: Start postgres container for seeding
+        run: |
+          docker run -d --name pg \
+            -e POSTGRES_DB=citibike \
+            -e POSTGRES_USER=citibike \
+            -e POSTGRES_PASSWORD=citibike \
+            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build-and-push.outputs.tag }}
+          until docker exec pg pg_isready -U citibike -d citibike; do
+            echo "Waiting for postgres..."; sleep 3
+          done
+
+      - name: Download and seed default dataset
+        timeout-minutes: 45
+        run: |
+          docker run --rm \
+            --network container:pg \
+            -e DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike \
+            ${{ env.IMAGE_PREFIX }}-backend:${{ needs.build-and-push.outputs.tag }} \
+            python /app/scripts/download_data.py \
+              --start-date 202601 \
+              --end-date ${{ steps.dates.outputs.end }}
+
+      - name: Export database dump
+        run: |
+          docker exec pg pg_dump -U citibike --no-owner --no-privileges citibike \
+            | gzip > citibike_data.sql.gz
+          echo "Dump size: $(du -sh citibike_data.sql.gz | cut -f1)"
+
+      - name: Stop and remove postgres container
+        if: always()
+        run: docker rm -f pg
+
+      - name: Build and push preloaded postgres image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockers/Dockerfile.postgres-preloaded
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build-and-push.outputs.tag }}
+            ${{ env.IMAGE_PREFIX }}-postgres:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
