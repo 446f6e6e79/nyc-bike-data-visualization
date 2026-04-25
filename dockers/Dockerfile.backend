@@ -17,4 +17,4 @@ COPY src/backend /app/src/backend
 COPY scripts/ /app/scripts/
 
 # Run the data download script before starting the server (default setting)
-CMD ["sh", "-c", "python /app/scripts/download_data.py && uvicorn src.backend.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "python /app/scripts/download_data.py ${DATA_START_DATE:+--start-date $DATA_START_DATE} ${DATA_END_DATE:+--end-date $DATA_END_DATE} ${DOWNLOAD_JC:+--download-jc} && uvicorn src.backend.main:app --host 0.0.0.0 --port 8000"]
