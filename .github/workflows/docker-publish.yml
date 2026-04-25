@@ -14,7 +14,7 @@ env:
   PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
-  build-and-push:
+  build-and-push-images:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -134,8 +134,8 @@ jobs:
           files: |
             docker-compose.release.yml
 
-  seed-and-push-postgres:
-    needs: build-and-push
+  fill-postgres:
+    needs: build-and-push-images
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -160,20 +160,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Compute data end date (month before release)
-        id: dates
-        run: |
-          DATA_END=$(date -d "$(date +%Y-%m-01) -1 month" +%Y%m)
-          echo "end=$DATA_END" >> "$GITHUB_OUTPUT"
-          echo "Seeding data from 202601 to $DATA_END"
-
       - name: Start postgres container for seeding
         run: |
           docker run -d --name pg \
             -e POSTGRES_DB=citibike \
             -e POSTGRES_USER=citibike \
             -e POSTGRES_PASSWORD=citibike \
-            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build-and-push.outputs.tag }}
+            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build-and-push-images.outputs.tag }}
           until docker exec pg pg_isready -U citibike -d citibike; do
             echo "Waiting for postgres..."; sleep 3
           done
@@ -184,10 +177,8 @@ jobs:
           docker run --rm \
             --network container:pg \
             -e DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike \
-            ${{ env.IMAGE_PREFIX }}-backend:${{ needs.build-and-push.outputs.tag }} \
-            python /app/scripts/download_data.py \
-              --start-date 202601 \
-              --end-date ${{ steps.dates.outputs.end }}
+            ${{ env.IMAGE_PREFIX }}-backend:${{ needs.build-and-push-images.outputs.tag }} \
+            python /app/scripts/download_data.py
 
       - name: Export database dump
         run: |
@@ -207,7 +198,7 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build-and-push.outputs.tag }}
+            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build-and-push-images.outputs.tag }}
             ${{ env.IMAGE_PREFIX }}-postgres:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

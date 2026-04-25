@@ -45,6 +45,8 @@ Note: The image is built with the script `scripts/download_data.py` included wit
 The easiest way to run the application is to use the pre-built images from the latest release.
 No need to clone the repository or build anything, Docker will automatically pull the correct image for your architecture (linux/amd64, linux/arm64).
 
+> **Default data range:** The images are built filled with default data starting from January 2025 to the last month released before the build date. If you want to customise the date range, please refer to the "Customise the date range" section below.
+
 **1. Download `docker-compose.release.yml` from the [latest release](https://github.com/446f6e6e79/nyc-bike-data-visualization/releases/latest)**
 
 **2. Run it:**
@@ -95,12 +97,12 @@ docker compose down
 
 > Use `docker compose down -v` only if you want to wipe the database and downloaded data entirely and start fresh.
 
-**Customise the date range** (optional) — by default the backend downloads data starting from January 2026. Override via environment variables before running:
+**Customise the date range** (optional) — by default the backend downloads data starting from January 2025. Override via environment variables before running:
 
 | Variable | Description | Example |
 |---|---|---|
-| `DATA_START_DATE` | Start month in `YYYYMM` format | `202401` |
-| `DATA_END_DATE` | End month in `YYYYMM` format | `202412` |
+| `DATA_START_DATE` | Start month in `YYYYMM` format | `202501` |
+| `DATA_END_DATE` | End month in `YYYYMM` format | `202603` |
 | `DOWNLOAD_JC` | Set to true to include Jersey City data | `true` |
 
 Inline (Linux/macOS):
@@ -140,6 +142,7 @@ Those files are downloaded from https://s3.amazonaws.com/tripdata/index.html.
 To use the script, run the following command in your terminal:
 
 ```bash
+export DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike
 python scripts/download_data.py
 ```
 
@@ -147,7 +150,7 @@ Database schema initialization in `scripts/download_data.py` executes ordered fi
 
 The available options for the script are:
 
-- `--start-date`: The start date for filtering files (in YYYYMM format). Default is "202601".
+- `--start-date`: The start date for filtering files (in YYYYMM format). Default is "202501".
 - `--end-date`: The end date for filtering files (in YYYYMM format). Default is "" (no end date).
 - `--download-jc`: Include files from the Jersey City dataset (those starting with "JC-"). By default, these files are excluded.
 

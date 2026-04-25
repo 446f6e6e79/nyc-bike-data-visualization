@@ -39,7 +39,7 @@ NYC_COORDS = (40.7823234, -73.9654161)
 WEATHER_TIMEZONE = "America/New_York"
 
 # Default parameters for data processing and retrieval
-DEFAULT_START_DATE = "202601"
+DEFAULT_START_DATE = "202501"
 # The default end date is set to the YYYYMM of the previous month
 one_month_ago = datetime.now() - timedelta(days=30)
 DEFAULT_END_DATE = one_month_ago.strftime("%Y%m")
