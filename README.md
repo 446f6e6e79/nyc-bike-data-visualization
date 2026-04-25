@@ -69,6 +69,60 @@ docker compose -f docker-compose.release.yml down
 
 Note: You can also run it from the Docker Desktop built-in terminal in the same way.
 
+### Quick start from source
+
+Clone the repository and start all services with a single command:
+
+```bash
+git clone https://github.com/446f6e6e79/nyc-bike-data-visualization.git
+cd nyc-bike-data-visualization
+docker compose up --build
+```
+
+> **First run:** the backend downloads and processes the Citi Bike dataset automatically before starting. This can take several minutes  depending on your connection. Subsequent starts are fast because the data is persisted in a Docker volume.
+
+**Subsequent runs** (images already built, data already on volume):
+
+```bash
+docker compose up
+```
+
+**Stop without losing data:**
+
+```bash
+docker compose down
+```
+
+> Use `docker compose down -v` only if you want to wipe the database and downloaded data entirely and start fresh.
+
+**Customise the date range** (optional) — by default the backend downloads data starting from January 2026. Override via environment variables before running:
+
+| Variable | Description | Example |
+|---|---|---|
+| `DATA_START_DATE` | Start month in `YYYYMM` format | `202401` |
+| `DATA_END_DATE` | End month in `YYYYMM` format | `202412` |
+| `DOWNLOAD_JC` | Set to true to include Jersey City data | `true` |
+
+Inline (Linux/macOS):
+
+```bash
+DATA_START_DATE=202512 DATA_END_DATE=202603 docker compose up --build
+```
+
+On Windows (PowerShell):
+
+```powershell
+$env:DATA_START_DATE="202512"; $env:DATA_END_DATE="202603"; docker compose up --build
+```
+
+Or create a `.env` file in the repository root (Docker Compose picks it up automatically):
+
+```env
+DATA_START_DATE=202401
+DATA_END_DATE=202412
+# DOWNLOAD_JC=true
+```
+
 ### Useful terminal checks
 
 - Service status: `docker compose ps`
