@@ -172,7 +172,7 @@ jobs:
           done
 
       - name: Download and seed default dataset
-        timeout-minutes: 45
+        timeout-minutes: 120
         run: |
           docker run --rm \
             --network container:pg \
