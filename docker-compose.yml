@@ -1,35 +1,54 @@
 services:
-  postgres:
-    build:
-      context: .
+  postgres:                                                       # PostgreSQL database service
+    build:                                                        # Initialize the PostgreSQL service by building the image from the specified context and Dockerfile
+      context: .                                                                    
       dockerfile: dockers/Dockerfile.postgres
+    image: ${IMAGE_PREFIX:-nyc-bike-local}-postgres:${TAG:-latest}
     container_name: NYC-Bike-Visualisation-Postgres
-    environment:
+    environment:                                                  # Environment variables for PostgreSQL configuration
       POSTGRES_DB: citibike
       POSTGRES_USER: citibike
       POSTGRES_PASSWORD: citibike
     volumes:
       - pg_data:/var/lib/postgresql/data
-    healthcheck:
+    healthcheck:                                                 # Health check to ensure the PostgreSQL service is ready before other services depend on it                        
       test: ["CMD-SHELL", "pg_isready -U citibike"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  backend:
+  seeder:                                                       # Service of data seeding service that populates the database with initial data
+    build:                                                      # Build the seeder image from the specified context and Dockerfile
+      context: .
+      dockerfile: dockers/Dockerfile.seeder
+      args:
+        DATA_START_DATE: ${DATA_START_DATE:-202501}
+        DATA_END_DATE: ${DATA_END_DATE:-}
+        DOWNLOAD_JC: ${DOWNLOAD_JC:-}
+    container_name: NYC-Bike-Visualisation-Seeder
+    image: ${IMAGE_PREFIX:-nyc-bike-local}-seeder:${TAG:-latest}
+    depends_on:
+      postgres:                                                 # Ensure the seeder service only starts after the PostgreSQL service is healthy
+        condition: service_healthy
+    environment:                                                # Environment variables for the seeder service, including database connection details and optional parameters for data seeding
+      DATABASE_URL: postgresql://citibike:citibike@postgres:5432/citibike
+    volumes:
+      - app_data:/app/data
+
+  backend:                                                      # Backend service that provides the API for the application          
     build:
       context: .
       dockerfile: dockers/Dockerfile.backend
+    image: ${IMAGE_PREFIX:-nyc-bike-local}-backend:${TAG:-latest}
     container_name: NYC-Bike-Visualisation-Backend
-    init: true
-    depends_on:
+    init: true                                                  # Use an init system to handle signal forwarding and process reaping, ensuring graceful shutdowns              
+    depends_on:                                                 # Ensure the backend service only starts after the seeder service has completed successfully
       postgres:
         condition: service_healthy
+      seeder:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgresql://citibike:citibike@postgres:5432/citibike
-      DATA_START_DATE:
-      DATA_END_DATE:
-      DOWNLOAD_JC:
     volumes:
       - app_data:/app/data
     ports:
@@ -43,10 +62,11 @@ services:
       retries: 40
       start_period: 60s
 
-  frontend:
+  frontend:                                                   # Frontend service that serves the user interface of the application                
     build:
       context: .
       dockerfile: dockers/Dockerfile.frontend
+    image: ${IMAGE_PREFIX:-nyc-bike-local}-frontend:${TAG:-latest}
     container_name: NYC-Bike-Visualisation-Frontend
     init: true
     depends_on:
@@ -56,6 +76,6 @@ services:
     stop_signal: SIGINT
     stop_grace_period: 5s
 
-volumes:
-  pg_data:
-  app_data:
+volumes:                                                      # Define named volumes for persistent data storage
+  pg_data:                                                    # Volume for PostgreSQL data
+  app_data:                                                   # Volume for application data used by the seeder and backend services                   

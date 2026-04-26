@@ -1,8 +1,0 @@
-FROM postgres:16-alpine
-
-COPY scripts/postgre/init/ /docker-entrypoint-initdb.d/
-RUN sed -i 's/\r//' /docker-entrypoint-initdb.d/*.sh
-
-# Pre-seeded data dump (schema + data), restored automatically on first start with an empty volume.
-# Named 99_ so it runs after any other init scripts.
-COPY citibike_data.sql.gz /docker-entrypoint-initdb.d/99_citibike_data.sql.gz
