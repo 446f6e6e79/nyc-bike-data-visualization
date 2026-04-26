@@ -1,3 +1,4 @@
+import datetime
 from fastapi import HTTPException
 
 from src.backend.db import get_conn
@@ -19,14 +20,14 @@ def get_trips_between_stations_stats(
     user_val = user_type.value if user_type else None
     bike_val = bike_type.value if bike_type else None
 
-    start_ym = start_year * 100 + start_month
-    end_ym = end_year * 100 + end_month
+    start_date = datetime.date(start_year, start_month, 1)
+    end_date = datetime.date(end_year + (end_month == 12), end_month % 12 + 1, 1)
 
     sql = """
         WITH spine AS (
             SELECT COUNT(*) AS hours_count
             FROM weather_hourly
-            WHERE EXTRACT(YEAR FROM date) * 100 + EXTRACT(MONTH FROM date) BETWEEN %s AND %s
+            WHERE date >= %s AND date < %s
         )
         SELECT fam.station_a_id,
                sm_a.station_name AS station_a_name,
@@ -42,7 +43,7 @@ def get_trips_between_stations_stats(
         JOIN station_metadata sm_a ON sm_a.station_id = fam.station_a_id
         JOIN station_metadata sm_b ON sm_b.station_id = fam.station_b_id
         CROSS JOIN spine s
-        WHERE (fam.year * 100 + fam.month) BETWEEN %s AND %s
+        WHERE (fam.year, fam.month) >= (%s, %s) AND (fam.year, fam.month) <= (%s, %s)
           AND (%s IS NULL OR fam.station_a_id = %s OR fam.station_b_id = %s)
           AND (%s IS NULL OR fam.user_type = %s)
           AND (%s IS NULL OR fam.bike_type = %s)
@@ -52,8 +53,8 @@ def get_trips_between_stations_stats(
                  s.hours_count
     """
     params = (
-        start_ym, end_ym,
-        start_ym, end_ym,
+        start_date, end_date,
+        start_year, start_month, end_year, end_month,
         station_id, station_id, station_id,
         user_val, user_val,
         bike_val, bike_val,

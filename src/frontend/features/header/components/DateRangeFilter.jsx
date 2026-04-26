@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useDateRangeBounds from '../hooks/useDateBounds.js'
 import useDateRangeCommit from '../hooks/useDateRangeCommit.js'
 import useDateRangePresentation from '../hooks/useDatePresentation.js'
@@ -59,6 +59,12 @@ export default function DateRangeFilter({ value, onCommit, disabled = false }) {
     } = useDateRangeCommit({ selection: selectionView, value, onCommit, defaultRange })
 
     const wasInteractingRef = useRef(false)
+    const maxedTooltipRef = useRef(null)
+    const tooltipAnimationFrameRef = useRef(null)
+    const [activeHandle, setActiveHandle] = useState(null)
+    const [showMaxedTooltip, setShowMaxedTooltip] = useState(false)
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+
     useEffect(() => {
         if (isInteracting) {
             wasInteractingRef.current = true
@@ -79,6 +85,104 @@ export default function DateRangeFilter({ value, onCommit, disabled = false }) {
         isLoadingView,
         isUnavailableView,
     } = useDateRangePresentation({ selection: selectionView, minDate, totalMonths, loading, error, bounds })
+
+    const positionMaxedTooltip = (clientX, clientY) => {
+        const track = document.querySelector('[data-month-slider]')
+        const tooltipNode = maxedTooltipRef.current
+        if (!track || !tooltipNode) return
+
+        const trackRect = track.getBoundingClientRect()
+        const nextX = clientX - trackRect.left
+        const nextY = clientY - trackRect.top - 12
+
+        if (tooltipAnimationFrameRef.current) {
+            cancelAnimationFrame(tooltipAnimationFrameRef.current)
+        }
+
+        tooltipAnimationFrameRef.current = requestAnimationFrame(() => {
+            tooltipNode.style.left = `${nextX}px`
+            tooltipNode.style.top = `${nextY}px`
+            setShowMaxedTooltip(true)
+            tooltipAnimationFrameRef.current = null
+        })
+    }
+
+    const handleSliderMouseEnter = (event) => {
+        if (!selectionView?.isMaxed) {
+            setShowMaxedTooltip(false)
+            return
+        }
+
+        const track = document.querySelector('[data-month-slider]')
+        if (track) {
+            const trackRect = track.getBoundingClientRect()
+            setTooltipPosition({
+                x: event.clientX - trackRect.left,
+                y: event.clientY - trackRect.top,
+            })
+        }
+        setShowMaxedTooltip(true)
+    }
+
+    const handleSliderMouseMove = (event) => {
+        if (!selectionView?.isMaxed || activeHandle) {
+            setShowMaxedTooltip(false)
+            return
+        }
+
+        positionMaxedTooltip(event.clientX, event.clientY)
+    }
+
+    const handleSliderMouseLeave = () => {
+        if (tooltipAnimationFrameRef.current) {
+            cancelAnimationFrame(tooltipAnimationFrameRef.current)
+            tooltipAnimationFrameRef.current = null
+        }
+        setShowMaxedTooltip(false)
+    }
+
+    const handleHandlePointerDown = (side) => (event) => {
+        setActiveHandle(side)
+        if (selectionView?.isMaxed) {
+            positionMaxedTooltip(event.clientX, event.clientY)
+        }
+        beginPointerAction(event, side === 'start' ? 'resize-start' : 'resize-end')
+    }
+
+    useEffect(() => {
+        if (!activeHandle || !selectionView?.isMaxed) return undefined
+
+        const handleWindowPointerMove = (event) => {
+            positionMaxedTooltip(event.clientX, event.clientY)
+        }
+
+        const handleWindowPointerUp = () => {
+            setActiveHandle(null)
+            setShowMaxedTooltip(false)
+            if (tooltipAnimationFrameRef.current) {
+                cancelAnimationFrame(tooltipAnimationFrameRef.current)
+                tooltipAnimationFrameRef.current = null
+            }
+        }
+
+        window.addEventListener('pointermove', handleWindowPointerMove)
+        window.addEventListener('pointerup', handleWindowPointerUp)
+
+        return () => {
+            window.removeEventListener('pointermove', handleWindowPointerMove)
+            window.removeEventListener('pointerup', handleWindowPointerUp)
+        }
+    }, [activeHandle, selectionView?.isMaxed])
+
+    useEffect(() => {
+        return () => {
+            if (tooltipAnimationFrameRef.current) {
+                cancelAnimationFrame(tooltipAnimationFrameRef.current)
+                tooltipAnimationFrameRef.current = null
+            }
+        }
+    }, [])
+
     if (isLoadingView) return <PlaceholderState label="Loading date range..." />
     if (isUnavailableView) return <PlaceholderState label="Date range unavailable" />
 
@@ -156,7 +260,10 @@ export default function DateRangeFilter({ value, onCommit, disabled = false }) {
                 >
                     {/* Start handle */}
                     <div
-                        onPointerDown={disabled ? undefined : (event) => beginPointerAction(event, 'resize-start')}
+                        onPointerDown={disabled ? undefined : handleHandlePointerDown('start')}
+                        onMouseEnter={handleSliderMouseEnter}
+                        onMouseMove={handleSliderMouseMove}
+                        onMouseLeave={handleSliderMouseLeave}
                         className="date-range-filter__handle-anchor date-range-filter__handle-anchor--start"
                     >
                         <SliderHandle
@@ -172,7 +279,10 @@ export default function DateRangeFilter({ value, onCommit, disabled = false }) {
 
                     {/* End handle */}
                     <div
-                        onPointerDown={disabled ? undefined : (event) => beginPointerAction(event, 'resize-end')}
+                        onPointerDown={disabled ? undefined : handleHandlePointerDown('end')}
+                        onMouseEnter={handleSliderMouseEnter}
+                        onMouseMove={handleSliderMouseMove}
+                        onMouseLeave={handleSliderMouseLeave}
                         className="date-range-filter__handle-anchor date-range-filter__handle-anchor--end"
                     >
                         <SliderHandle
@@ -185,6 +295,21 @@ export default function DateRangeFilter({ value, onCommit, disabled = false }) {
                             disabled={disabled}
                         />
                     </div>
+                </div>
+
+                {/* Maxed tooltip */}
+                <div
+                    ref={maxedTooltipRef}
+                    className={`date-range-filter__tooltip date-range-filter__tooltip--maxed${showMaxedTooltip ? ' is-visible' : ''}`}
+                    style={{
+                        left: `${tooltipPosition.x}px`,
+                        top: `${tooltipPosition.y}px`,
+                    }}
+                    aria-hidden={!showMaxedTooltip}
+                >
+                    <span className="date-range-filter__tooltip-text">
+                        Maximum {maxWindowSize} months selected.
+                    </span>
                 </div>
             </div>
         </div>

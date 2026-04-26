@@ -12,6 +12,9 @@ ON station_activity_hourly (year, month, station_id);
 CREATE INDEX IF NOT EXISTS idx_sah_station
 ON station_activity_hourly (station_id);
 
+CREATE INDEX IF NOT EXISTS idx_sah_station_year_month
+ON station_activity_hourly (station_id, year, month);
+
 -- flow_activity_monthly
 CREATE INDEX IF NOT EXISTS idx_fam_year_month
 ON flow_activity_monthly (year, month);

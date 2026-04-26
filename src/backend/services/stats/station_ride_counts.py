@@ -1,3 +1,5 @@
+import datetime
+
 from src.backend.db import get_conn
 from src.backend.models.ride import MemberCasual, RideableType
 from src.backend.models.stats.station_ride_counts import GroupedStationRideCount, StationRideGroupBy, StationRideCounts
@@ -18,8 +20,8 @@ def get_station_ride_counts_stats(
     user_val = user_type.value if user_type else None
     bike_val = bike_type.value if bike_type else None
 
-    start_ym = start_year * 100 + start_month
-    end_ym = end_year * 100 + end_month
+    start_date = datetime.date(start_year, start_month, 1)
+    end_date = datetime.date(end_year + (end_month == 12), end_month % 12 + 1, 1)
 
     if group_by == StationRideGroupBy.NONE:
         spine_dim  = ""
@@ -50,7 +52,7 @@ def get_station_ride_counts_stats(
         WITH spine AS (
             SELECT {spine_dim}COUNT(*) AS hours_count
             FROM weather_hourly
-            WHERE EXTRACT(YEAR FROM date) * 100 + EXTRACT(MONTH FROM date) BETWEEN %s AND %s
+            WHERE date >= %s AND date < %s
             {spine_grp}
         )
         SELECT sah.station_id, sm.station_name, sm.lat, sm.lon{sah_sel},
@@ -61,7 +63,7 @@ def get_station_ride_counts_stats(
         FROM station_activity_hourly sah
         JOIN station_metadata sm ON sm.station_id = sah.station_id
         {spine_join}
-        WHERE sah.year * 100 + sah.month BETWEEN %s AND %s
+        WHERE (sah.year, sah.month) >= (%s, %s) AND (sah.year, sah.month) <= (%s, %s)
           AND (%s IS NULL OR sah.station_id = %s)
           AND (%s IS NULL OR sah.user_type = %s)
           AND (%s IS NULL OR sah.bike_type = %s)
@@ -69,8 +71,8 @@ def get_station_ride_counts_stats(
         GROUP BY sah.station_id, sm.station_name, sm.lat, sm.lon{sah_grp}
     """
     params = (
-        start_ym, end_ym,
-        start_ym, end_ym,
+        start_date, end_date,
+        start_year, start_month, end_year, end_month,
         station_id, station_id,
         user_val, user_val,
         bike_val, bike_val,
