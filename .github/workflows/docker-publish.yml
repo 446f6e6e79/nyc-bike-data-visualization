@@ -175,7 +175,7 @@ jobs:
         run: |
           cat > /tmp/Dockerfile.preloaded << 'EOF'
           FROM postgres:16-alpine
-          COPY postgre/init/ /docker-entrypoint-initdb.d/
+          COPY postgres/init/ /docker-entrypoint-initdb.d/
           RUN sed -i 's/\r//' /docker-entrypoint-initdb.d/*.sh
           COPY citibike_data.sql.gz /docker-entrypoint-initdb.d/99_citibike_data.sql.gz
           EOF

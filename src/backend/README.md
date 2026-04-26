@@ -65,7 +65,7 @@ docker compose stop postgres
 
    ```bash
    export DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike
-   psql "$DATABASE_URL" -f scripts/postgre/init.sql
+   psql "$DATABASE_URL" -f postgres/init.sql
    ```
 
 Set the connection URL before running the backend or any scripts:

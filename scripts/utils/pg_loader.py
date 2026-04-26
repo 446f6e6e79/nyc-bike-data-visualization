@@ -17,7 +17,7 @@ from utils.db_loaders.weather_hourly import upsert_weather_hourly
 
 def init_db(conn) -> None:
 	"""
-	Initialize the database schema by executing ordered SQL files from scripts/postgre/schemas.
+	Initialize the database schema by executing ordered SQL files from postgres/schemas.
 	Args:
 		conn: psycopg2 connection object to the target database
 	"""
