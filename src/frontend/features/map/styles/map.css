@@ -86,6 +86,24 @@
     @apply font-mono text-[10px] uppercase tracking-eyebrow text-white/55;
   }
 
+  .map-fullscreen-button {
+    @apply absolute left-4 bottom-4 z-30 inline-flex items-center gap-2 px-3 py-1.5
+           font-mono text-[11px] uppercase tracking-eyebrow text-white bg-ink/90 border border-rule-invert
+           backdrop-blur-sm transition-colors duration-150
+           hover:bg-ink
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+    pointer-events: auto;
+  }
+
+  .map-fullscreen-button__icon {
+    @apply inline-flex items-center justify-center w-4 h-4 text-[12px] text-current;
+    line-height: 1;
+  }
+
+  .map-fullscreen-button__text {
+    letter-spacing: 0.08em;
+  }
+
   .deck-tooltip {
     @apply font-mono text-[11px] leading-tight border border-rule text-white/90;
     background-color: rgba(18, 18, 18, 0.9);

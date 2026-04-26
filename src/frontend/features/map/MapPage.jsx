@@ -1,5 +1,5 @@
 import DeckGL from '@deck.gl/react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMapHandler } from './hooks/useMapHandler.js'
 import { useBuildLayers } from './hooks/useBuildLayers.js'
 import MapController from './components/MapController.jsx'
@@ -117,6 +117,8 @@ const MAP_LAYER_GUIDES = {
 function MapPage({ filters }) {
     const [showInitialLoadingOverlay, setShowInitialLoadingOverlay] = useState(true)
     const [isHoveringPoint, setIsHoveringPoint] = useState(false)
+    const [isFullscreen, setIsFullscreen] = useState(false)
+    const mapShellRef = useRef(null)
 
     const handleHover = useCallback(({ object, layer }) => {
         if (!object || !layer?.id) {
@@ -143,6 +145,29 @@ function MapPage({ filters }) {
         return () => {
             clearTimeout(timeoutId)
         }
+    }, [])
+
+    useEffect(() => {
+        const syncFullscreenState = () => {
+            setIsFullscreen(document.fullscreenElement === mapShellRef.current)
+        }
+
+        document.addEventListener('fullscreenchange', syncFullscreenState)
+        return () => {
+            document.removeEventListener('fullscreenchange', syncFullscreenState)
+        }
+    }, [])
+
+    const toggleFullscreen = useCallback(async () => {
+        const mapShellNode = mapShellRef.current
+        if (!mapShellNode || !document.fullscreenEnabled) return
+
+        if (document.fullscreenElement === mapShellNode) {
+            await document.exitFullscreen()
+            return
+        }
+
+        await mapShellNode.requestFullscreen()
     }, [])
 
     // Map handler manages view state, active layer, animation time, and related logic
@@ -193,7 +218,7 @@ function MapPage({ filters }) {
                 </div>
             </header>
             <div className="page-card__body">
-                <div className="map-shell">
+                <div ref={mapShellRef} className="map-shell">
                     <DeckGL
                         viewState={viewState}
                         onViewStateChange={handleViewStateChange}
@@ -203,6 +228,20 @@ function MapPage({ filters }) {
                         getCursor={getCursor}
                         getTooltip={({ object }) => Tooltip({ object, activeLayer })}
                     />
+                    <button
+                        type="button"
+                        className="map-fullscreen-button"
+                        onClick={toggleFullscreen}
+                        title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+                        aria-label={isFullscreen ? 'Exit full screen map' : 'Enter full screen map'}
+                    >
+                        <span className="map-fullscreen-button__icon" aria-hidden="true">
+                            <i className={`fa-solid ${isFullscreen ? 'fa-compress' : 'fa-expand'}`} />
+                        </span>
+                        <span className="map-fullscreen-button__text">
+                            {isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+                        </span>
+                    </button>
                     {shouldShowMapUi && (
                         <MapController
                             activeLayer={activeLayer}
