@@ -85,7 +85,7 @@ def _filter_files(available_files: list, current_coverage: list, start_date: str
         
         # If the file is fully covered by existing files, skip it
         if is_covered:
-            print(f"File {f} is already covered by existing files, skipping.")
+            print(f"[DOWNLOAD] {f} already covered, skipping")
             continue
 
         # If the start value is set and the file ends before the start value, skip it
@@ -97,7 +97,7 @@ def _filter_files(available_files: list, current_coverage: list, start_date: str
         # If the file passes all filters, add it to the list of filtered files
         filtered_files.append(f)
 
-    print(f"Selected {len(filtered_files)} files")
+    print(f"[DOWNLOAD] Selected {len(filtered_files)} files")
     return filtered_files
 
 def _find_available_files(base_data_url: str) -> list[str]:
@@ -108,7 +108,7 @@ def _find_available_files(base_data_url: str) -> list[str]:
     Returns:
         list: A list of file keys available in the S3 bucket.
     """
-    print(f"Finding available files in S3 bucket at {base_data_url}...")
+    print(f"[DOWNLOAD] Finding files in S3 at {base_data_url}...")
     # Get S3 bucket index
     response = _get_response(base_data_url)
     
@@ -122,7 +122,7 @@ def _find_available_files(base_data_url: str) -> list[str]:
         if key.endswith(".zip"):
             files.append(key)
 
-    print(f"Found {len(files)} files")
+    print(f"[DOWNLOAD] Found {len(files)} files")
     return files
 
 def _clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
@@ -161,7 +161,7 @@ def _clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
 
 def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFrame:
     """Download and process a single ZIP file in one streaming operation."""
-    print(f"Downloading {file_key}...")
+    print(f"[DOWNLOAD] Downloading {file_key}...")
     # Check if the file exists in the S3 bucket before attempting to download
     response = requests.get(base_data_url + file_key, stream=True)
     response.raise_for_status()
@@ -200,8 +200,8 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
                 )
     
     print()  # New line after progress is complete
-    print(f"Finished downloading {file_key}")
-    print("Extracting CSV files from ZIP content...")
+    print(f"[DOWNLOAD] Finished {file_key}")
+    print("[PROCESS] Extracting CSV files from ZIP...")
     
     # Process the ZIP content directly from the buffer
     buffer.seek(0)
@@ -211,7 +211,7 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
         for name in zip_file.namelist():
             if name.endswith(".csv"):
                 csv_name = os.path.basename(name)
-                print(f"Reading {csv_name}...")
+                print(f"[PROCESS] Reading {csv_name}")
                 with zip_file.open(name) as source:
                     csv_frames.append(
                         pl.read_csv(
@@ -225,10 +225,10 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
                     )
     
     if not csv_frames:
-        print("No CSV files found in ZIP.")
+        print("[WARN] No CSV files found in ZIP")
         return pl.DataFrame()
     
-    print(f"Extracted {len(csv_frames)} CSV files from ZIP, combining into a single DataFrame...")
+    print(f"[PROCESS] Extracted {len(csv_frames)} CSV files, combining...")
     return pl.concat(csv_frames, how="diagonal_relaxed")
 
 def download_ride_data(start_date: str, end_date: str, download_jc: bool, current_coverage: list[int]):
@@ -246,9 +246,9 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool, curren
     for f in filtered_files:
         trip_data = _download_and_process_file(f, BASE_URL_RIDE_DATA)
 
-        print("Starting data cleaning...")
+        print("[PROCESS] Cleaning data...")
         trip_data = _clean_rides_data(trip_data)
-        print("Data cleaning completed.")
+        print("[PROCESS] Data cleaning complete")
 
         # Extract year and month from cleaned datetime column (REQUIRED for partitioning by year and month in parquet output)
         # Note: this information must be extracted from the ended_at column, not the started_at column, because some files are partitioned by end date rather than start date
@@ -271,7 +271,7 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool, curren
             partition_by=["year", "month"],
             compression=PARQUET_COMPRESSION)
 
-        print(f"Wrote {trip_data.height} rows to {RIDES_DATA_DIR} for file {f}")
+        print(f"[PROCESS] Wrote {trip_data.height} rows → {RIDES_DATA_DIR} ({f})")
 
         for year, month in trip_data.select(["year", "month"]).unique().rows():
             yield year, month

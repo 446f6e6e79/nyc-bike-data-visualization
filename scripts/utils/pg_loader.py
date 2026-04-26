@@ -32,14 +32,14 @@ def init_db(conn) -> None:
 	with conn.cursor() as cur:
 		for sql_file in schema_files:
 			cur.execute(sql_file.read_text())
-			print(f"Applied schema file: {sql_file.name}")
+			print(f"[DB] Applied schema: {sql_file.name}")
 	conn.commit()
-	print(f"Database schema initialised from {schema_dir}.")
+	print("[DB] Schema initialised")
 
 def load_stats_for_month(conn, year: int, month: int) -> None:
 	"""Precompute and insert all stats tables for a single calendar month.."""
 	
-	print(f"Precomputing stats for {year}-{month:02d}...")
+	print(f"[DB] Loading {year}-{month:02d}...")
 	partition_path = RIDES_DATA_DIR / f"year={year}" / f"month={month}"
 	rides_lf = pl.scan_parquet(str(partition_path / "*.parquet"))
 
@@ -47,24 +47,24 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 	if STATION_DISTANCES_PATH.exists():
 		rides_lf = enrich_with_distances(rides_lf, pl.scan_parquet(str(STATION_DISTANCES_PATH)))
 	else:
-		print(f"Warning: {STATION_DISTANCES_PATH} not found, skipping distance enrichment.")
+		print(f"[WARN] {STATION_DISTANCES_PATH} not found, skipping distance enrichment")
 		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Float32).alias("distance_km"))
 
     # Collect the enriched rides data into memory for aggregation and insertion
 	rides = rides_lf.collect()
-	print(f"  {len(rides)} rides — computing aggregations...")
+	print(f"[PROCESS] {len(rides)} rides — computing aggregations")
 
 	insert_stats_hourly(conn, rides)
 	insert_station_activity_hourly(conn, rides)
 	insert_station_activity_preagg(conn, rides)
 	insert_flow_activity_monthly(conn, rides)
 	conn.commit()
-	print(f"  Done — {year}-{month:02d} committed.")
+	print(f"[DB] {year}-{month:02d} committed")
 
 def load_weather_hourly(conn) -> None:
 	"""Load hourly weather parquet data into weather_hourly table."""
 	if not WEATHER_DATA_DIR.exists() or not any(WEATHER_DATA_DIR.rglob("*.parquet")):
-		print(f"Warning: No weather data found in {WEATHER_DATA_DIR}, skipping weather_hourly load.")
+		print(f"[WARN] No weather data found in {WEATHER_DATA_DIR}, skipping")
 		return
 
 	weather_df = pl.scan_parquet(str(WEATHER_DATA_DIR / "**/*.parquet"), hive_partitioning=True).collect()

@@ -97,11 +97,11 @@ def _effective_date_range(conn, requested_start: str, requested_end: str) -> tup
     
     if effective_start > _next(db_max_ym):
         effective_start = _next(db_max_ym)
-        print(f"Expanding start date from {requested_start} to {effective_start} to fill coverage gap.")
+        print(f"[PROCESS] Expanding start date {requested_start} → {effective_start} to fill coverage gap")
 
     if  effective_end < _prev(db_min_ym):
         effective_end = _prev(db_min_ym)
-        print(f"Expanding end date from {requested_end} to {effective_end} to fill coverage gap.")
+        print(f"[PROCESS] Expanding end date {requested_end} → {effective_end} to fill coverage gap")
 
     return str(effective_start), str(effective_end)
 

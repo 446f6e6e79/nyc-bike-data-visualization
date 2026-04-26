@@ -75,9 +75,9 @@ def download_bike_routes(force_download: bool = False) -> pl.DataFrame:
 
     Returns the cleaned DataFrame (from cache or fresh download) for DB insertion.
     """
-    print("Downloading bike route data...")
+    print("[DOWNLOAD] Downloading bike routes...")
     if not force_download and _check_bike_routes_cache():
-        print(f"Bike routes data already exists at {BIKE_ROUTES_PATH} and is fresh, skipping download.")
+        print(f"[DOWNLOAD] Bike routes already fresh at {BIKE_ROUTES_PATH}, skipping")
         return pl.read_parquet(BIKE_ROUTES_PATH)
 
     df = _fetch_bike_routes_csv()
@@ -88,6 +88,6 @@ def download_bike_routes(force_download: bool = False) -> pl.DataFrame:
         statistics=True,           # enables min/max skipping
         compression=PARQUET_COMPRESSION,
     )
-    print(f"Downloaded and saved bike route data to {BIKE_ROUTES_PATH}")
+    print(f"[PROCESS] Wrote bike routes → {BIKE_ROUTES_PATH}")
     return df
     

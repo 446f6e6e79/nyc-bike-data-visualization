@@ -47,7 +47,7 @@ def compute_and_save_station_distances(force_download: bool = False) -> None:
     """
     # If the distances file already exists and is fresh, skip recomputation to save time
     if not force_download and _check_freshness(Path(STATION_DISTANCES_PATH)):
-        print(f"Station distances file already exists at {STATION_DISTANCES_PATH}, skipping recomputation.")
+        print(f"[PROCESS] Station distances already exist at {STATION_DISTANCES_PATH}, skipping")
         return
     # Fetch raw station data
     raw_stations = fetch_station_data()[0]
@@ -68,7 +68,7 @@ def compute_and_save_station_distances(force_download: bool = False) -> None:
 
     pair_rows = []
 
-    print(f"Computing station-pair distances for {len(stations)} stations")
+    print(f"[PROCESS] Computing distances for {len(stations)} stations...")
     # Each station is paired with every station that comes after it in the list to avoid duplicate pairs (A-B and B-A) and self-pairs (A-A)
     for i, station_a in enumerate(stations):
         for station_b in stations[i + 1 :]:
@@ -92,7 +92,7 @@ def compute_and_save_station_distances(force_download: bool = False) -> None:
         statistics=True,           # enables min/max skipping
         compression=PARQUET_COMPRESSION,
     )
-    print(f"Wrote {distances_df.height} station-pair distances to {STATION_DISTANCES_PATH}")
+    print(f"[PROCESS] Wrote {distances_df.height} station distances → {STATION_DISTANCES_PATH}")
 
 def enrich_with_distances(rides: pl.LazyFrame, distances: pl.LazyFrame) -> pl.LazyFrame:
     """"""

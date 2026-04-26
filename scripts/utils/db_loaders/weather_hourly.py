@@ -13,7 +13,7 @@ def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
             - wind_speed_10m (float)
     """
     if weather_df.is_empty():
-        print("    weather_hourly: 0 rows upserted")
+        print("[DB-LOAD: weather_hourly] 0 rows upserted")
         return
 
     weather_hourly = (

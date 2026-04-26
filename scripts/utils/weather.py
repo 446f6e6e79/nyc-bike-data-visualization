@@ -63,7 +63,7 @@ def download_weather_data(min_date: str, max_date: str) -> None:
     # Determine the actual date range to retrieve based on provided min and max dates
     start_date, end_date = _get_date_range(min_date, max_date)
 
-    print(f"Downloading weather data from {start_date.isoformat()} to {end_date.isoformat()}...")
+    print(f"[DOWNLOAD] Downloading weather {start_date.isoformat()} → {end_date.isoformat()}...")
 
     response = requests.get(
         WEATHER_API_URL,
@@ -90,4 +90,4 @@ def download_weather_data(min_date: str, max_date: str) -> None:
         partition_by=["year"],          
         compression=PARQUET_COMPRESSION,
     )
-    print(f"Wrote {weather_data.height} hourly weather rows to {WEATHER_DATA_DIR}")
+    print(f"[PROCESS] Wrote {weather_data.height} weather rows → {WEATHER_DATA_DIR}")
