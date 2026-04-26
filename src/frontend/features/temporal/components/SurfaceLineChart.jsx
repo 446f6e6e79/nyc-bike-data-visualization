@@ -9,6 +9,7 @@ import {
     FONT_MONO,
     RULE,
     RULE_STRONG,
+    FONT_DISPLAY,
 } from "../../../utils/editorialTokens.js";
 
 function sortRowsByDate(rows = []) {
@@ -135,7 +136,7 @@ function SurfaceLineChart({
                                 type: "date",
                                 title: {
                                     text: "Date",
-                                    font: { family: FONT_MONO, size: 11, color: INK_MUTED },
+                                    font: { family: FONT_DISPLAY, size: 11, color: INK_MUTED },
                                 },
                                 tickfont: { family: FONT_MONO, size: 10, color: INK_MUTED },
                                 // gridcolor: RULE,
@@ -145,7 +146,7 @@ function SurfaceLineChart({
                             yaxis: {
                                 title: {
                                     text: metric.label,
-                                    font: { family: FONT_MONO, size: 11, color: INK_MUTED },
+                                    font: { family: FONT_DISPLAY, size: 11, color: INK_MUTED },
                                 },
                                 tickfont: { family: FONT_MONO, size: 10, color: INK_MUTED },
                                 // gridcolor: RULE,
@@ -158,7 +159,6 @@ function SurfaceLineChart({
                                 namelength: -1,
                                 font: { family: FONT_MONO, size: 11, color: "#fbf8f2" },
                             },
-                            dragmode: false,
                         }}
                         config={{
                             displayModeBar: false,
