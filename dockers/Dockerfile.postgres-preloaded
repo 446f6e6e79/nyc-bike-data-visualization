@@ -1,6 +1,6 @@
 FROM postgres:16-alpine
 
-COPY scripts/postgre/init/ /docker-entrypoint-initdb.d/
+COPY postgres/init/ /docker-entrypoint-initdb.d/
 RUN sed -i 's/\r//' /docker-entrypoint-initdb.d/*.sh
 
 # Pre-seeded data dump (schema + data), restored automatically on first start with an empty volume.

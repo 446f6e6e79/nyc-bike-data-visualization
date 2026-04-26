@@ -139,7 +139,7 @@ def main():
     # Connect to Postgres
     conn = psycopg2.connect(os.environ["DATABASE_URL"])
 
-    # Initialise the database schema from scripts/postgre/schemas/*.sql
+    # Initialise the database schema from postgres/schemas/*.sql
     init_db(conn)
     upsert_station_metadata_from_gbfs(conn)
 
