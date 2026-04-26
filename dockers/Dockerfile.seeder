@@ -7,9 +7,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app:/app/scripts
 
-# Build-time defaults for seeding parameters — override with --build-arg at build time,
-# or with -e / environment: at runtime.
-ARG DATA_START_DATE=202501
+# Optional seeding parameters, can be provided via build args or runtime env vars.
+ARG DATA_START_DATE
 ARG DATA_END_DATE
 ARG DOWNLOAD_JC
 ENV DATA_START_DATE=${DATA_START_DATE} \

@@ -21,8 +21,8 @@ services:
     build:                                                      # Build the seeder image from the specified context and Dockerfile
       context: .
       dockerfile: dockers/Dockerfile.seeder
-      args:
-        DATA_START_DATE: ${DATA_START_DATE:-202501}
+      args:                                                     # Build arguments for the seeder image
+        DATA_START_DATE: ${DATA_START_DATE:-}
         DATA_END_DATE: ${DATA_END_DATE:-}
         DOWNLOAD_JC: ${DOWNLOAD_JC:-}
     container_name: NYC-Bike-Visualisation-Seeder
