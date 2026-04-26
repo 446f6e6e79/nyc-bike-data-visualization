@@ -21,7 +21,7 @@ def init_db(conn) -> None:
 	Args:
 		conn: psycopg2 connection object to the target database
 	"""
-	schema_dir = __import__("pathlib").Path(__file__).resolve().parents[1] / "postgre" / "schemas"
+	schema_dir = __import__("pathlib").Path(__file__).resolve().parents[2] / "postgres" / "schemas"
 	
     # Get all files in the schema directory, sorted alphabetically 
 	schema_files = sorted(schema_dir.glob("*.sql"))
