@@ -129,6 +129,8 @@ def main():
     if args.end_date and int(args.end_date) > int(current_yyyymm):
         raise ValueError("--end-date cannot be in the future")
     
+    print(f"[INFO] Using date range {args.start_date} to {args.end_date}, download JC files: {args.download_jc}, force download: {args.force_download}")
+
     # Create the download directory if it doesn't exist
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(RIDES_DATA_DIR, exist_ok=True)
@@ -146,6 +148,8 @@ def main():
     # Expand date range if needed to fill any gap with existing DB coverage
     start_date, end_date = _effective_date_range(conn, args.start_date, args.end_date)
 
+    print(f"[INFO] Effective date range for processing: {start_date} to {end_date}")
+    
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances(force_download=args.force_download)
 
