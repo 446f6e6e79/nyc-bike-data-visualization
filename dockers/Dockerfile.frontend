@@ -2,10 +2,13 @@ FROM node:20-alpine
 
 WORKDIR /app/src/frontend
 
+# Setup installation of dependencies, excluding those specified in the excluded-packages.txt
 COPY src/frontend/package*.json /app/src/frontend/
 RUN npm ci
 
+# Copy the frontend source code to the container and build the application
 COPY src/frontend/ /app/src/frontend/
 RUN npm run build
 
+# Command to start the Vite preview server, specifying the host and port, and preventing it from opening a browser
 CMD ["node_modules/.bin/vite", "preview", "--host", "0.0.0.0", "--port", "5173", "--no-open"]

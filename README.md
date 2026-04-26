@@ -81,7 +81,7 @@ cd nyc-bike-data-visualization
 docker compose up --build
 ```
 
-> **First run:** the backend downloads and processes the Citi Bike dataset automatically before starting. This can take several minutes  depending on your connection. Subsequent starts are fast because the data is persisted in a Docker volume.
+> **First run:** a dedicated seeder service downloads and processes the Citi Bike dataset before the backend starts. This can take several minutes depending on your connection. Subsequent starts are fast because the data is persisted in a Docker volume.
 
 **Subsequent runs** (images already built, data already on volume):
 
@@ -97,13 +97,13 @@ docker compose down
 
 > Use `docker compose down -v` only if you want to wipe the database and downloaded data entirely and start fresh.
 
-**Customise the date range** (optional) — by default the backend downloads data starting from January 2025. Override via environment variables before running:
+**Customise the date range** (optional) — by default the seeder downloads data starting from January 2025. The date range is **baked into the image at build time**, so you must pass the variables together with `--build`:
 
 | Variable | Description | Example |
 |---|---|---|
 | `DATA_START_DATE` | Start month in `YYYYMM` format | `202501` |
 | `DATA_END_DATE` | End month in `YYYYMM` format | `202603` |
-| `DOWNLOAD_JC` | Set to true to include Jersey City data | `true` |
+| `DOWNLOAD_JC` | Set to `true` to include Jersey City data | `true` |
 
 Inline (Linux/macOS):
 
@@ -124,6 +124,8 @@ DATA_START_DATE=202401
 DATA_END_DATE=202412
 # DOWNLOAD_JC=true
 ```
+
+> **Note:** Setting these variables without `--build` has no effect. The date range is fixed in the already-built seeder image. To change the range after a previous build, always pass `--build` to rebuild the seeder image.
 
 ### Useful terminal checks
 
@@ -146,7 +148,7 @@ export DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike
 python scripts/download_data.py
 ```
 
-Database schema initialization in `scripts/download_data.py` executes ordered files from `scripts/postgre/schemas/`. For manual `psql` bootstrap, use `scripts/postgre/init.sql`.
+Database schema initialization in `scripts/download_data.py` executes ordered files from `postgre/schemas/`. For manual `psql` bootstrap, use `postgre/init.sql`.
 
 The available options for the script are:
 

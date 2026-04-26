@@ -4,7 +4,17 @@ WORKDIR /app
 
 # Set environment variables to prevent Python from writing .pyc files and to ensure that output is not buffered
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app:/app/scripts
+
+# Build-time defaults for seeding parameters — override with --build-arg at build time,
+# or with -e / environment: at runtime.
+ARG DATA_START_DATE=202501
+ARG DATA_END_DATE
+ARG DOWNLOAD_JC
+ENV DATA_START_DATE=${DATA_START_DATE} \
+    DATA_END_DATE=${DATA_END_DATE} \
+    DOWNLOAD_JC=${DOWNLOAD_JC}
 
 # Copy the requirements and excluded packages list to the container
 COPY requirements.txt /app/requirements.txt
@@ -16,8 +26,10 @@ RUN awk -F'==' 'NR==FNR { excluded[$1]=1; next } !($1 in excluded)' \
     && pip install --no-cache-dir -r /tmp/requirements.docker.txt \
     && rm /tmp/requirements.docker.txt /tmp/excluded-packages.txt
 
-# Copy the application code to the container
+# Copy the application code and scripts to the container
+COPY scripts/ /app/scripts/
 COPY src/backend /app/src/backend
+COPY postgre/ /app/postgre/
 
-# Command to run the application using Uvicorn, specifying the host and port
-CMD ["uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run the data download script
+CMD ["sh", "-c", "python /app/scripts/download_data.py ${DATA_START_DATE:+--start-date $DATA_START_DATE} ${DATA_END_DATE:+--end-date $DATA_END_DATE} ${DOWNLOAD_JC:+--download-jc}"]

@@ -1,20 +1,19 @@
 name: Docker Release Pipeline
 
+# At the release of a new version, this workflow builds and pushes Docker images for all services 
 on:
-  # ONLY triggers when a new release is published
   release:
     types: [published]
 
-# Environment variables for the workflow
+# Define environment variables for the workflow
 env:
-  # This forces the use of Node 24 for compatibility 
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true                                         
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/nyc-bike-data-visualisation
-  PLATFORMS: linux/amd64,linux/arm64
+  PLATFORMS: linux/amd64,linux/arm64                   # Define the platforms for multi-architecture builds
 
 jobs:
-  build-and-push-images:
+  build:                                               # Builds and pushes Docker images for all services, and generates a release-specific docker-compose file
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -33,19 +32,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up QEMU                
+      - name: Set up QEMU                               # Set up QEMU for building multi-architecture images
         uses: docker/setup-qemu-action@v3
         with:
           platforms: ${{ env.PLATFORMS }}
 
-      - name: Set up Docker Buildx            
+      - name: Set up Docker Buildx                      # Set up Docker Buildx for advanced build capabilities
         uses: docker/setup-buildx-action@v3
-      
-      # Extract the release tag from the GitHub event context
-      - name: Extract release tag
+
+      - name: Extract release tag                       # Extract the tag name from the GitHub release event and set it as an output for use in subsequent steps                     
         id: tag
         run: echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-       
+
       - name: Build and push postgres image
         uses: docker/build-push-action@v6
         with:
@@ -56,6 +54,19 @@ jobs:
           tags: |
             ${{ env.IMAGE_PREFIX }}-postgres:${{ steps.tag.outputs.value }}
             ${{ env.IMAGE_PREFIX }}-postgres:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push seeder image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockers/Dockerfile.seeder
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-seeder:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE_PREFIX }}-seeder:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -85,57 +96,28 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Generate versioned docker-compose for release
+      - name: Generate docker-compose.release.yml
         env:
           TAG: ${{ steps.tag.outputs.value }}
-          IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
+          PREFIX: ${{ env.IMAGE_PREFIX }}
         run: |
-          set -euo pipefail
-          echo "Generating docker-compose.release.yml with pinned image tags."
-          pip install pyyaml -q
-          python3 - << 'EOF'
-          import os, yaml
+          yq eval "
+            .services.postgres.image = strenv(PREFIX) + \"-postgres:\" + strenv(TAG) |
+            .services.seeder.image   = strenv(PREFIX) + \"-seeder:\"   + strenv(TAG) |
+            .services.backend.image  = strenv(PREFIX) + \"-backend:\"  + strenv(TAG) |
+            .services.frontend.image = strenv(PREFIX) + \"-frontend:\" + strenv(TAG) |
+            del(.services.*.build)
+          " docker-compose.yml > docker-compose.release.yml
 
-          tag = os.environ["TAG"]
-          prefix = os.environ["IMAGE_PREFIX"]
-
-          image_map = {
-              "dockers/Dockerfile.backend":  f"{prefix}-backend:{tag}",
-              "dockers/Dockerfile.frontend": f"{prefix}-frontend:{tag}",
-              "dockers/Dockerfile.postgres": f"{prefix}-postgres:{tag}",
-          }
-
-          with open("docker-compose.yml") as f:
-              compose = yaml.safe_load(f)
-
-          for svc in compose["services"].values():
-              build = svc.pop("build", {})
-              dockerfile = build.get("dockerfile")
-              if dockerfile in image_map:
-                  svc["image"] = image_map[dockerfile]
-
-          with open("docker-compose.release.yml", "w") as f:
-              yaml.dump(compose, f, default_flow_style=False, sort_keys=False)
-
-          print("docker-compose.release.yml generated.")
-          EOF
-
-      - name: Verify release assets exist
-        run: |
-          set -euo pipefail
-          test -s docker-compose.release.yml || { echo "docker-compose.release.yml is missing or empty!"; exit 1; }
-          echo "Release assets verified."
-      # Once the docker-compose file is generated and verified, we can attach it to the GitHub Release
       - name: Attach assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.value }}
           name: Data Visualisation Docker Release ${{ steps.tag.outputs.value }}
-          files: |
-            docker-compose.release.yml
+          files: docker-compose.release.yml
 
-  fill-postgres:
-    needs: build-and-push-images
+  seed:                                          # Seeds the database with initial data using the seeder image
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -160,45 +142,53 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Start postgres container for seeding
+      - name: Start postgres container for seeding              # Start a PostgreSQL container 
         run: |
           docker run -d --name pg \
             -e POSTGRES_DB=citibike \
             -e POSTGRES_USER=citibike \
             -e POSTGRES_PASSWORD=citibike \
-            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build-and-push-images.outputs.tag }}
+            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build.outputs.tag }}
           until docker exec pg pg_isready -U citibike -d citibike; do
             echo "Waiting for postgres..."; sleep 3
           done
 
-      - name: Download and seed default dataset
+      - name: Seed default dataset                              # Run the seeder container with the appropriate environment variables and network settings to seed the database
         timeout-minutes: 120
         run: |
           docker run --rm \
             --network container:pg \
             -e DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike \
-            ${{ env.IMAGE_PREFIX }}-backend:${{ needs.build-and-push-images.outputs.tag }} \
-            python /app/scripts/download_data.py
+            ${{ env.IMAGE_PREFIX }}-seeder:${{ needs.build.outputs.tag }}
 
-      - name: Export database dump
+      - name: Export database dump                              # After seeding, export the database dump in a compressed format
         run: |
           docker exec pg pg_dump -U citibike --no-owner --no-privileges citibike \
             | gzip > citibike_data.sql.gz
           echo "Dump size: $(du -sh citibike_data.sql.gz | cut -f1)"
 
-      - name: Stop and remove postgres container
+      - name: Stop and remove postgres container                # Remove the PostgreSQL container used for seeding
         if: always()
         run: docker rm -f pg
 
-      - name: Build and push preloaded postgres image
+      - name: Prepare preloaded Dockerfile                      # Create a new PostgreSQL for multi-arch build that includes the seeded data by copying the initialization scripts and the database dump into a new Dockerfile based on the official PostgreSQL image
+        run: |
+          cat > /tmp/Dockerfile.preloaded << 'EOF'
+          FROM postgres:16-alpine
+          COPY postgre/init/ /docker-entrypoint-initdb.d/
+          RUN sed -i 's/\r//' /docker-entrypoint-initdb.d/*.sh
+          COPY citibike_data.sql.gz /docker-entrypoint-initdb.d/99_citibike_data.sql.gz
+          EOF
+
+      - name: Build and push preloaded postgres image           # Build and push a new PostgreSQL image 
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: dockers/Dockerfile.postgres-preloaded
+          file: /tmp/Dockerfile.preloaded
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build-and-push-images.outputs.tag }}
+            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build.outputs.tag }}
             ${{ env.IMAGE_PREFIX }}-postgres:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

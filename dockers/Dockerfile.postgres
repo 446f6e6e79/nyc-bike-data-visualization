@@ -1,6 +1,6 @@
 FROM postgres:16-alpine
 
-COPY postgres/init/ /docker-entrypoint-initdb.d/
+COPY postgre/init/ /docker-entrypoint-initdb.d/
 
-# Remove carriage return characters from the initialization scripts to ensure they run correctly in the Unix environment
+# Initialize the database with the provided SQL scripts
 RUN sed -i 's/\r//' /docker-entrypoint-initdb.d/*.sh
