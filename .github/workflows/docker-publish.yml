@@ -99,13 +99,14 @@ jobs:
         env:
           TAG: ${{ steps.tag.outputs.value }}
           PREFIX: ${{ env.IMAGE_PREFIX }}
-        run: |
+        run: |                                          # Remove build instructions and seeder service from the original docker-compose.yml
           yq eval "
             .services.postgres.image = strenv(PREFIX) + \"-postgres:\" + strenv(TAG) |
-            .services.seeder.image   = strenv(PREFIX) + \"-seeder:\"   + strenv(TAG) |
             .services.backend.image  = strenv(PREFIX) + \"-backend:\"  + strenv(TAG) |
             .services.frontend.image = strenv(PREFIX) + \"-frontend:\" + strenv(TAG) |
-            del(.services.*.build)
+            del(.services.seeder) |           
+            del(.services.*.build) |
+            del(.services.backend.depends_on.seeder)
           " docker-compose.yml > docker-compose.release.yml
 
       - name: Attach assets to GitHub Release
@@ -191,6 +192,21 @@ jobs:
             ${{ env.IMAGE_PREFIX }}-postgres:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Remove seeder image                                # Clean up the seeder image — data is now baked into the preloaded postgres image
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.build.outputs.tag }}"
+          OWNER="${{ github.repository_owner }}"
+          PACKAGE="nyc-bike-data-visualisation-seeder"
+          for SCOPE in "users/$OWNER" "orgs/$OWNER"; do
+            ID=$(gh api "$SCOPE/packages/container/$PACKAGE/versions" 2>/dev/null \
+              --jq ".[] | select(.metadata.container.tags[] == \"$TAG\") | .id" || true)
+            [ -z "$ID" ] && continue
+            gh api --method DELETE "$SCOPE/packages/container/$PACKAGE/versions/$ID" && break
+          done
 
       - name: Remove temporary unseeded postgres image          # Clean up the intermediate unseeded image pushed by the build job
         if: always()
