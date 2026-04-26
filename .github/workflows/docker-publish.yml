@@ -115,8 +115,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  build-postgres:                   # Build and push unseeded postgres image on release
-    if: github.event_name == 'release'
+  build-postgres:                   # Build and push unseeded postgres image (release + monthly reseed)
+    if: github.event_name == 'release' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs: prepare
     runs-on: ubuntu-latest
     permissions:
@@ -153,8 +153,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  build-seeder:                     # Build and push seeder image on release
-    if: github.event_name == 'release'
+  build-seeder:                     # Build and push seeder image (release + monthly reseed)
+    if: github.event_name == 'release' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs: prepare
     runs-on: ubuntu-latest
     permissions:
