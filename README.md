@@ -45,7 +45,7 @@ Note: The image is built with the script `scripts/download_data.py` included wit
 The easiest way to run the application is to use the pre-built images from the latest release.
 No need to clone the repository or build anything, Docker will automatically pull the correct image for your architecture (linux/amd64, linux/arm64).
 
-> **Default data range:** The images are built filled with default data starting from January 2025 to the last month released before the build date. If you want to customise the date range, please refer to the "Customise the date range" section below.
+> **Default data range:** The images are built filled with default data starting from January 2020 to the last month updated. If you want to customise the date range, please refer to the "Quick start from source" section below.
 
 **1. Download `docker-compose.release.yml` from the [latest release](https://github.com/446f6e6e79/nyc-bike-data-visualization/releases/latest)**
 
@@ -69,7 +69,9 @@ docker-compose -f docker-compose.release.yml up
 docker compose -f docker-compose.release.yml down
 ```
 
-Note: You can also run it from the Docker Desktop built-in terminal in the same way.
+>**Note**: You can also run it from the Docker Desktop built-in terminal in the same way.
+
+> **Note:** In case the first run fails due to unhealthy containers (e.g. if the backend starts before the database is ready), simply run `docker compose -f docker-compose.release.yml up` again.
 
 ### Quick start from source
 
@@ -97,24 +99,24 @@ docker compose down
 
 > Use `docker compose down -v` only if you want to wipe the database and downloaded data entirely and start fresh.
 
-**Customise the date range** (optional) — by default the seeder downloads data starting from January 2025. The date range is **baked into the image at build time**, so you must pass the variables together with `--build`:
+**Customise the date range** (optional) — by default the seeder downloads data starting from January 2020. The date range is **baked into the image at build time**, so you must pass the variables together with `--build`:
 
 | Variable | Description | Example |
 |---|---|---|
-| `DATA_START_DATE` | Start month in `YYYYMM` format | `202501` |
-| `DATA_END_DATE` | End month in `YYYYMM` format | `202603` |
+| `DATA_START_DATE` | Start month in `YYYYMM` format | `202001` |
+| `DATA_END_DATE` | End month in `YYYYMM` format | `202112` |
 | `DOWNLOAD_JC` | Set to `true` to include Jersey City data | `true` |
 
 Inline (Linux/macOS):
 
 ```bash
-DATA_START_DATE=202512 DATA_END_DATE=202603 docker compose up --build
+DATA_START_DATE=202001 DATA_END_DATE=202112 docker compose up --build
 ```
 
 On Windows (PowerShell):
 
 ```powershell
-$env:DATA_START_DATE="202512"; $env:DATA_END_DATE="202603"; docker compose up --build
+$env:DATA_START_DATE="202001"; $env:DATA_END_DATE="202112"; docker compose up --build
 ```
 
 Or create a `.env` file in the repository root (Docker Compose picks it up automatically):
