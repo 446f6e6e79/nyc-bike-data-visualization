@@ -9,6 +9,9 @@ import {
 // so the click target and its connections read as one visual group.
 const STATION_COLOR_DEFAULT = INK_MUTED_RGB       // [110, 106, 98]
 const STATION_COLOR_SELECTED = WARM_HIGHLIGHT_RGB // [229, 140, 43]
+const STATION_RADIUS_BASE = 24
+const STATION_RADIUS_HOVER_MULTIPLIER = 2
+const STATION_RADIUS_MAX = 140
 
 /**
  * Creates a scatterplot layer for displaying all available stations as blue dots in trip flow view.
@@ -17,30 +20,55 @@ const STATION_COLOR_SELECTED = WARM_HIGHLIGHT_RGB // [229, 140, 43]
  * @param {Function} onStationPick - Click handler for station points.
  * @returns {ScatterplotLayer}
  */
-export function createTripStationsLayer({ stations, selectedStationIds = [], onStationPick }) {
+export function createTripStationsLayer({
+    stations,
+    selectedStationIds = [],
+    hoveredStationId = null,
+    onStationPick,
+    onStationHover,
+}) {
     const selectedStationIdSet = new Set(selectedStationIds)
+    const getBaseRadius = () => STATION_RADIUS_BASE
 
     return new ScatterplotLayer({
-    id: 'trip-flow-stations-layer',
-    data: stations,
-    getPosition: (d) => [d.longitude, d.latitude],
-    getRadius: 20,    // Radius in meters
-    getFillColor: (d) => selectedStationIdSet.has(d.id) ? STATION_COLOR_SELECTED : STATION_COLOR_DEFAULT,
-    getLineColor: [255, 255, 255],
-    lineWidthMinPixels: 1,
-    stroked: true,
-    filled: true,
-    radiusUnits: 'meters',      // Use meters to keep consistency across zoom levels
-    radiusMinPixels: 4,         // Minimum radius in pixels to ensure visibility at low zoom levels
-    radiusMaxPixels: 80,        // Maximum radius in pixels to prevent excessive size at high zoom levels
-    pickable: true,
-    onClick: onStationPick,
-    updateTriggers: {
-        getFillColor: [selectedStationIds],
-    },
-})
+        id: 'trip-flow-stations-layer',
+        data: stations,
+        getPosition: (d) => [d.longitude, d.latitude],
+        getRadius: (d) => {
+            const baseRadius = getBaseRadius(d)
+            if (d.id !== hoveredStationId) return baseRadius
+            return Math.min(baseRadius * STATION_RADIUS_HOVER_MULTIPLIER, STATION_RADIUS_MAX)
+        },
+        getFillColor: (d) => (selectedStationIdSet.has(d.id) || d.id === hoveredStationId)
+            ? STATION_COLOR_SELECTED
+            : STATION_COLOR_DEFAULT,
+        getLineColor: [255, 255, 255],
+        lineWidthMinPixels: 1,
+        stroked: true,
+        filled: true,
+        radiusUnits: 'meters',
+        radiusMinPixels: 4,
+        radiusMaxPixels: 60,
+        pickingRadius: 12,
+        pickable: true,
+        onClick: onStationPick,
+        onHover: onStationHover,
+        transitions: {
+            getRadius: {
+                duration: 220,
+                easing: (t) => t * t * (3 - 2 * t),
+            },
+            getFillColor: {
+                duration: 180,
+            },
+        },
+        updateTriggers: {
+            getFillColor: [selectedStationIds, hoveredStationId],
+            getRadius: [hoveredStationId],
+        },
+    })
 }
 
 export function tripStationTooltip(object) {
-    return object.name ?? 'Unknown Station'
+    return `Station: ${object.name}` ?? 'Unknown Station'
 }

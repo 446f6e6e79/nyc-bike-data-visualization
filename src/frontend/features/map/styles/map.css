@@ -396,6 +396,10 @@
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
   }
 
+  .map-reset-button-wrap {
+    @apply relative inline-flex;
+  }
+
   .map-reset-button-icon {
     @apply inline-flex items-center justify-center w-4 h-4 text-[13px] text-white;
   }
@@ -410,6 +414,20 @@
 
   .map-reset-button:disabled:hover {
     @apply bg-ink;
+  }
+
+  .map-reset-tooltip {
+    @apply pointer-events-none fixed z-50 whitespace-nowrap font-mono text-[11px]
+           text-white/90 px-2 py-1 border border-rule-invert bg-ink;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 0%);
+    transition: opacity 120ms ease, visibility 120ms ease;
+  }
+
+  .map-reset-tooltip.is-visible {
+    opacity: 1;
+    visibility: visible;
   }
 
   .map-error {

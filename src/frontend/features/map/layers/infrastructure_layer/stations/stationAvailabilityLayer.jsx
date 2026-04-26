@@ -52,8 +52,7 @@ function getStationColor(health) {
  * @returns {string} A formatted string with station information for the tooltip.
  */
 export function stationAvailabilityTooltip( object ) {
-    return `
-            ${object.name}\n
+    return `${object.name}\n
             Available Classical Bikes: ${object.classicalBikes}
             Available Electric Bikes: ${object.electricBikes}
             Available Docks: ${object.available_docks}

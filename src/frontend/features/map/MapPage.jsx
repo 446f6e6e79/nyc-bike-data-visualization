@@ -1,5 +1,5 @@
 import DeckGL from '@deck.gl/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useMapHandler } from './hooks/useMapHandler.js'
 import { useBuildLayers } from './hooks/useBuildLayers.js'
 import MapController from './components/MapController.jsx'
@@ -27,7 +27,7 @@ export const INITIAL_VIEW_STATE = {
 }
 
 // Allowed zoom range for map interactions
-export const MIN_ZOOM = 10
+export const MIN_ZOOM = 12
 export const MAX_ZOOM = 15
 // Allowed pitch range for map interactions
 export const MIN_PITCH = 0
@@ -38,6 +38,12 @@ export const MIN_LONGITUDE = -74.30
 export const MAX_LONGITUDE = -73.65
 export const MIN_LATITUDE = 40.45
 export const MAX_LATITUDE = 40.95
+
+const POINT_LAYER_ID_PREFIXES = [
+    'station-usage-layer',
+    'trip-flow-stations-layer',
+    'station-availability-layer',
+]
 
 const MAP_LAYER_GUIDES = {
     station_usage: {
@@ -110,6 +116,24 @@ const MAP_LAYER_GUIDES = {
 
 function MapPage({ filters }) {
     const [showInitialLoadingOverlay, setShowInitialLoadingOverlay] = useState(true)
+    const [isHoveringPoint, setIsHoveringPoint] = useState(false)
+
+    const handleHover = useCallback(({ object, layer }) => {
+        if (!object || !layer?.id) {
+            setIsHoveringPoint(false)
+            return
+        }
+
+        setIsHoveringPoint(
+            POINT_LAYER_ID_PREFIXES.some((prefix) => layer.id.startsWith(prefix)),
+        )
+    }, [])
+
+    const getCursor = useCallback(({ isDragging }) => {
+        if (isDragging) return 'grabbing'
+        if (isHoveringPoint) return 'pointer'
+        return 'grab'
+    }, [isHoveringPoint])
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {
@@ -175,6 +199,8 @@ function MapPage({ filters }) {
                         onViewStateChange={handleViewStateChange}
                         controller={controller}
                         layers={layers}
+                        onHover={handleHover}
+                        getCursor={getCursor}
                         getTooltip={({ object }) => Tooltip({ object, activeLayer })}
                     />
                     {shouldShowMapUi && (
