@@ -18,14 +18,16 @@ export default function useSliderHandler({ totalMonths, maxWindowSize, minDate, 
 	const selection = useMemo(() => {
 		if (!range || !minDate) return null
 		const endDate = indexToDate(range.endIndex, minDate)
+		const monthCount = range.endIndex - range.startIndex + 1
 		return {
 			startIndex: range.startIndex,
 			endIndex: range.endIndex,
 			startDate: indexToDate(range.startIndex, minDate),
 			endDate: new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0),
-			monthCount: range.endIndex - range.startIndex + 1,
+			monthCount,
+			isMaxed: monthCount === maxWindowSize,
 		}
-	}, [minDate, range])
+	}, [minDate, range, maxWindowSize])
     // Effect to initialize the range state based on the provided defaultRange prop
 	useEffect(() => {
 		if (!defaultRange) return

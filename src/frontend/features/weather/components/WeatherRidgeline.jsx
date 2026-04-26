@@ -141,6 +141,7 @@ function WeatherRidgeline({ data, loading, error, onRefetch }) {
                                 title: {
                                     text: "Weather",
                                     font: { family: FONT_DISPLAY, size: 13, weight: "500" },
+                                    standoff: 30,
                                 },
                                 tickmode: "array",
                                 tickvals: yTickValues,

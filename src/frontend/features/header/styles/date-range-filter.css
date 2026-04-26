@@ -156,6 +156,23 @@
     pointer-events: none;
   }
 
+  .date-range-filter__tooltip {
+    @apply pointer-events-none absolute z-50 whitespace-nowrap font-mono text-[11px] 
+           text-white px-2 py-1 border border-white/40 bg-ink rounded;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 120ms ease, visibility 120ms ease;
+  }
+
+  .date-range-filter__tooltip--maxed.is-visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .date-range-filter__tooltip-text {
+    @apply block text-white/90 whitespace-nowrap;
+  }
+
   .date-range-filter__actions {
     @apply mt-1 flex justify-end;
   }
