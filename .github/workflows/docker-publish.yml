@@ -1,26 +1,49 @@
 name: Docker Release Pipeline
 
-# At the release of a new version, this workflow builds and pushes Docker images for all services 
+# Builds and pushes Docker images on release.
+# On the 5th of each month: re-seeds the database and updates the latest release title with the month name.
 on:
   release:
     types: [published]
+  schedule:
+    - cron: '0 0 5 * *' # 5th of every month at midnight UTC
+  workflow_dispatch:    # Manual trigger to simulate the schedule path
 
-# Define environment variables for the workflow
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true                                         
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/nyc-bike-data-visualisation
-  PLATFORMS: linux/amd64,linux/arm64                   # Define the platforms for multi-architecture builds
+  PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
-  build:                                               # Builds and pushes Docker images for all services, and generates a release-specific docker-compose file
+  
+
+  prepare:                  # On release: resolve the tag from the event; on schedule: get the latest release tag
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      packages: write
+      contents: read
     outputs:
       tag: ${{ steps.tag.outputs.value }}
+    steps:
+      - name: Resolve release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            TAG=$(gh release view --repo "${{ github.repository }}" --json tagName -q '.tagName')
+            echo "value=$TAG" >> "$GITHUB_OUTPUT"
+          fi
 
+  build-backend:                        # Build and push backend image on release
+    if: github.event_name == 'release'
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,42 +55,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up QEMU                               # Set up QEMU for building multi-architecture images
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
           platforms: ${{ env.PLATFORMS }}
 
-      - name: Set up Docker Buildx                      # Set up Docker Buildx for advanced build capabilities
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Extract release tag                       # Extract the tag name from the GitHub release event and set it as an output for use in subsequent steps                     
-        id: tag
-        run: echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-
-      - name: Build and push postgres image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: dockers/Dockerfile.postgres
-          platforms: ${{ env.PLATFORMS }}
-          push: true
-          tags: |
-            ${{ env.IMAGE_PREFIX }}-postgres:${{ steps.tag.outputs.value }}-unseeded
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push seeder image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: dockers/Dockerfile.seeder
-          platforms: ${{ env.PLATFORMS }}
-          push: true
-          tags: |
-            ${{ env.IMAGE_PREFIX }}-seeder:${{ steps.tag.outputs.value }}
-            ${{ env.IMAGE_PREFIX }}-seeder:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build and push backend image
         uses: docker/build-push-action@v6
@@ -77,10 +71,36 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-backend:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE_PREFIX }}-backend:${{ needs.prepare.outputs.tag }}
             ${{ env.IMAGE_PREFIX }}-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  build-frontend:                     # Build and push frontend image on release
+    if: github.event_name == 'release'
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ${{ env.PLATFORMS }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v6
@@ -90,34 +110,97 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-frontend:${{ steps.tag.outputs.value }}
+            ${{ env.IMAGE_PREFIX }}-frontend:${{ needs.prepare.outputs.tag }}
             ${{ env.IMAGE_PREFIX }}-frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Generate docker-compose.release.yml
-        env:
-          TAG: ${{ steps.tag.outputs.value }}
-          PREFIX: ${{ env.IMAGE_PREFIX }}
-        run: |                                          # Remove build instructions and seeder service from the original docker-compose.yml
-          yq eval "
-            .services.postgres.image = strenv(PREFIX) + \"-postgres:\" + strenv(TAG) |
-            .services.backend.image  = strenv(PREFIX) + \"-backend:\"  + strenv(TAG) |
-            .services.frontend.image = strenv(PREFIX) + \"-frontend:\" + strenv(TAG) |
-            del(.services.seeder) |           
-            del(.services.*.build) |
-            del(.services.backend.depends_on.seeder)
-          " docker-compose.yml > docker-compose.release.yml
+  build-postgres:                   # Build and push unseeded postgres image on release
+    if: github.event_name == 'release'
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Attach assets to GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
         with:
-          tag_name: ${{ steps.tag.outputs.value }}
-          name: Data Visualisation Docker Release ${{ steps.tag.outputs.value }}
-          files: docker-compose.release.yml
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-  seed:                                          # Seeds the database with initial data using the seeder image
-    needs: build
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ${{ env.PLATFORMS }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push postgres image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockers/Dockerfile.postgres
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.prepare.outputs.tag }}-unseeded
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-seeder:                     # Build and push seeder image on release
+    if: github.event_name == 'release'
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ${{ env.PLATFORMS }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push seeder image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockers/Dockerfile.seeder
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-seeder:${{ needs.prepare.outputs.tag }}
+            ${{ env.IMAGE_PREFIX }}-seeder:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  seed:                                         # Run the seeding process and publish the preloaded postgres image (schedule only)
+    needs: [prepare, build-postgres, build-seeder]
+    # Run when prepare succeeded AND build jobs either succeeded or were skipped (schedule path)
+    if: |
+      always() &&
+      needs.prepare.result == 'success' &&
+      (needs.build-postgres.result == 'success' || needs.build-postgres.result == 'skipped') &&
+      (needs.build-seeder.result == 'success' || needs.build-seeder.result == 'skipped') &&
+      (github.event_name == 'release' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -142,36 +225,36 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Start postgres container for seeding              # Start a PostgreSQL container
+      - name: Start postgres container for seeding
         run: |
           docker run -d --name pg \
             -e POSTGRES_DB=citibike \
             -e POSTGRES_USER=citibike \
             -e POSTGRES_PASSWORD=citibike \
-            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build.outputs.tag }}-unseeded
+            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.prepare.outputs.tag }}-unseeded
           until docker exec pg pg_isready -U citibike -d citibike -h 127.0.0.1; do
             echo "Waiting for postgres..."; sleep 3
           done
 
-      - name: Seed default dataset                              # Run the seeder container with the appropriate environment variables and network settings to seed the database
+      - name: Seed default dataset
         timeout-minutes: 120
         run: |
           docker run --rm \
             --network container:pg \
             -e DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike \
-            ${{ env.IMAGE_PREFIX }}-seeder:${{ needs.build.outputs.tag }}
+            ${{ env.IMAGE_PREFIX }}-seeder:${{ needs.prepare.outputs.tag }}
 
-      - name: Export database dump                              # After seeding, export the database dump in a compressed format
+      - name: Export database dump
         run: |
           docker exec pg pg_dump -U citibike --no-owner --no-privileges citibike \
             | gzip > citibike_data.sql.gz
           echo "Dump size: $(du -sh citibike_data.sql.gz | cut -f1)"
 
-      - name: Stop and remove postgres container                # Remove the PostgreSQL container used for seeding
+      - name: Stop and remove postgres container
         if: always()
         run: docker rm -f pg
 
-      - name: Prepare preloaded Dockerfile                      # Create a new PostgreSQL for multi-arch build that includes the seeded data by copying the initialization scripts and the database dump into a new Dockerfile based on the official PostgreSQL image
+      - name: Prepare preloaded Dockerfile
         run: |
           cat > /tmp/Dockerfile.preloaded << 'EOF'
           FROM postgres:16-alpine
@@ -180,7 +263,7 @@ jobs:
           COPY citibike_data.sql.gz /docker-entrypoint-initdb.d/99_citibike_data.sql.gz
           EOF
 
-      - name: Build and push preloaded postgres image           # Build and push a new PostgreSQL image
+      - name: Build and push preloaded postgres image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -188,37 +271,106 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.build.outputs.tag }}
+            ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.prepare.outputs.tag }}
             ${{ env.IMAGE_PREFIX }}-postgres:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Remove seeder image                                # Clean up the seeder image — data is now baked into the preloaded postgres image
+      - name: Remove seeder image
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="${{ needs.build.outputs.tag }}"
+          TAG="${{ needs.prepare.outputs.tag }}"
           OWNER="${{ github.repository_owner }}"
           PACKAGE="nyc-bike-data-visualisation-seeder"
-          for SCOPE in "users/$OWNER" "orgs/$OWNER"; do
-            ID=$(gh api "$SCOPE/packages/container/$PACKAGE/versions" 2>/dev/null \
-              --jq ".[] | select(.metadata.container.tags[] == \"$TAG\") | .id" || true)
+          for ENDPOINT in \
+              "user/packages/container/${PACKAGE}/versions" \
+              "orgs/${OWNER}/packages/container/${PACKAGE}/versions"; do
+            ID=$(gh api "$ENDPOINT" --paginate 2>/dev/null \
+              | jq -r ".[] | select(.metadata.container.tags | contains([\"$TAG\"])) | .id" \
+              | head -1)
             [ -z "$ID" ] && continue
-            gh api --method DELETE "$SCOPE/packages/container/$PACKAGE/versions/$ID" && break
+            gh api --method DELETE "${ENDPOINT%/versions}/$ID" \
+              && { echo "Deleted $PACKAGE:$TAG (id $ID)"; break; }
           done
 
-      - name: Remove temporary unseeded postgres image          # Clean up the intermediate unseeded image pushed by the build job
+      - name: Remove temporary unseeded postgres image
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="${{ needs.build.outputs.tag }}-unseeded"
+          TAG="${{ needs.prepare.outputs.tag }}-unseeded"
           OWNER="${{ github.repository_owner }}"
           PACKAGE="nyc-bike-data-visualisation-postgres"
-          for SCOPE in "users/$OWNER" "orgs/$OWNER"; do
-            ID=$(gh api "$SCOPE/packages/container/$PACKAGE/versions" 2>/dev/null \
-              --jq ".[] | select(.metadata.container.tags[] == \"$TAG\") | .id" || true)
+          for ENDPOINT in \
+              "user/packages/container/${PACKAGE}/versions" \
+              "orgs/${OWNER}/packages/container/${PACKAGE}/versions"; do
+            ID=$(gh api "$ENDPOINT" --paginate 2>/dev/null \
+              | jq -r ".[] | select(.metadata.container.tags | contains([\"$TAG\"])) | .id" \
+              | head -1)
             [ -z "$ID" ] && continue
-            gh api --method DELETE "$SCOPE/packages/container/$PACKAGE/versions/$ID" && break
+            gh api --method DELETE "${ENDPOINT%/versions}/$ID" \
+              && { echo "Deleted $PACKAGE:$TAG (id $ID)"; break; }
           done
+
+  release:                              # Create GitHub release and attach docker-compose file (release only)
+    if: github.event_name == 'release'
+    needs: [prepare, build-backend, build-frontend, build-postgres, build-seeder]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate docker-compose.release.yml
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+          PREFIX: ${{ env.IMAGE_PREFIX }}
+        run: |
+          yq eval "
+            .services.postgres.image = strenv(PREFIX) + \"-postgres:\" + strenv(TAG) |
+            .services.backend.image  = strenv(PREFIX) + \"-backend:\"  + strenv(TAG) |
+            .services.frontend.image = strenv(PREFIX) + \"-frontend:\" + strenv(TAG) |
+            del(.services.seeder) |
+            del(.services.*.build) |
+            del(.services.backend.depends_on.seeder)
+          " docker-compose.yml > docker-compose.release.yml
+
+      - name: Attach assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: Data Visualisation Docker Release ${{ needs.prepare.outputs.tag }}
+          files: docker-compose.release.yml
+
+  update-monthly-title:                                         # On schedule: update the latest release title to include the current month, after seeding new data
+    needs: seed
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.seed.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Append current month to latest release title
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MONTH=$(date +%B)
+          TAG="${{ needs.seed.outputs.tag || '' }}"
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release view --repo "${{ github.repository }}" --json tagName -q '.tagName')
+          fi
+          CURRENT=$(gh release view "$TAG" --repo "${{ github.repository }}" --json name -q '.name')
+          BASE=$(echo "$CURRENT" | sed 's/ - [A-Za-z]*$//')
+          gh release edit "$TAG" --repo "${{ github.repository }}" --title "$BASE - $MONTH"
+          echo "Updated release $TAG title to: $BASE - $MONTH"
