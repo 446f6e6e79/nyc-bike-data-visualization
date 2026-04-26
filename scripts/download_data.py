@@ -17,7 +17,7 @@ from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
 from utils.pg_loader import assert_no_coverage_gaps, get_loaded_months, init_db, load_stats_for_month, load_weather_hourly, update_dataset_coverage, upsert_station_metadata_from_gbfs
 from scripts.utils.db_loaders.bike_routes import upsert_bike_routes
-from src.backend.config import (
+from config import (
     DATA_DIR,
     RIDES_DATA_DIR,
     WEATHER_DATA_DIR,
