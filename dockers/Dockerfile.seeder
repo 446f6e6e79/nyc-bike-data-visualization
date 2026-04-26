@@ -29,7 +29,7 @@ RUN awk -F'==' 'NR==FNR { excluded[$1]=1; next } !($1 in excluded)' \
 # Copy the application code and scripts to the container
 COPY scripts/ /app/scripts/
 COPY src/backend /app/src/backend
-COPY postgre/ /app/postgre/
+COPY postgres/ /app/postgres/
 
 # Command to run the data download script
 CMD ["sh", "-c", "python /app/scripts/download_data.py ${DATA_START_DATE:+--start-date $DATA_START_DATE} ${DATA_END_DATE:+--end-date $DATA_END_DATE} ${DOWNLOAD_JC:+--download-jc}"]

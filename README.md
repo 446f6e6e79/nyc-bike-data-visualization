@@ -148,7 +148,7 @@ export DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike
 python scripts/download_data.py
 ```
 
-Database schema initialization in `scripts/download_data.py` executes ordered files from `postgre/schemas/`. For manual `psql` bootstrap, use `postgre/init.sql`.
+Database schema initialization in `scripts/download_data.py` executes ordered files from `postgres/schemas/`. For manual `psql` bootstrap, use `postgres/init.sql`.
 
 The available options for the script are:
 
