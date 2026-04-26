@@ -16,7 +16,7 @@ export default function BikeRoutesToggle({ showBikeRoutes, setShowBikeRoutes }) 
             <span className="map-toggle-button__icon" aria-hidden="true">
                 <i className="fa-solid fa-map" />
             </span>
-            <span className="map-toggle-button__label">{showBikeRoutes ? 'Hide Routes' : 'Show Routes'}</span>
+            <span className="map-toggle-button__label">{showBikeRoutes ? 'Hide' : 'Show'} Routes</span>
         </button>
     )
 }

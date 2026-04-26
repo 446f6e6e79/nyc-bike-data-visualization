@@ -56,8 +56,7 @@ export function stationAvailabilityTooltip( object ) {
             Available Classical Bikes: ${object.classicalBikes}
             Available Electric Bikes: ${object.electricBikes}
             Available Docks: ${object.available_docks}
-            Total Capacity: ${object.capacity}
-        `
+            Total Capacity: ${object.capacity}`
 }
 
 /**
