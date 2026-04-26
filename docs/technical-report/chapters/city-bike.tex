@@ -1,32 +1,69 @@
 \section{City Bike Dataset}
-\begin{comment}
-    Description of the dataset, including its source
-    Link to the notebook where the dataset was explored and analyzed (src/notebooks/...)  
-\end{comment}
+Our main source of data is the City Bike dataset, which contains information about bike trips in New York City.
+These datasets are published on a monthly basis and can be accessed through the Citi Bike website\footnote{\url{https://www.citibikenyc.com/system-data}}.
+
+The process involved in writing this report can be found in the Jupyter notebook in our repository\footnote{\url{https://github.com/446f6e6e79/nyc-bike-data-visualization/blob/main/src/notebooks/analysis.ipynb}}.
 
 \subsection{Dataset Structure}
-\begin{comment}
-    What data is included, how it is organized (various csv files), variables, etc.
-    Take in consideration also the features that we extracted from the original dataset 
-    (trip duration, distance, day of the week, etc. that can be found in src/backend/services/historical.py)
-\end{comment}
+The data is organized in multiple CSV files, each containing information about bike trips that ended in that month. 
+Each row in the dataset represents a single bike trip and includes various attributes that describe the trip.
 \subsubsection{Original Structure}
+The original dataset includes the following columns:
+\begin{itemize}
+    \item \textbf{Ride ID}: A unique identifier for each bike trip.
+    \item \textbf{Rideable Type}: The type of bike used for the trip. Can be either "classic bike", "electric bike".
+    \item \textbf{Started At}: a timestamp (YYYY-MM-DD HH:MM:SS) indicating when the trip started.
+    \item \textbf{Ended At}: a timestamp indicating when the trip ended.
+    \item \textbf{Start Info}: Information about the station and location where the trip started, structured as:
+    \begin{itemize}
+        \item \textbf{Station Name}: The name of the station where the trip started.
+        \item \textbf{Station ID}: A unique identifier for the station where the trip started.
+        \item \textbf{Latitude}: The latitude coordinate of where the trip started.
+        \item \textbf{Longitude}: The longitude coordinate of where the trip started.
+    \end{itemize}
+    \item \textbf{End Info}: Information about the station and location where the trip ended, structured similarly to the Start Info.
+    \item \textbf{User Type}: The type of user who took the trip. Can be either "member" (a user with a subscription) or "casual" (a user without a subscription).
+\end{itemize}
+
 \subsubsection{Extracted Features}
-\begin{comment}
-    Take in consideration the choices made for computing the distance (Haversine distance vs Manhattan distance)
-    1) Haversine distance is more accurate for long distances gives a straight line distance between two points, correct for the curvature of the Earth
-       but might be computationally expensive and underestimate the actual distance traveled along the streets
-    2) Manhattan distance is simpler and more appropriate for a city like New York with a grid-like street layout, it gives the distance traveled along the streets rather than a straight line distance
-\end{comment}
+These features alone are not sufficient for our analysis, so we extracted additional features from the original dataset, such as:
+\begin{itemize}
+    \item \textbf{Trip Duration}: The duration of the trip in seconds, calculated as $\text{Ended At} - \text{Started At}$.
+    \item \textbf{Trip Distance}: The distance traveled during the trip, computed from the latitude and longitude of the start and end stations using the Haversine formula.
+    Various distance metrics were also tested, such as Manhattan distance, but the Haversine formula, multiplied by a circuity factor of 1.3, provided the best results.
+    \item \textbf{Day of the Week}: The day of the week on which the trip occurred, extracted from the "Started At" timestamp. 
+    \item \textbf{Hour of the Day}: The hour of the day when the trip started, also extracted from the "Started At" timestamp.
+    \item \textbf{Station Popularity}: A measure of how frequently a station is used, calculated as the total number of trips that start or end at that station in a given time period
+    (e.g hourly, daily).
+    \item \textbf{Trips Flow}: The number of trips between pairs of stations, calculated by counting the number of trips that start at one station and end at another station in a given time period.
+\end{itemize}
+
+\subsection{Live Data}
 
 \subsection{Analysis and Insights}
 \begin{comment}
     Extracted insights from the dataset, also using visual features
 \end{comment}
+
+
+
 \subsection{Data Quality}
+Various data quality issues were encountered during the analysis of the City Bike dataset.
+
+\paragraph{Different Structure}
+During the analysis, we noticed that older datasets have a different structure compared to newer ones.
+In particular, older dataset miss some of the columns that are present in newer datasets, such as the "Rideable Type", column in the "Start Info" and "End Info" fields.
+On the other hand, they include some columns that are not present in newer datasets, such as the Gender, Birth Year and Bike ID columns.
+
+This inconsistency in the structure of the datasets posed a challenge for our analysis, as we had to adapt our data processing pipeline to handle both types of datasets and ensure that the extracted features were consistent across all datasets.
+
+\paragraph{Missing Values and Inconsistencies}
+
 \begin{comment}
+    Older dataset have a different structure.
     Discussion of any data quality issues, such as missing values, outliers, or inconsistencies, and how they were addressed in the analysis.
     Two UUID (short name and station id) were used to uniquely identify stations, but they are not consistent across the dataset, so we had to use the short name as the unique identifier for stations.
+    Live data has inactive stations that need to be filtered out, and bike counts aren't always perfect
 \end{comment}
 
 
