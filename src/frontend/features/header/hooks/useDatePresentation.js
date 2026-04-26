@@ -27,7 +27,7 @@ export default function useDatePresentation({ selection, minDate, totalMonths, l
     // Memoized date label that formats the currently selected date range into a human-readable string, showing the month and year for the start and end of the selection.
     const dateLabel = useMemo(() => {
         if (!selection) return ''
-        return `${MONTH_LABELS[selection.startDate.getMonth()]} ${selection.startDate.getFullYear()}${selection.monthCount === 1 ? '' : ` -> ${MONTH_LABELS[selection.endDate.getMonth()]} ${selection.endDate.getFullYear()}`}`
+        return `${MONTH_LABELS[selection.startDate.getMonth()]} ${selection.startDate.getFullYear()}${selection.monthCount === 1 ? '' : `   → ${MONTH_LABELS[selection.endDate.getMonth()]} ${selection.endDate.getFullYear()}`}`
     }, [selection])
     // Memoized boolean flag to determine if the view should show a loading state, which is true if the date range data is currently loading or if there is no current selection.
     const isLoadingView = loading || !selection
