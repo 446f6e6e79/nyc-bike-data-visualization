@@ -17,6 +17,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from utils.pg_loader import init_db
 from utils.db_loaders.hourly_stats import insert_stats_hourly
 from utils.db_loaders.station_activity_hourly import insert_station_activity_hourly
+from utils.db_loaders.station_activity_preagg import insert_station_activity_preagg
 from utils.db_loaders.flow_activity_monthly import insert_flow_activity_monthly
 from utils.db_loaders.station_metadata import upsert_station_metadata
 from utils.db_loaders.weather_hourly import upsert_weather_hourly
@@ -78,6 +79,7 @@ def main() -> None:
         rides = _build_rides(TEST_DATA_DIR / "trips.csv", TEST_DATA_DIR / "distances.csv")
         insert_stats_hourly(conn, rides)
         insert_station_activity_hourly(conn, rides)
+        insert_station_activity_preagg(conn, rides)
         insert_flow_activity_monthly(conn, rides)
         conn.commit()
 

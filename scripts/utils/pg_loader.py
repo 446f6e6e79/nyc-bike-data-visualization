@@ -6,12 +6,13 @@ plus station_metadata and dataset_coverage.
 """
 import polars as pl
 
-from src.backend.config import RIDES_DATA_DIR, STATION_DISTANCES_PATH, WEATHER_DATA_DIR
+from config import RIDES_DATA_DIR, STATION_DISTANCES_PATH, WEATHER_DATA_DIR
 from src.backend.services.gbfs import fetch_station_data
 from utils.distances import enrich_with_distances
 from utils.db_loaders.flow_activity_monthly import insert_flow_activity_monthly
 from utils.db_loaders.hourly_stats import insert_stats_hourly
 from utils.db_loaders.station_activity_hourly import insert_station_activity_hourly
+from utils.db_loaders.station_activity_preagg import insert_station_activity_preagg
 from utils.db_loaders.station_metadata import upsert_station_metadata
 from utils.db_loaders.weather_hourly import upsert_weather_hourly
 
@@ -55,6 +56,7 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 
 	insert_stats_hourly(conn, rides)
 	insert_station_activity_hourly(conn, rides)
+	insert_station_activity_preagg(conn, rides)
 	insert_flow_activity_monthly(conn, rides)
 	conn.commit()
 	print(f"  Done — {year}-{month:02d} committed.")
@@ -128,3 +130,4 @@ def get_loaded_months(conn) -> list[int]:
             GROUP BY 1, 2
         """)
         return [y * 100 + m for y, m in cur.fetchall()]
+

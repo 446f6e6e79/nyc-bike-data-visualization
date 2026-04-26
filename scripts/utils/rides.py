@@ -3,10 +3,8 @@ import os
 import requests
 import zipfile
 import polars as pl
-from src.backend.config import PARQUET_COMPRESSION, YEARLY_CUTOFF
+from config import PARQUET_COMPRESSION, YEARLY_CUTOFF, BASE_URL_RIDE_DATA, RIDES_DATA_DIR
 import xml.etree.ElementTree as ET
-
-from src.backend.config import BASE_URL_RIDE_DATA, RIDES_DATA_DIR
 
 def _get_response(url: str, stream: bool = False) -> requests.Response:
     """Execute HTTP GET and raise for non-2xx responses."""

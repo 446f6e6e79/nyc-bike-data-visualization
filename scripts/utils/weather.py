@@ -3,7 +3,7 @@ import polars as pl
 from calendar import monthrange
 from datetime import date, timedelta
 
-from src.backend.config import WEATHER_API_URL, NYC_COORDS, WEATHER_TIMEZONE, PARQUET_COMPRESSION, WEATHER_DATA_DIR
+from config import WEATHER_API_URL, NYC_COORDS, WEATHER_TIMEZONE, PARQUET_COMPRESSION, WEATHER_DATA_DIR
 
 def _get_date_range(min_date: str, max_date: str) -> tuple[date, date]:
     """

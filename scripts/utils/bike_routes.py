@@ -4,7 +4,7 @@ import polars as pl
 from pathlib import Path
 from datetime import datetime, timezone
 
-from src.backend.config import BIKE_ROUTES_URL, BIKE_ROUTES_PATH, PARQUET_COMPRESSION
+from config import BIKE_ROUTES_URL, BIKE_ROUTES_PATH, PARQUET_COMPRESSION
 
 def _fetch_bike_routes_csv() -> pl.DataFrame:
     """Fetch bike routes CSV bytes over HTTPS and parse with Polars."""
