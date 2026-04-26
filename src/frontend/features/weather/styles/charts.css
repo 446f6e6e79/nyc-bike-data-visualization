@@ -26,7 +26,7 @@
   }
 
   .weather-ridgeline-toggle {
-    @apply inline-flex border border-rule border-[2px] bg-paper;
+    @apply inline-flex border border-rule border-[1px] bg-paper;
   }
 
   .weather-ridgeline-toggle__btn {
