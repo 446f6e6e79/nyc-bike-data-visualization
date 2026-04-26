@@ -88,10 +88,9 @@
 
   .map-fullscreen-button {
     @apply absolute left-4 bottom-4 z-30 inline-flex items-center gap-2 px-3 py-1.5
-           font-mono text-[11px] uppercase tracking-eyebrow text-white bg-ink/90 border border-rule-invert
+           font-mono text-[11px] uppercase tracking-eyebrow text-ink bg-paper-raised/90 border border-rule border-ink/20
            backdrop-blur-sm transition-colors duration-150
-           hover:bg-ink
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+           hover:bg-paper;
     pointer-events: auto;
   }
 
@@ -138,9 +137,9 @@
 
   .map-toggle-button {
     @apply inline-flex items-center gap-2 px-3 py-1.5 font-mono text-[11px]
-           uppercase tracking-eyebrow text-ink border border-rule bg-paper
+           uppercase tracking-eyebrow text-ink border border-rule border-ink/20 bg-paper-raised
            transition-colors duration-150
-           hover:bg-paper-raised
+           hover:bg-paper
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
   }
 

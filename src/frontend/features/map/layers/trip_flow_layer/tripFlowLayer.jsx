@@ -1,4 +1,4 @@
-import { createTripStationsLayer } from "./stations/tripStationsLayer";
+import { createTripStationsHitLayer, createTripStationsLayer } from "./stations/tripStationsLayer";
 import { createTripsArcLayer } from "./trips/tripArcsLayer";
 
 /**
@@ -24,6 +24,10 @@ export function createTripFlowLayers({
     layers.push(createTripStationsLayer({
         stations,
         selectedStationIds,
+        hoveredStationId,
+    }))
+    layers.push(createTripStationsHitLayer({
+        stations,
         hoveredStationId,
         onStationPick,
         onStationHover,
