@@ -86,6 +86,23 @@
     @apply font-mono text-[10px] uppercase tracking-eyebrow text-white/55;
   }
 
+  .map-fullscreen-button {
+    @apply absolute left-4 bottom-4 z-30 inline-flex items-center gap-2 px-3 py-1.5
+           font-mono text-[11px] uppercase tracking-eyebrow text-ink bg-paper-raised/90 border border-rule border-ink/20
+           backdrop-blur-sm transition-colors duration-150
+           hover:bg-paper;
+    pointer-events: auto;
+  }
+
+  .map-fullscreen-button__icon {
+    @apply inline-flex items-center justify-center w-4 h-4 text-[12px] text-current;
+    line-height: 1;
+  }
+
+  .map-fullscreen-button__text {
+    letter-spacing: 0.08em;
+  }
+
   .deck-tooltip {
     @apply font-mono text-[11px] leading-tight border border-rule text-white/90;
     background-color: rgba(18, 18, 18, 0.9);
@@ -120,9 +137,9 @@
 
   .map-toggle-button {
     @apply inline-flex items-center gap-2 px-3 py-1.5 font-mono text-[11px]
-           uppercase tracking-eyebrow text-ink border border-rule bg-paper
+           uppercase tracking-eyebrow text-ink border border-rule border-ink/20 bg-paper-raised
            transition-colors duration-150
-           hover:bg-paper-raised
+           hover:bg-paper
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
   }
 
@@ -396,6 +413,10 @@
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
   }
 
+  .map-reset-button-wrap {
+    @apply relative inline-flex;
+  }
+
   .map-reset-button-icon {
     @apply inline-flex items-center justify-center w-4 h-4 text-[13px] text-white;
   }
@@ -410,6 +431,20 @@
 
   .map-reset-button:disabled:hover {
     @apply bg-ink;
+  }
+
+  .map-reset-tooltip {
+    @apply pointer-events-none fixed z-50 whitespace-nowrap font-mono text-[11px]
+           text-white/90 px-2 py-1 border border-rule-invert bg-ink;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 0%);
+    transition: opacity 120ms ease, visibility 120ms ease;
+  }
+
+  .map-reset-tooltip.is-visible {
+    opacity: 1;
+    visibility: visible;
   }
 
   .map-error {

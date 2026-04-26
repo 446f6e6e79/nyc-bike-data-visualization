@@ -1,4 +1,4 @@
-import { createTripStationsLayer } from "./stations/tripStationsLayer";
+import { createTripStationsHitLayer, createTripStationsLayer } from "./stations/tripStationsLayer";
 import { createTripsArcLayer } from "./trips/tripArcsLayer";
 
 /**
@@ -10,10 +10,28 @@ import { createTripsArcLayer } from "./trips/tripArcsLayer";
  * @param {Function} onStationPick - Click handler to toggle station selection.
  * @returns 
  */
-export function createTripFlowLayers({ trips, maxTripCount, stations, selectedStationIds = [], onStationPick }) {
+export function createTripFlowLayers({
+    trips,
+    maxTripCount,
+    stations,
+    selectedStationIds = [],
+    hoveredStationId = null,
+    onStationPick,
+    onStationHover,
+}) {
     const layers = []
     layers.push(createTripsArcLayer({ trips, maxTripCount, selectedStationIds }))
-    layers.push(createTripStationsLayer({ stations, selectedStationIds, onStationPick }))
+    layers.push(createTripStationsLayer({
+        stations,
+        selectedStationIds,
+        hoveredStationId,
+    }))
+    layers.push(createTripStationsHitLayer({
+        stations,
+        hoveredStationId,
+        onStationPick,
+        onStationHover,
+    }))
     return layers
 }
 

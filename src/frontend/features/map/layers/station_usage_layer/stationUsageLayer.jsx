@@ -52,10 +52,10 @@ export function stationUsageTooltip(object) {
     if (Array.isArray(object.points) && object.points.length > 0) {
         const totalUsage = Math.round(object.points.reduce((sum, p) => sum + (Number(p.usage) || 0), 0))
         const ids = [...new Set(object.points.map((p) => p.stationId).filter(Boolean))]
-        return `Stations: ${object.points.length}\nUsage: ${totalUsage} rides\nIDs: ${ids.slice(0, 4).join(', ')}${ids.length > 4 ? ', …' : ''}`
+        return `Station(s): ${object.points.length}\nUsage: ${totalUsage} rides\nIDs: ${ids.slice(0, 4).join(', ')}${ids.length > 4 ? ', …' : ''}`
     }
     const totalUsage = Math.round(Number(object.elevationValue ?? object.colorValue ?? 0) || 0)
-    return `Stations: ${Math.round(Number(object.count ?? 0) || 0)}\nUsage: ${totalUsage} rides`
+    return `Station(s): ${Math.round(Number(object.count ?? 0) || 0)}\nUsage: ${totalUsage} rides`
 }
 
 /**

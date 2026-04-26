@@ -231,7 +231,7 @@
 
     /* ---------- Shared page surface primitives ---------- */
     .page-shell {
-        @apply mx-auto w-full max-w-[70%] flex flex-col gap-10 px-6 py-10
+        @apply mx-auto w-full lg:max-w-[70%] flex flex-col gap-10 px-6 py-10
            animate-fade-up;
     }
 

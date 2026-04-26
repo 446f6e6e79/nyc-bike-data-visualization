@@ -14,6 +14,8 @@
 
   .status-wrap--error {
     @apply text-error;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .status-loading-rings {

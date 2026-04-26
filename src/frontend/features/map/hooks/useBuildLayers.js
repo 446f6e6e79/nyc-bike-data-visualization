@@ -30,6 +30,7 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
     // Fetch and process data
     const { frameStations, maxUsage, maxDelta, loading: stationLoading, error: stationError, refetch: stationRefetch } = useStationUsageLayer({ filters: filters, currentTime })
     const { selectedStationIds, onStationPick, resetSelectedStationIds } = useTripStationSelection() // Manage station selection state for trip flow layer
+    const [hoveredTripStationId, setHoveredTripStationId] = useState(null)
     const { trips, maxTripFlow, stations: tripStations, loading: tripLoading, error: tripError, refetch: tripRefetch } = useTripFlowLayer({ filters, selectedStationIds })
     const { stations, bikeRoutes, loading: availabilityLoading, error: availabilityError, refetch: availabilityRefetch } = useInfrastructureLayer({ showBikeRoutes })
     // State for hovered bike route segment
@@ -37,6 +38,9 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
     const handleRoutePick = (info) => {
         const route = info?.object
         setHoveredrouteID(route?.routeID ?? route?.properties?.routeID ?? null)
+    }
+    const handleTripStationHover = (info) => {
+        setHoveredTripStationId(info?.object?.id ?? null)
     }
 
     // Combine loading and error states for easier handling in the component
@@ -62,7 +66,9 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
                     maxTripCount: maxTripFlow,
                     stations: tripStations,
                     selectedStationIds,
+                    hoveredStationId: hoveredTripStationId,
                     onStationPick,
+                    onStationHover: handleTripStationHover,
                 }))
             }
         }
@@ -75,7 +81,7 @@ export function useBuildLayers({ filters, currentTime, activeLayer, showBikeRout
         }
 
         return base
-    }, [frameStations, maxUsage, maxDelta, trips, maxTripFlow, tripStations, selectedStationIds, onStationPick, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes, hoveredrouteID])
+    }, [frameStations, maxUsage, maxDelta, trips, maxTripFlow, tripStations, selectedStationIds, hoveredTripStationId, onStationPick, stations, activeLayer, stationLoading, stationError, tripLoading, tripError, availabilityLoading, availabilityError, bikeRoutes, showBikeRoutes, hoveredrouteID])
 
     // Consider the loading and error states of only the active layer for the overall status
     const loading = stateLayers.find(layer => layer.layer === activeLayer)?.loading || false
