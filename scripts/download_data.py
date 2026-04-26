@@ -97,11 +97,11 @@ def _effective_date_range(conn, requested_start: str, requested_end: str) -> tup
     
     if effective_start > _next(db_max_ym):
         effective_start = _next(db_max_ym)
-        print(f"Expanding start date from {requested_start} to {effective_start} to fill coverage gap.")
+        print(f"[PROCESS] Expanding start date {requested_start} → {effective_start} to fill coverage gap")
 
     if  effective_end < _prev(db_min_ym):
         effective_end = _prev(db_min_ym)
-        print(f"Expanding end date from {requested_end} to {effective_end} to fill coverage gap.")
+        print(f"[PROCESS] Expanding end date {requested_end} → {effective_end} to fill coverage gap")
 
     return str(effective_start), str(effective_end)
 
@@ -129,6 +129,8 @@ def main():
     if args.end_date and int(args.end_date) > int(current_yyyymm):
         raise ValueError("--end-date cannot be in the future")
     
+    print(f"[INFO] Using date range {args.start_date} to {args.end_date}, download JC files: {args.download_jc}, force download: {args.force_download}")
+
     # Create the download directory if it doesn't exist
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(RIDES_DATA_DIR, exist_ok=True)
@@ -146,6 +148,8 @@ def main():
     # Expand date range if needed to fill any gap with existing DB coverage
     start_date, end_date = _effective_date_range(conn, args.start_date, args.end_date)
 
+    print(f"[INFO] Effective date range for processing: {start_date} to {end_date}")
+    
     # Extract available GBFS stations, filter to those found in rides, and save pairwise distances
     compute_and_save_station_distances(force_download=args.force_download)
 

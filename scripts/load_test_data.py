@@ -95,7 +95,7 @@ def main() -> None:
                 SET min_date = EXCLUDED.min_date, max_date = EXCLUDED.max_date
             """)
         conn.commit()
-        print("Test data loaded successfully.")
+        print("[DB] Test data loaded successfully")
     finally:
         conn.close()
 
