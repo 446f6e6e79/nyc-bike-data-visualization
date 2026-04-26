@@ -76,11 +76,7 @@ export function buildRidgelineSeries(rows = [], dimension = "hour") {
         bucketMap.set(bucket, (bucketMap.get(bucket) ?? 0) + ridesPerHour);
     }
 
-    const orderedCodes = [...weatherBuckets.keys()].sort((codeA, codeB) => {
-        const sumA = [...weatherBuckets.get(codeA).values()].reduce((sum, value) => sum + value, 0);
-        const sumB = [...weatherBuckets.get(codeB).values()].reduce((sum, value) => sum + value, 0);
-        return sumB - sumA;
-    });
+    const orderedCodes = [...weatherBuckets.keys()].sort((a, b) => b - a);
 
     const spacing = 1.2;
     const amplitude = 0.9;
