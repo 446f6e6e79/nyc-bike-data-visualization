@@ -20,7 +20,7 @@ WEATHER_API_URL    = "https://archive-api.open-meteo.com/v1/archive"
 BIKE_ROUTES_URL    = "https://data.cityofnewyork.us/api/views/mzxg-pwib/rows.csv?accessType=DOWNLOAD"
 
 # Default date range for data ingestion
-DEFAULT_START_DATE = "202001"
+DEFAULT_START_DATE = "202601"
 _one_month_ago     = datetime.now() - timedelta(days=30)
 DEFAULT_END_DATE   = _one_month_ago.strftime("%Y%m")
 DOWNLOAD_JC        = False

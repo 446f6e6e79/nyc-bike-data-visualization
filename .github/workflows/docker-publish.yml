@@ -206,8 +206,8 @@ jobs:
             -e POSTGRES_USER=citibike \
             -e POSTGRES_PASSWORD=citibike \
             ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.prepare.outputs.tag }}-unseeded
-          until docker exec pg pg_isready -U citibike -d citibike -h 127.0.0.1; do
-            echo "Waiting for postgres..."; sleep 3
+          until docker logs pg 2>&1 | grep -q "database system is ready to accept connections"; do
+            echo "Waiting for postgres..."; sleep 2
           done
 
       - name: Seed default dataset
@@ -231,9 +231,7 @@ jobs:
       - name: Prepare preloaded Dockerfile
         run: |
           cat > /tmp/Dockerfile.preloaded << 'EOF'
-          FROM postgres:16-alpine
-          COPY postgres/init/ /docker-entrypoint-initdb.d/
-          RUN sed -i 's/\r//' /docker-entrypoint-initdb.d/*.sh
+          FROM ${{ env.IMAGE_PREFIX }}-postgres:${{ needs.prepare.outputs.tag }}-unseeded
           COPY citibike_data.sql.gz /docker-entrypoint-initdb.d/99_citibike_data.sql.gz
           EOF
 
