@@ -11,11 +11,12 @@ services:
       POSTGRES_PASSWORD: citibike
     volumes:
       - pg_data:/var/lib/postgresql/data
-    healthcheck:                                                 # Health check to ensure the PostgreSQL service is ready before other services depend on it                        
-      test: ["CMD-SHELL", "pg_isready -U citibike -h 127.0.0.1"]
+    healthcheck:                                                 # Health check to ensure the PostgreSQL service is ready before other services depend on it
+      test: ["CMD-SHELL", "psql -U citibike -d citibike -tAc \"SELECT 1 FROM information_schema.tables WHERE table_name='station_metadata'\" | grep -q 1"]
       interval: 5s
-      timeout: 5s
-      retries: 10
+      timeout: 10s
+      retries: 120
+      start_period: 30s
 
   seeder:                                                       # Service of data seeding service that populates the database with initial data
     build:                                                      # Build the seeder image from the specified context and Dockerfile

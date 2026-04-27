@@ -1,0 +1,156 @@
+name: Monthly Data Update
+
+# Incrementally seeds new data into the existing postgres image and updates the release title.
+# Runs on the 5th of each month or can be triggered manually.
+on:
+  schedule:
+    - cron: '0 0 5 * *' 
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/nyc-bike-data-visualisation
+
+jobs:
+
+  prepare:                            # Resolve the latest release tag for image references
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.tag.outputs.value }}
+    steps:
+      - name: Resolve latest release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=$(gh release view --repo "${{ github.repository }}" --json tagName -q '.tagName')
+          echo "value=$TAG" >> "$GITHUB_OUTPUT"
+
+  seed:                               # Pull existing postgres:latest, run incremental seeder, upload dump
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Start existing postgres container
+        run: |
+          docker run -d --name pg \
+            -e POSTGRES_DB=citibike \
+            -e POSTGRES_USER=citibike \
+            -e POSTGRES_PASSWORD=citibike \
+            ${{ env.IMAGE_PREFIX }}-postgres:latest
+          until docker exec pg pg_isready -U citibike -d citibike -h 127.0.0.1; do
+            echo "Waiting for postgres..."; sleep 3
+          done
+
+      - name: Seed new data (incremental)
+        timeout-minutes: 480
+        run: |
+          docker run --rm \
+            --network container:pg \
+            -e DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike \
+            ${{ env.IMAGE_PREFIX }}-seeder:${{ needs.prepare.outputs.tag }}
+
+      - name: Export database dump
+        run: |
+          docker exec pg pg_dump -U citibike --no-owner --no-privileges citibike \
+            | gzip > citibike_data.sql.gz
+          echo "Dump size: $(du -sh citibike_data.sql.gz | cut -f1)"
+
+      - name: Stop and remove postgres container
+        if: always()
+        run: docker rm -f pg
+
+      - name: Upload dump artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: citibike-dump
+          path: citibike_data.sql.gz
+          retention-days: 1
+
+  build-image:                        # Build and push updated preloaded postgres:latest image
+    needs: seed
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Download dump artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: citibike-dump
+
+      - name: Prepare preloaded Dockerfile
+        run: |
+          cat > /tmp/Dockerfile.preloaded << 'EOF'
+          FROM postgres:16-alpine
+          COPY postgres/init/ /docker-entrypoint-initdb.d/
+          RUN sed -i 's/\r//' /docker-entrypoint-initdb.d/*.sh
+          COPY citibike_data.sql.gz /docker-entrypoint-initdb.d/99_citibike_data.sql.gz
+          EOF
+
+      - name: Build and push updated preloaded postgres image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: /tmp/Dockerfile.preloaded
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-postgres:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  update-title:                       # Update the latest release title to reflect data coverage month
+    needs: build-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Update release title to previous month + year
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          YEAR=$(date +%Y)
+          MONTH_NUM=$(date +%-m)
+          if [ "$MONTH_NUM" -eq 1 ]; then
+            DATA_MONTH="December"
+            DATA_YEAR=$((YEAR - 1))
+          else
+            DATA_MONTH=$(date -d "$(date +%Y-%m-01) -1 month" +%B)
+            DATA_YEAR=$YEAR
+          fi
+          TAG=$(gh release view --repo "${{ github.repository }}" --json tagName -q '.tagName')
+          CURRENT=$(gh release view "$TAG" --repo "${{ github.repository }}" --json name -q '.name')
+          BASE=$(echo "$CURRENT" | sed 's/ - [A-Za-z]* [0-9]\{4\}$//' | sed 's/ - [A-Za-z]*$//')
+          gh release edit "$TAG" --repo "${{ github.repository }}" --title "$BASE - $DATA_MONTH $DATA_YEAR"
+          echo "Updated release $TAG title to: $BASE - $DATA_MONTH $DATA_YEAR"
