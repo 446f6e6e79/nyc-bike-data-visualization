@@ -1,4 +1,5 @@
 import polars as pl
+from psycopg2.extras import execute_values
 
 def insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
     """
@@ -48,11 +49,12 @@ def insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
         for r in activity.iter_rows(named=True)
     ]
     with conn.cursor() as cur:
-        cur.executemany(
+        execute_values(
+            cur,
             """
             INSERT INTO station_activity_hourly
                 (year, month, day_of_week, hour, station_id, user_type, bike_type, outgoing_rides, incoming_rides)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES %s
             ON CONFLICT (year, month, day_of_week, hour, station_id, user_type, bike_type) DO NOTHING
             """,
             rows,

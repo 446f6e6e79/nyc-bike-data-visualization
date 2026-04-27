@@ -4,7 +4,10 @@ Replaces daily_stats.py — writes three tables:
   stats_hourly, station_activity_hourly, flow_activity_monthly
 plus station_metadata and dataset_coverage.
 """
+import os
+from concurrent.futures import ThreadPoolExecutor
 import polars as pl
+import psycopg2
 
 from config import RIDES_DATA_DIR, STATION_DISTANCES_PATH, WEATHER_DATA_DIR
 from src.backend.services.gbfs import fetch_station_data
@@ -38,7 +41,7 @@ def init_db(conn) -> None:
 
 def load_stats_for_month(conn, year: int, month: int) -> None:
 	"""Precompute and insert all stats tables for a single calendar month.."""
-	
+
 	print(f"[DB] Loading {year}-{month:02d}...")
 	partition_path = RIDES_DATA_DIR / f"year={year}" / f"month={month}"
 	rides_lf = pl.scan_parquet(str(partition_path / "*.parquet"))
@@ -54,10 +57,24 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 	rides = rides_lf.collect()
 	print(f"[PROCESS] {len(rides)} rides — computing aggregations")
 
-	insert_stats_hourly(conn, rides)
-	insert_station_activity_hourly(conn, rides)
-	insert_station_activity_preagg(conn, rides)
-	insert_flow_activity_monthly(conn, rides)
+	def _run(insert_fn):
+		pconn = psycopg2.connect(os.environ["DATABASE_URL"])
+		try:
+			insert_fn(pconn, rides)
+			pconn.commit()
+		finally:
+			pconn.close()
+
+	with ThreadPoolExecutor(max_workers=4) as pool:
+		futures = [
+			pool.submit(_run, insert_stats_hourly),
+			pool.submit(_run, insert_station_activity_hourly),
+			pool.submit(_run, insert_station_activity_preagg),
+			pool.submit(_run, insert_flow_activity_monthly),
+		]
+		for f in futures:
+			f.result()
+
 	conn.commit()
 	print(f"[DB] {year}-{month:02d} committed")
 

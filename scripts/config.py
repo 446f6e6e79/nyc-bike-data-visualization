@@ -24,6 +24,7 @@ DEFAULT_START_DATE = "202001"
 _one_month_ago     = datetime.now() - timedelta(days=30)
 DEFAULT_END_DATE   = _one_month_ago.strftime("%Y%m")
 DOWNLOAD_JC        = False
+PARALLEL_MONTHS    = 2
 
 # Data processing constants
 YEARLY_CUTOFF         = 2023   # Files with only a year <= this are assumed to cover the full year

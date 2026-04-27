@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS bike_routes (
-    segmentid           INTEGER      PRIMARY KEY,
+    segmentid           INTEGER      NOT NULL,
     bikeid              INTEGER      NOT NULL,
     status              VARCHAR(20)  NOT NULL,
     installation_date   DATE         NOT NULL,
@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS bike_routes (
     tostreet            VARCHAR(500) NOT NULL,
     facilitycl          VARCHAR(5)   NOT NULL,
     instdate            DATE,
-    boro                VARCHAR(20)
+    boro                VARCHAR(20),
+    PRIMARY KEY (segmentid, installation_date)
 );
