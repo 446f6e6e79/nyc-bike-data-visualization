@@ -84,6 +84,6 @@ def download_bike_routes(force_download: bool = False) -> pl.DataFrame:
         statistics=True,           # enables min/max skipping
         compression=PARQUET_COMPRESSION,
     )
-    print(f"[PROCESS] Wrote bike routes → {BIKE_ROUTES_PATH}")
+    print(f"[PROCESS] Wrote bike routes -> {BIKE_ROUTES_PATH}")
     return df
     

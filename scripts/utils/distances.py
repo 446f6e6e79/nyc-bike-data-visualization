@@ -92,7 +92,7 @@ def compute_and_save_station_distances(force_download: bool = False) -> None:
         statistics=True,           # enables min/max skipping
         compression=PARQUET_COMPRESSION,
     )
-    print(f"[PROCESS] Wrote {distances_df.height} station distances → {STATION_DISTANCES_PATH}")
+    print(f"[PROCESS] Wrote {distances_df.height} station distances -> {STATION_DISTANCES_PATH}")
 
 def enrich_with_distances(rides: pl.LazyFrame, distances: pl.LazyFrame) -> pl.LazyFrame:
     """"""

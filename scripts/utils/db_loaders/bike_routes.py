@@ -11,22 +11,25 @@ def upsert_bike_routes(conn, df: pl.DataFrame) -> None:
         - segmentid (int)
         - bikeid (int)
         - status (str, e.g. "Current")
-        - instdate (date)
+        - instdate (str in format "%m/%d/%Y")
         - ret_date (date or null)
         - the_geom (str)
         - street (str)
         - fromstreet (str)
         - tostreet (str)
         - facilitycl (str)
-        - instdate (str in format "%m/%d/%Y")
         - boro (str)
     """
     df = df.with_columns(
         pl.col("instdate").str.strptime(pl.Date, "%m/%d/%Y", strict=False)
     )
+    # Remove duplicates based on segmentid, instdate, and status to avoid 
+    # violating the unique constraint on upsert, keeping the last occurrence (most recent data)
+    df = df.unique(subset=["segmentid", "instdate", "status"], keep="last")
+
     rows = [
         (int(r["segmentid"]), int(r["bikeid"]), r["status"], r["instdate"] ,r["ret_date"], r["the_geom"], r["street"], r["fromstreet"],
-         r["tostreet"], r["facilitycl"], r["instdate"], r["boro"])
+         r["tostreet"], r["facilitycl"], r["boro"])
         for r in df.iter_rows(named=True)
     ]
     with conn.cursor() as cur:
@@ -34,9 +37,9 @@ def upsert_bike_routes(conn, df: pl.DataFrame) -> None:
             cur,
             """
             INSERT INTO bike_routes
-                (segmentid, bikeid, status, installation_date, retired_date, the_geom, street, fromstreet, tostreet, facilitycl, instdate, boro)
+                (segmentid, bikeid, status, installation_date, retired_date, the_geom, street, fromstreet, tostreet, facilitycl, boro)
             VALUES %s
-            ON CONFLICT (segmentid, installation_date) DO UPDATE SET
+            ON CONFLICT (segmentid, installation_date, status) DO UPDATE SET
                 bikeid     = EXCLUDED.bikeid,
                 status     = EXCLUDED.status,
                 installation_date = EXCLUDED.installation_date,
@@ -46,7 +49,6 @@ def upsert_bike_routes(conn, df: pl.DataFrame) -> None:
                 fromstreet = EXCLUDED.fromstreet,
                 tostreet   = EXCLUDED.tostreet,
                 facilitycl = EXCLUDED.facilitycl,
-                instdate   = EXCLUDED.instdate,
                 boro       = EXCLUDED.boro
             """,
             rows,
