@@ -23,14 +23,10 @@ def _fetch_bike_routes_csv() -> pl.DataFrame:
     return pl.read_csv(io.BytesIO(response.content))
 
 def _clean_bike_data(df: pl.DataFrame) -> pl.DataFrame:
-    # Filter to current facilities only (note capital C)
-    df = df.filter(pl.col('status') == 'Current')
-
+    
     # Drop columns unused by the frontend
     df = df.drop([
         'prevbikeid',
-        'status',       # redundant after filtering
-        'ret_date',     # null for all current records
         'gwsys2',       # sparsely populated
         'spur',         # sparsely populated
         'ft2facilit',   # complex corridors only

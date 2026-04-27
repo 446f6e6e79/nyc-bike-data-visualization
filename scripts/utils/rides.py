@@ -165,6 +165,7 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
     # Check if the file exists in the S3 bucket before attempting to download
     response = requests.get(base_data_url + file_key, stream=True)
     response.raise_for_status()
+
     # Get the total size of the file for progress tracking
     total_size = int(response.headers.get("content-length", 0))
     downloaded_size = 0
@@ -207,22 +208,49 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
     buffer.seek(0)
     csv_frames = []
     
-    with zipfile.ZipFile(buffer) as zip_file:
-        for name in zip_file.namelist():
-            if name.endswith(".csv"):
-                csv_name = os.path.basename(name)
-                print(f"[PROCESS] Reading {csv_name}")
-                with zip_file.open(name) as source:
-                    csv_frames.append(
-                        pl.read_csv(
-                            source,
-                            # Override the schema for station ID columns to ensure string type
-                            schema_overrides={
-                                "start_station_id": pl.Utf8,
-                                "end_station_id": pl.Utf8,
-                            },
+    with zipfile.ZipFile(buffer) as outer_zip:
+        names = outer_zip.namelist()
+        has_inner_zips = any(n.endswith(".zip") for n in names)
+
+        if has_inner_zips:
+            # Pre-202401 yearly format: outer zip contains monthly inner zips
+            print("[PROCESS] Detected nested ZIP structure (yearly format)")
+            for inner_name in names:
+                if not inner_name.endswith(".zip"):
+                    continue
+                print(f"[PROCESS] Opening inner ZIP {os.path.basename(inner_name)}")
+                with outer_zip.open(inner_name) as inner_raw:
+                    inner_bytes = io.BytesIO(inner_raw.read())
+                with zipfile.ZipFile(inner_bytes) as inner_zip:
+                    for csv_name in inner_zip.namelist():
+                        if csv_name.endswith(".csv"):
+                            print(f"[PROCESS] Reading {os.path.basename(csv_name)}")
+                            with inner_zip.open(csv_name) as source:
+                                csv_frames.append(
+                                    pl.read_csv(
+                                        source,
+                                        schema_overrides={
+                                            "start_station_id": pl.Utf8,
+                                            "end_station_id": pl.Utf8,
+                                        },
+                                    )
+                                )
+        else:
+            # Post-202401 monthly format: outer zip contains CSVs directly
+            for name in names:
+                if name.endswith(".csv"):
+                    csv_name = os.path.basename(name)
+                    print(f"[PROCESS] Reading {csv_name}")
+                    with outer_zip.open(name) as source:
+                        csv_frames.append(
+                            pl.read_csv(
+                                source,
+                                schema_overrides={
+                                    "start_station_id": pl.Utf8,
+                                    "end_station_id": pl.Utf8,
+                                },
+                            )
                         )
-                    )
     
     if not csv_frames:
         print("[WARN] No CSV files found in ZIP")

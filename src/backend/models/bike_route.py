@@ -26,4 +26,6 @@ class BikeRoute(BaseModel):
     fromStreet: str
     toStreet: str
     facilityClass: FacilityClass
-    instDate: date | None = None
+    instDate: date
+    retiredDate: date | None
+    boro: str
