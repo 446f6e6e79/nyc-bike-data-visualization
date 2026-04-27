@@ -305,7 +305,7 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool, curren
             partition_by=["year", "month"],
             compression=PARQUET_COMPRESSION)
 
-        print(f"[PROCESS] Wrote {trip_data.height} rows → {RIDES_DATA_DIR} ({f})")
+        print(f"[PROCESS] Wrote {trip_data.height} rows -> {RIDES_DATA_DIR} ({f})")
 
         # Free the full-year DataFrame before suspending at yields — otherwise it
         # stays alive in the generator frame across all 12 yield points.

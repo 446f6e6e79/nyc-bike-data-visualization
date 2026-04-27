@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS bike_routes (
     fromstreet          VARCHAR(500) NOT NULL,
     tostreet            VARCHAR(500) NOT NULL,
     facilitycl          VARCHAR(5)   NOT NULL,
-    instdate            DATE,
     boro                VARCHAR(20),
-    PRIMARY KEY (segmentid, installation_date)
+    PRIMARY KEY (segmentid, installation_date, status)
 );
