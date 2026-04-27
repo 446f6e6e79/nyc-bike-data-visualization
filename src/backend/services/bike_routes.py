@@ -4,7 +4,7 @@ from src.backend.db import get_conn
 from src.backend.models.bike_route import BikeRoute, BikeSegmentGeometry, GeometryType
 
 _SELECT = (
-    "SELECT bikeid, the_geom, street, fromstreet, tostreet, facilitycl, instdate, retired_date, boro "
+    "SELECT bikeid, the_geom, street, fromstreet, tostreet, facilitycl, installation_date, retired_date, boro "
     "FROM bike_routes"
 )
 
@@ -34,7 +34,7 @@ def _rows_to_bike_routes(rows: list[dict]) -> list[BikeRoute]:
             fromStreet=row["fromstreet"],
             toStreet=row["tostreet"],
             facilityClass=row["facilitycl"],
-            instDate=row["instdate"],
+            instDate=row["installation_date"],
             retiredDate=row["retired_date"],
             boro=row["boro"],
         )
