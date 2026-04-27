@@ -1,13 +1,9 @@
 name: Docker Release Pipeline
 
-# Builds and pushes Docker images on release.
-# On the 5th of each month: re-seeds the database and updates the latest release title with the month name.
+# Builds and pushes all Docker images on release and seeds the database.
 on:
   release:
     types: [published]
-  schedule:
-    - cron: '0 0 5 * *' # 5th of every month at midnight UTC
-  workflow_dispatch:    # Manual trigger to simulate the schedule path
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -16,29 +12,17 @@ env:
   PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
-  
-
-  prepare:                  # On release: resolve the tag from the event; on schedule: get the latest release tag
+    
+  prepare:                  # Extracts the release tag from the GitHub ref and makes it available to downstream jobs.
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     outputs:
       tag: ${{ steps.tag.outputs.value }}
     steps:
       - name: Resolve release tag
         id: tag
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          else
-            TAG=$(gh release view --repo "${{ github.repository }}" --json tagName -q '.tagName')
-            echo "value=$TAG" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
-  build-backend:                        # Build and push backend image on release
-    if: github.event_name == 'release'
+  build-backend:            # Builds and pushes the backend image to GitHub Container Registry.
     needs: prepare
     runs-on: ubuntu-latest
     permissions:
@@ -76,8 +60,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  build-frontend:                     # Build and push frontend image on release
-    if: github.event_name == 'release'
+  build-frontend:           # Builds and pushes the frontend image to GitHub Container Registry.
     needs: prepare
     runs-on: ubuntu-latest
     permissions:
@@ -115,8 +98,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  build-postgres:                   # Build and push unseeded postgres image (release + monthly reseed)
-    if: github.event_name == 'release' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  build-postgres:           # Builds and pushes the postgres image to GitHub Container Registry.
     needs: prepare
     runs-on: ubuntu-latest
     permissions:
@@ -153,8 +135,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  build-seeder:                     # Build and push seeder image (release + monthly reseed)
-    if: github.event_name == 'release' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  build-seeder:             # Builds and pushes the seeder image to GitHub Container Registry.
     needs: prepare
     runs-on: ubuntu-latest
     permissions:
@@ -192,15 +173,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  seed:                                         # Run the seeding process and publish the preloaded postgres image (schedule only)
+  seed:             # Runs the seeder container to seed the database, exports the dump, and builds the final preloaded postgres image.
     needs: [prepare, build-postgres, build-seeder]
-    # Run when prepare succeeded AND build jobs either succeeded or were skipped (schedule path)
-    if: |
-      always() &&
-      needs.prepare.result == 'success' &&
-      (needs.build-postgres.result == 'success' || needs.build-postgres.result == 'skipped') &&
-      (needs.build-seeder.result == 'success' || needs.build-seeder.result == 'skipped') &&
-      (github.event_name == 'release' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -314,8 +288,7 @@ jobs:
               && { echo "Deleted $PACKAGE:$TAG (id $ID)"; break; }
           done
 
-  release:                              # Create GitHub release and attach docker-compose file (release only)
-    if: github.event_name == 'release'
+  release:                 # Generates a docker-compose.release.yml with the new image tags and attaches it to the GitHub Release.
     needs: [prepare, build-backend, build-frontend, build-postgres, build-seeder]
     runs-on: ubuntu-latest
     permissions:
@@ -353,24 +326,3 @@ jobs:
           tag_name: ${{ needs.prepare.outputs.tag }}
           name: Data Visualisation Docker Release ${{ needs.prepare.outputs.tag }}
           files: docker-compose.release.yml
-
-  update-monthly-title:                                         # On schedule: update the latest release title to include the current month, after seeding new data
-    needs: seed
-    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.seed.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Append current month to latest release title
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          MONTH=$(date +%B)
-          TAG="${{ needs.seed.outputs.tag || '' }}"
-          if [ -z "$TAG" ]; then
-            TAG=$(gh release view --repo "${{ github.repository }}" --json tagName -q '.tagName')
-          fi
-          CURRENT=$(gh release view "$TAG" --repo "${{ github.repository }}" --json name -q '.name')
-          BASE=$(echo "$CURRENT" | sed 's/ - [A-Za-z]*$//')
-          gh release edit "$TAG" --repo "${{ github.repository }}" --title "$BASE - $MONTH"
-          echo "Updated release $TAG title to: $BASE - $MONTH"
