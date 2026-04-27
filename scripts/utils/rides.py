@@ -221,11 +221,16 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
                 print(f"[PROCESS] Opening inner ZIP {os.path.basename(inner_name)}")
                 with outer_zip.open(inner_name) as inner_raw:
                     inner_bytes = io.BytesIO(inner_raw.read())
-                with zipfile.ZipFile(inner_bytes) as inner_zip:
-                    for csv_name in inner_zip.namelist():
+                try:
+                    inner_zip_file = zipfile.ZipFile(inner_bytes)
+                except zipfile.BadZipFile:
+                    print(f"[WARN] Skipping {os.path.basename(inner_name)}: not a valid ZIP")
+                    continue
+                with inner_zip_file:
+                    for csv_name in inner_zip_file.namelist():
                         if csv_name.endswith(".csv"):
                             print(f"[PROCESS] Reading {os.path.basename(csv_name)}")
-                            with inner_zip.open(csv_name) as source:
+                            with inner_zip_file.open(csv_name) as source:
                                 csv_frames.append(
                                     pl.read_csv(
                                         source,

@@ -25,6 +25,7 @@ from config import (
     DEFAULT_START_DATE,
     DEFAULT_END_DATE,
     DOWNLOAD_JC,
+    PARALLEL_MONTHS,
     BIKE_ROUTES_DATA_DIR,
 )
 
@@ -60,6 +61,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--start-date", default=DEFAULT_START_DATE, help="Start date in YYYYMM")
     parser.add_argument("--end-date", default=DEFAULT_END_DATE, help="End date in YYYYMM")
     parser.add_argument("--download-jc", action="store_true", default=DOWNLOAD_JC, help="Include JC files")
+    parser.add_argument("--parallel-months", type=int, default=PARALLEL_MONTHS, help="Number of months to load into the DB concurrently")
     parser.add_argument("--force-download", action="store_true", help="Force re-download of all files, even if they already exist")
     return parser.parse_args()
 
@@ -161,7 +163,7 @@ def main():
     # overlapping DB loading with the download of the next month.
     # DB coverage is used to skip months already fully loaded, avoiding redundant downloads.
     current_coverage = get_loaded_months(conn)
-    with ThreadPoolExecutor(max_workers=1) as executor:
+    with ThreadPoolExecutor(max_workers=args.parallel_months) as executor:
         futures = []
         for year, month in download_ride_data(start_date, end_date, download_jc=args.download_jc, current_coverage=current_coverage):
             futures.append(executor.submit(_load_month, year, month))

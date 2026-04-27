@@ -1,4 +1,5 @@
 import polars as pl
+from psycopg2.extras import execute_values
 
 def upsert_bike_routes(conn, df: pl.DataFrame) -> None:
     """
@@ -29,12 +30,13 @@ def upsert_bike_routes(conn, df: pl.DataFrame) -> None:
         for r in df.iter_rows(named=True)
     ]
     with conn.cursor() as cur:
-        cur.executemany(
+        execute_values(
+            cur,
             """
             INSERT INTO bike_routes
                 (segmentid, bikeid, status, installation_date, retired_date, the_geom, street, fromstreet, tostreet, facilitycl, instdate, boro)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (segmentid) DO UPDATE SET
+            VALUES %s
+            ON CONFLICT (segmentid, installation_date) DO UPDATE SET
                 bikeid     = EXCLUDED.bikeid,
                 status     = EXCLUDED.status,
                 installation_date = EXCLUDED.installation_date,

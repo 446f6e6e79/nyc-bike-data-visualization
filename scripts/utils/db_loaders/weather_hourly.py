@@ -1,4 +1,5 @@
 import polars as pl
+from psycopg2.extras import execute_values
 
 def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
     """
@@ -49,11 +50,12 @@ def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
     ]
 
     with conn.cursor() as cur:
-        cur.executemany(
+        execute_values(
+            cur,
             """
             INSERT INTO weather_hourly
                 (date, hour, day_of_week, weather_code, temperature_2m, precipitation, wind_speed_10m)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            VALUES %s
             ON CONFLICT (date, hour) DO NOTHING
             """,
             rows,

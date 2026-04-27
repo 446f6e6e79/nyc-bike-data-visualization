@@ -1,3 +1,5 @@
+from psycopg2.extras import execute_values
+
 def upsert_station_metadata(conn, station_info: list[dict]) -> None:
     """
     Upsert station metadata from GBFS feed into station_metadata table.
@@ -14,10 +16,11 @@ def upsert_station_metadata(conn, station_info: list[dict]) -> None:
         for s in station_info
     ]
     with conn.cursor() as cur:
-        cur.executemany(
+        execute_values(
+            cur,
             """
             INSERT INTO station_metadata (station_id, station_name, lat, lon)
-            VALUES (%s, %s, %s, %s)
+            VALUES %s
             ON CONFLICT (station_id) DO NOTHING
             """,
             rows,

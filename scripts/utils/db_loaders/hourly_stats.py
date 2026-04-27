@@ -1,4 +1,5 @@
 import polars as pl
+from psycopg2.extras import execute_values
 
 def insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
     """
@@ -36,12 +37,13 @@ def insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
 
     # Insert the aggregated stats into the database
     with conn.cursor() as cur:
-        cur.executemany(
+        execute_values(
+            cur,
             """
             INSERT INTO stats_hourly
                 (date, hour, day_of_week, user_type, bike_type,
                  total_rides, total_duration_seconds, total_distance_km)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES %s
             ON CONFLICT (date, hour, user_type, bike_type) DO NOTHING
             """,
             rows,
