@@ -65,7 +65,7 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 		finally:
 			pconn.close()
 
-	with ThreadPoolExecutor(max_workers=4) as pool:
+	with ThreadPoolExecutor(max_workers=min(4, os.cpu_count() or 1)) as pool:
 		futures = [
 			pool.submit(_run, insert_stats_hourly),
 			pool.submit(_run, insert_station_activity_hourly),

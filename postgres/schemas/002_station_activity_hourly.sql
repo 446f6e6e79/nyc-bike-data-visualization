@@ -6,9 +6,9 @@ CREATE TABLE IF NOT EXISTS station_activity_hourly (
     month           SMALLINT     NOT NULL,
     day_of_week     SMALLINT     NOT NULL,
     hour            SMALLINT     NOT NULL,
-    station_id      VARCHAR(20)  NOT NULL,
+    station_id      TEXT         NOT NULL,
     user_type       VARCHAR(10)  NOT NULL,
-    bike_type       VARCHAR(20)  NOT NULL,
+    bike_type       VARCHAR(50)  NOT NULL,
     outgoing_rides  INTEGER      NOT NULL DEFAULT 0,
     incoming_rides  INTEGER      NOT NULL DEFAULT 0,
     PRIMARY KEY (year, month, day_of_week, hour, station_id, user_type, bike_type)
@@ -21,9 +21,9 @@ CREATE TABLE IF NOT EXISTS station_activity_hourly (
 CREATE TABLE IF NOT EXISTS station_activity_by_month (
     year            SMALLINT     NOT NULL,
     month           SMALLINT     NOT NULL,
-    station_id      VARCHAR(20)  NOT NULL,
+    station_id      TEXT         NOT NULL,
     user_type       VARCHAR(10)  NOT NULL,
-    bike_type       VARCHAR(20)  NOT NULL,
+    bike_type       VARCHAR(50)  NOT NULL,
     outgoing_rides  INTEGER      NOT NULL DEFAULT 0,
     incoming_rides  INTEGER      NOT NULL DEFAULT 0,
     PRIMARY KEY (year, month, station_id, user_type, bike_type)
@@ -34,9 +34,9 @@ CREATE TABLE IF NOT EXISTS station_activity_by_hour (
     year            SMALLINT     NOT NULL,
     month           SMALLINT     NOT NULL,
     hour            SMALLINT     NOT NULL,
-    station_id      VARCHAR(20)  NOT NULL,
+    station_id      TEXT         NOT NULL,
     user_type       VARCHAR(10)  NOT NULL,
-    bike_type       VARCHAR(20)  NOT NULL,
+    bike_type       VARCHAR(50)  NOT NULL,
     outgoing_rides  INTEGER      NOT NULL DEFAULT 0,
     incoming_rides  INTEGER      NOT NULL DEFAULT 0,
     PRIMARY KEY (year, month, hour, station_id, user_type, bike_type)
@@ -47,9 +47,9 @@ CREATE TABLE IF NOT EXISTS station_activity_by_dow (
     year            SMALLINT     NOT NULL,
     month           SMALLINT     NOT NULL,
     day_of_week     SMALLINT     NOT NULL,
-    station_id      VARCHAR(20)  NOT NULL,
+    station_id      TEXT         NOT NULL,
     user_type       VARCHAR(10)  NOT NULL,
-    bike_type       VARCHAR(20)  NOT NULL,
+    bike_type       VARCHAR(50)  NOT NULL,
     outgoing_rides  INTEGER      NOT NULL DEFAULT 0,
     incoming_rides  INTEGER      NOT NULL DEFAULT 0,
     PRIMARY KEY (year, month, day_of_week, station_id, user_type, bike_type)
