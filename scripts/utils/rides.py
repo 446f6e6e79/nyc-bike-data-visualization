@@ -297,6 +297,7 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool, curren
         )
 
         # Write the combined DataFrame to a parquet file, partitioned by year and month
+        new_month_pairs = trip_data.select(["year", "month"]).unique().rows()
         trip_data.write_parquet(
             RIDES_DATA_DIR,
             row_group_size=100_000,   # smaller = faster predicate pushdown
@@ -306,5 +307,9 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool, curren
 
         print(f"[PROCESS] Wrote {trip_data.height} rows → {RIDES_DATA_DIR} ({f})")
 
-        for year, month in trip_data.select(["year", "month"]).unique().rows():
+        # Free the full-year DataFrame before suspending at yields — otherwise it
+        # stays alive in the generator frame across all 12 yield points.
+        del trip_data
+
+        for year, month in new_month_pairs:
             yield year, month
