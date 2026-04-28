@@ -45,6 +45,10 @@ Note: The image is built with the script `scripts/download_data.py` included wit
 The easiest way to run the application is to use the pre-built images from the latest release.
 No need to clone the repository or build anything, Docker will automatically pull the correct image for your architecture (linux/amd64, linux/arm64).
 
+> **Download Size:** Download size: ~1.2 GB | Final disk footprint: ~17 GB. To avoid a segmentation fault or installation failure, please ensure your system meets these storage requirements.
+
+> **Time:** Deployment may take several minutes. This is primarily due to the PostgreSQL image. **Please do not interrupt or close the terminal once the build has started**.
+
 > **Default data range:** The images are built filled with default data starting from January 2020 to the last month updated. If you want to customise the date range, please refer to the "Quick start from source" section below.
 
 **1. Download `docker-compose.release.yml` from the [latest release](https://github.com/446f6e6e79/nyc-bike-data-visualization/releases/latest)**
@@ -68,10 +72,8 @@ docker-compose -f docker-compose.release.yml up
 ```bash
 docker compose -f docker-compose.release.yml down
 ```
+You can also run it from the Docker Desktop built-in terminal in the same way.
 
->**Note**: You can also run it from the Docker Desktop built-in terminal in the same way.
-
-> **Note:** In case the first run fails due to unhealthy containers (e.g. if the backend starts before the database is ready), simply run `docker compose -f docker-compose.release.yml up` again.
 
 ### Quick start from source
 
