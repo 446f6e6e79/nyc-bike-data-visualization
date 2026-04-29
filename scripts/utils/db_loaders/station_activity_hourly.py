@@ -1,29 +1,18 @@
 import logging
+
 import polars as pl
 from psycopg2.extras import execute_values
 
 log = logging.getLogger(__name__)
 
-
 def insert_station_activity_hourly(conn, rides: pl.DataFrame) -> None:
-    """
-    Compute and insert hourly station activity (outgoing/incoming rides) into station_activity_hourly table.
-    Arguments:
-        - conn: psycopg2 connection object to the database
-        - rides: Polars DataFrame containing ride data with columns:
-            - date (datetime)
-            - hour (int)
-            - day_of_week (int)
-            - start_station_id (int)
-            - end_station_id (int)
-            - member_casual (str)
-            - rideable_type (str)
-    """
+    """Insert per-station outgoing/incoming ride counts grouped by (year, month, dow, hour, user, bike)."""
     rides = rides.with_columns([
         pl.col("date").dt.year().cast(pl.Int16).alias("year"),
         pl.col("date").dt.month().cast(pl.Int16).alias("month"),
     ])
     key_cols = ["year", "month", "day_of_week", "hour", "member_casual", "rideable_type"]
+
     outgoing = (
         rides
         .group_by([*key_cols, "start_station_id"])

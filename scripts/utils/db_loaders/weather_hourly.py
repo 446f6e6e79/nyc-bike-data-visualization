@@ -1,21 +1,12 @@
+import logging
+
 import polars as pl
 from psycopg2.extras import execute_values
-import logging
 
 log = logging.getLogger(__name__)
 
 def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
-    """
-    Upsert hourly weather data into weather_hourly table.
-    Arguments:
-        - conn: psycopg2 connection object to the database
-        - weather_df: Polars DataFrame containing weather data with columns:
-            - datetime (datetime)
-            - weather_code (int)
-            - temperature_2m (float)
-            - precipitation (float)
-            - wind_speed_10m (float)
-    """
+    """Upsert hourly weather observations into weather_hourly, deduped by (date, hour)."""
     if weather_df.is_empty():
         log.info("[DB-LOAD: weather_hourly] 0 rows upserted")
         return

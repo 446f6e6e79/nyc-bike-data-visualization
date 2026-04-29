@@ -1,19 +1,11 @@
-from psycopg2.extras import execute_values
 import logging
 
+from psycopg2.extras import execute_values
+
 log = logging.getLogger(__name__)
-    
+
 def upsert_station_metadata(conn, station_info: list[dict]) -> None:
-    """
-    Upsert station metadata from GBFS feed into station_metadata table.
-    Arguments:
-        - conn: psycopg2 connection object to the database
-        - station_info: List of dictionaries containing station metadata with keys:
-            - short_name (str): Unique station ID
-            - name (str): Station name
-            - lat (float): Latitude
-            - lon (float): Longitude
-    """
+    """Upsert station metadata from the GBFS feed into station_metadata."""
     rows = [
         (s["short_name"], s["name"], s["lat"], s["lon"])
         for s in station_info

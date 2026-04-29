@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 
-
 def configure_logging() -> None:
     """Configure root logger to stdout with timestamp + thread name + level."""
     level = os.getenv("LOG_LEVEL", "INFO").upper()
