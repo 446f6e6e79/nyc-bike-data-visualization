@@ -1,5 +1,8 @@
 from psycopg2.extras import execute_values
+import logging
 
+log = logging.getLogger(__name__)
+    
 def upsert_station_metadata(conn, station_info: list[dict]) -> None:
     """
     Upsert station metadata from GBFS feed into station_metadata table.
@@ -25,4 +28,4 @@ def upsert_station_metadata(conn, station_info: list[dict]) -> None:
             """,
             rows,
         )
-    print(f"[DB-LOAD: station_metadata] Upserted {len(rows)} stations")
+    log.info(f"[DB-LOAD: station_metadata] Upserted {len(rows)} stations")

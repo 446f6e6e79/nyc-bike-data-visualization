@@ -1,5 +1,8 @@
 import polars as pl
 from psycopg2.extras import execute_values
+import logging
+
+log = logging.getLogger(__name__)
 
 def upsert_bike_routes(conn, df: pl.DataFrame) -> None:
     """
@@ -53,4 +56,4 @@ def upsert_bike_routes(conn, df: pl.DataFrame) -> None:
             """,
             rows,
         )
-    print(f"[DB-LOAD: bike_routes] Upserted {len(rows)} rows")
+    log.info(f"[DB-LOAD: bike_routes] Upserted {len(rows)} rows")

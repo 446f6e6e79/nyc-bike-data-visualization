@@ -5,7 +5,6 @@ from psycopg2.extras import execute_values
 
 log = logging.getLogger(__name__)
 
-
 def insert_station_activity_preagg(conn, rides: pl.DataFrame) -> None:
     rides = rides.with_columns([
         pl.col("date").dt.year().cast(pl.Int16).alias("year"),
