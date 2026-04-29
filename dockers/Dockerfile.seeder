@@ -8,12 +8,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/app/scripts
 
 # Optional seeding parameters, can be provided via build args or runtime env vars.
+# These env vars are translated into CLI flags by the CMD shell expansion below;
+# the Python application reads them only as argparse parameters, never via os.getenv.
 ARG DATA_START_DATE
 ARG DATA_END_DATE
 ARG DOWNLOAD_JC
+ARG PARALLEL_MONTHS
+ARG DB_LOADER_WORKERS
 ENV DATA_START_DATE=${DATA_START_DATE} \
     DATA_END_DATE=${DATA_END_DATE} \
-    DOWNLOAD_JC=${DOWNLOAD_JC}
+    DOWNLOAD_JC=${DOWNLOAD_JC} \
+    PARALLEL_MONTHS=${PARALLEL_MONTHS} \
+    DB_LOADER_WORKERS=${DB_LOADER_WORKERS}
 
 # Copy the requirements and excluded packages list to the container
 COPY requirements.txt /app/requirements.txt
@@ -31,4 +37,4 @@ COPY src/backend /app/src/backend
 COPY postgres/ /app/postgres/
 
 # Command to run the data download script
-CMD ["sh", "-c", "python /app/scripts/download_data.py ${DATA_START_DATE:+--start-date $DATA_START_DATE} ${DATA_END_DATE:+--end-date $DATA_END_DATE} ${DOWNLOAD_JC:+--download-jc}"]
+CMD ["sh", "-c", "python /app/scripts/download_data.py ${DATA_START_DATE:+--start-date $DATA_START_DATE} ${DATA_END_DATE:+--end-date $DATA_END_DATE} ${DOWNLOAD_JC:+--download-jc} ${PARALLEL_MONTHS:+--parallel-months $PARALLEL_MONTHS} ${DB_LOADER_WORKERS:+--db-loader-workers $DB_LOADER_WORKERS}"]

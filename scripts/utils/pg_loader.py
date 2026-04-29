@@ -4,6 +4,8 @@ Replaces daily_stats.py — writes three tables:
   stats_hourly, station_activity_hourly, flow_activity_monthly
 plus station_metadata and dataset_coverage.
 """
+import gc
+import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 import polars as pl
@@ -12,12 +14,16 @@ import psycopg2
 from config import RIDES_DATA_DIR, STATION_DISTANCES_PATH, WEATHER_DATA_DIR
 from src.backend.services.gbfs import fetch_station_data
 from utils.distances import enrich_with_distances
+from utils.logging_setup import log_memory
 from utils.db_loaders.flow_activity_monthly import insert_flow_activity_monthly
 from utils.db_loaders.hourly_stats import insert_stats_hourly
 from utils.db_loaders.station_activity_hourly import insert_station_activity_hourly
 from utils.db_loaders.station_activity_preagg import insert_station_activity_preagg
 from utils.db_loaders.station_metadata import upsert_station_metadata
 from utils.db_loaders.weather_hourly import upsert_weather_hourly
+
+# Set up a module-level logger
+log = logging.getLogger(__name__)
 
 def init_db(conn) -> None:
 	"""
@@ -26,8 +32,8 @@ def init_db(conn) -> None:
 		conn: psycopg2 connection object to the target database
 	"""
 	schema_dir = __import__("pathlib").Path(__file__).resolve().parents[2] / "postgres" / "schemas"
-	
-    # Get all files in the schema directory, sorted alphabetically 
+
+    # Get all files in the schema directory, sorted alphabetically
 	schema_files = sorted(schema_dir.glob("*.sql"))
 	if not schema_files:
 		raise FileNotFoundError(f"No schema SQL files found in {schema_dir}")
@@ -35,14 +41,15 @@ def init_db(conn) -> None:
 	with conn.cursor() as cur:
 		for sql_file in schema_files:
 			cur.execute(sql_file.read_text())
-			print(f"[DB] Applied schema: {sql_file.name}")
+			log.info(f"[DB] Applied schema: {sql_file.name}")
 	conn.commit()
-	print("[DB] Schema initialised")
+	log.info("[DB] Schema initialised")
 
-def load_stats_for_month(conn, year: int, month: int) -> None:
+def load_stats_for_month(conn, year: int, month: int, db_loader_workers: int) -> None:
 	"""Precompute and insert all stats tables for a single calendar month.."""
 
-	print(f"[DB] Loading {year}-{month:02d}...")
+	tag = f"{year}-{month:02d}"
+	log.info(f"[DB] Loading {tag}...")
 	partition_path = RIDES_DATA_DIR / f"year={year}" / f"month={month}"
 	rides_lf = pl.scan_parquet(str(partition_path / "*.parquet"))
 
@@ -50,12 +57,14 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 	if STATION_DISTANCES_PATH.exists():
 		rides_lf = enrich_with_distances(rides_lf, pl.scan_parquet(str(STATION_DISTANCES_PATH)))
 	else:
-		print(f"[WARN] {STATION_DISTANCES_PATH} not found, skipping distance enrichment")
+		log.warning(f"[WARN] {STATION_DISTANCES_PATH} not found, skipping distance enrichment")
 		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Float32).alias("distance_km"))
 
     # Collect the enriched rides data into memory for aggregation and insertion
+	log_memory("before-collect", month=tag)
 	rides = rides_lf.collect()
-	print(f"[PROCESS] {len(rides)} rides — computing aggregations")
+	log.info(f"[PROCESS] {len(rides)} rides — computing aggregations")
+	log_memory("after-collect", month=tag)
 
 	def _run(insert_fn):
 		pconn = psycopg2.connect(os.environ["DATABASE_URL"])
@@ -65,7 +74,10 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 		finally:
 			pconn.close()
 
-	with ThreadPoolExecutor(max_workers=min(4, os.cpu_count() or 1)) as pool:
+	# Inner pool sized by caller; each worker holds the rides frame plus its
+	# aggregation intermediates, so this multiplies memory pressure.
+	inner_workers = max(1, db_loader_workers)
+	with ThreadPoolExecutor(max_workers=inner_workers, thread_name_prefix="db-insert") as pool:
 		futures = [
 			pool.submit(_run, insert_stats_hourly),
 			pool.submit(_run, insert_station_activity_hourly),
@@ -75,13 +87,19 @@ def load_stats_for_month(conn, year: int, month: int) -> None:
 		for f in futures:
 			f.result()
 
+	log_memory("after-inserts", month=tag)
 	conn.commit()
-	print(f"[DB] {year}-{month:02d} committed")
+	log.info(f"[DB] {tag} committed")
+
+	# Drop the in-memory rides frame and reclaim before the next month starts.
+	del rides
+	gc.collect()
+	log_memory("after-gc", month=tag)
 
 def load_weather_hourly(conn) -> None:
 	"""Load hourly weather parquet data into weather_hourly table."""
 	if not WEATHER_DATA_DIR.exists() or not any(WEATHER_DATA_DIR.rglob("*.parquet")):
-		print(f"[WARN] No weather data found in {WEATHER_DATA_DIR}, skipping")
+		log.warning(f"[WARN] No weather data found in {WEATHER_DATA_DIR}, skipping")
 		return
 
 	weather_df = pl.scan_parquet(str(WEATHER_DATA_DIR / "**/*.parquet"), hive_partitioning=True).collect()

@@ -1,5 +1,9 @@
+import logging
 import polars as pl
 from psycopg2.extras import execute_values
+
+log = logging.getLogger(__name__)
+
 
 def insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
     """
@@ -48,4 +52,4 @@ def insert_stats_hourly(conn, rides: pl.DataFrame) -> None:
             """,
             rows,
         )
-    print(f"[DB-LOAD: stats_hourly] Inserted {len(rows)} rows")
+    log.info(f"[DB-LOAD: stats_hourly] Inserted {len(rows)} rows")

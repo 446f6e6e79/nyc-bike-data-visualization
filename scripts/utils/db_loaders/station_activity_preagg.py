@@ -1,5 +1,9 @@
+import gc
+import logging
 import polars as pl
 from psycopg2.extras import execute_values
+
+log = logging.getLogger(__name__)
 
 
 def insert_station_activity_preagg(conn, rides: pl.DataFrame) -> None:
@@ -7,9 +11,14 @@ def insert_station_activity_preagg(conn, rides: pl.DataFrame) -> None:
         pl.col("date").dt.year().cast(pl.Int16).alias("year"),
         pl.col("date").dt.month().cast(pl.Int16).alias("month"),
     ])
+    # Free each sub-insert's aggregation + tuple list before the next one allocates
+    # — for ~5M rides each by_hour run holds ~150K Python tuples.
     _insert_by_month(conn, rides)
+    gc.collect()
     _insert_by_hour(conn, rides)
+    gc.collect()
     _insert_by_dow(conn, rides)
+    gc.collect()
 
 
 def _build_activity(rides: pl.DataFrame, key_cols: list[str]) -> pl.DataFrame:
@@ -36,6 +45,7 @@ def _insert_by_month(conn, rides: pl.DataFrame) -> None:
          int(r["outgoing_rides"]), int(r["incoming_rides"]))
         for r in activity.iter_rows(named=True)
     ]
+    del activity
     with conn.cursor() as cur:
         execute_values(
             cur,
@@ -47,7 +57,8 @@ def _insert_by_month(conn, rides: pl.DataFrame) -> None:
             """,
             rows,
         )
-    print(f"[DB-LOAD: station_activity_by_month] Inserted {len(rows)} rows")
+    log.info(f"[DB-LOAD: station_activity_by_month] Inserted {len(rows)} rows")
+    del rows
 
 
 def _insert_by_hour(conn, rides: pl.DataFrame) -> None:
@@ -57,6 +68,7 @@ def _insert_by_hour(conn, rides: pl.DataFrame) -> None:
          int(r["outgoing_rides"]), int(r["incoming_rides"]))
         for r in activity.iter_rows(named=True)
     ]
+    del activity
     with conn.cursor() as cur:
         execute_values(
             cur,
@@ -68,7 +80,8 @@ def _insert_by_hour(conn, rides: pl.DataFrame) -> None:
             """,
             rows,
         )
-    print(f"[DB-LOAD: station_activity_by_hour] Inserted {len(rows)} rows")
+    log.info(f"[DB-LOAD: station_activity_by_hour] Inserted {len(rows)} rows")
+    del rows
 
 
 def _insert_by_dow(conn, rides: pl.DataFrame) -> None:
@@ -78,6 +91,7 @@ def _insert_by_dow(conn, rides: pl.DataFrame) -> None:
          int(r["outgoing_rides"]), int(r["incoming_rides"]))
         for r in activity.iter_rows(named=True)
     ]
+    del activity
     with conn.cursor() as cur:
         execute_values(
             cur,
@@ -89,4 +103,5 @@ def _insert_by_dow(conn, rides: pl.DataFrame) -> None:
             """,
             rows,
         )
-    print(f"[DB-LOAD: station_activity_by_dow] Inserted {len(rows)} rows")
+    log.info(f"[DB-LOAD: station_activity_by_dow] Inserted {len(rows)} rows")
+    del rows
