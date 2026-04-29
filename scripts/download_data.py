@@ -203,7 +203,9 @@ def main():
                 current_coverage=current_coverage,
             )
         }
+        # wait for all months to complete (or any raised exception)
         done, not_done = wait(futures, return_when=FIRST_EXCEPTION)
+        # If any month raised an exception, cancel all not-yet-completed months and re-raise the exception
         for f in not_done:
             f.cancel()
         for f in done:

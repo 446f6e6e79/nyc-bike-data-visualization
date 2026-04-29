@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -27,11 +26,12 @@ DEFAULT_END_DATE   = _one_month_ago.strftime("%Y%m")
 DOWNLOAD_JC        = False
 # Months processed concurrently by the outer pool. Default 1 keeps the seeder safe
 # on small CI runners (e.g. ubuntu-latest, 2 vCPU / 7 GB shared with postgres).
-# Override via PARALLEL_MONTHS env var on machines with more headroom.
-PARALLEL_MONTHS    = int(os.getenv("PARALLEL_MONTHS", "1"))
+# Override via the --parallel-months CLI flag on machines with more headroom.
+PARALLEL_MONTHS    = 1
 # Inner pool size for the per-month DB inserts. Each worker holds the rides frame
 # plus its aggregation intermediates, so this multiplies memory pressure.
-DB_LOADER_WORKERS  = int(os.getenv("DB_LOADER_WORKERS", "2"))
+# Override via the --db-loader-workers CLI flag.
+DB_LOADER_WORKERS  = 2
 
 # Data processing constants
 YEARLY_CUTOFF         = 2023   # Files with only a year <= this are assumed to cover the full year
