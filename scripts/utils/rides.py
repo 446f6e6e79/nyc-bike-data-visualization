@@ -188,12 +188,8 @@ def _open_inner_zip(outer_zip: zipfile.ZipFile, inner_name: str) -> Iterator[zip
     """Read an inner ZIP entry into a BytesIO and yield it as an open ZipFile."""
     with outer_zip.open(inner_name) as inner_raw:
         inner_bytes = io.BytesIO(inner_raw.read())
-    try:
-        with zipfile.ZipFile(inner_bytes) as inner_zip:
-            yield inner_zip
-    except zipfile.BadZipFile:
-        log.warning(f"[WARN] Skipping {os.path.basename(inner_name)}: not a valid ZIP")
-        return
+    with zipfile.ZipFile(inner_bytes) as inner_zip:
+        yield inner_zip
 
 def _read_csvs_from_zip(zip_file: zipfile.ZipFile) -> list[pl.DataFrame]:
     """Read every .csv entry in `zip_file` into a list of DataFrames."""
@@ -223,8 +219,12 @@ def _iter_month_frames(zip_path: Path) -> Iterator[pl.DataFrame]:
                 if not inner_name.endswith(".zip"):
                     continue
                 log.info(f"[PROCESS] Opening inner ZIP {os.path.basename(inner_name)}")
-                with _open_inner_zip(outer_zip, inner_name) as inner_zip:
-                    frames = _read_csvs_from_zip(inner_zip)
+                try:
+                    with _open_inner_zip(outer_zip, inner_name) as inner_zip:
+                        frames = _read_csvs_from_zip(inner_zip)
+                except zipfile.BadZipFile:
+                    log.warning(f"[WARN] Skipping {os.path.basename(inner_name)}: not a valid ZIP")
+                    continue
                 if not frames:
                     log.warning(f"[WARN] No CSVs found in {os.path.basename(inner_name)}")
                     continue
