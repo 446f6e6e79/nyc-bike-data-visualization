@@ -13,7 +13,7 @@ import shutil
 import psycopg2
 
 from utils.distances import compute_and_save_station_distances
-from utils.logging_setup import configure_logging, log_memory
+from utils.logging_setup import configure_logging
 from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
@@ -115,7 +115,6 @@ log = logging.getLogger(__name__)
 
 def _load_month(year: int, month: int, db_loader_workers: int) -> None:
     """Helper to load a single month of rides data into Postgres, with memory logging and error handling."""
-    log_memory("month-start", month=f"{year}-{month:02d}")
     conn = psycopg2.connect(os.environ["DATABASE_URL"])
     try:
         load_stats_for_month(conn, year, month, db_loader_workers)
@@ -125,7 +124,6 @@ def _load_month(year: int, month: int, db_loader_workers: int) -> None:
         raise
     finally:
         conn.close()
-        log_memory("month-end", month=f"{year}-{month:02d}")
 
 def main():
     configure_logging()

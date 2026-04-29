@@ -46,7 +46,6 @@ jobs:
       - name: Start existing postgres container
         run: |
           docker run -d --name pg \
-            --memory=4g --memory-swap=4g \
             -e POSTGRES_DB=citibike \
             -e POSTGRES_USER=citibike \
             -e POSTGRES_PASSWORD=citibike \
@@ -59,7 +58,6 @@ jobs:
         timeout-minutes: 480
         run: |
           docker run --rm \
-            --memory=3g --memory-swap=3g \
             --network container:pg \
             -e DATABASE_URL=postgresql://citibike:citibike@localhost:5432/citibike \
             -e PARALLEL_MONTHS=1 \

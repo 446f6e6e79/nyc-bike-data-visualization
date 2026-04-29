@@ -14,7 +14,6 @@ import psycopg2
 from config import RIDES_DATA_DIR, STATION_DISTANCES_PATH, WEATHER_DATA_DIR
 from src.backend.services.gbfs import fetch_station_data
 from utils.distances import enrich_with_distances
-from utils.logging_setup import log_memory
 from utils.db_loaders.flow_activity_monthly import insert_flow_activity_monthly
 from utils.db_loaders.hourly_stats import insert_stats_hourly
 from utils.db_loaders.station_activity_hourly import insert_station_activity_hourly
@@ -61,10 +60,8 @@ def load_stats_for_month(conn, year: int, month: int, db_loader_workers: int) ->
 		rides_lf = rides_lf.with_columns(pl.lit(None).cast(pl.Float32).alias("distance_km"))
 
     # Collect the enriched rides data into memory for aggregation and insertion
-	log_memory("before-collect", month=tag)
 	rides = rides_lf.collect()
 	log.info(f"[PROCESS] {len(rides)} rides — computing aggregations")
-	log_memory("after-collect", month=tag)
 
 	def _run(insert_fn):
 		pconn = psycopg2.connect(os.environ["DATABASE_URL"])
@@ -87,14 +84,12 @@ def load_stats_for_month(conn, year: int, month: int, db_loader_workers: int) ->
 		for f in futures:
 			f.result()
 
-	log_memory("after-inserts", month=tag)
 	conn.commit()
 	log.info(f"[DB] {tag} committed")
 
 	# Drop the in-memory rides frame and reclaim before the next month starts.
 	del rides
 	gc.collect()
-	log_memory("after-gc", month=tag)
 
 def load_weather_hourly(conn) -> None:
 	"""Load hourly weather parquet data into weather_hourly table."""
