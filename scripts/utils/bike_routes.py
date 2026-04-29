@@ -1,10 +1,13 @@
 import io
+import logging
 import requests
 import polars as pl
 from pathlib import Path
 from datetime import datetime, timezone
 
 from config import BIKE_ROUTES_URL, BIKE_ROUTES_PATH, PARQUET_COMPRESSION
+
+log = logging.getLogger(__name__)
 
 def _fetch_bike_routes_csv() -> pl.DataFrame:
     """Fetch bike routes CSV bytes over HTTPS and parse with Polars."""
@@ -71,9 +74,9 @@ def download_bike_routes(force_download: bool = False) -> pl.DataFrame:
 
     Returns the cleaned DataFrame (from cache or fresh download) for DB insertion.
     """
-    print("[DOWNLOAD] Downloading bike routes...")
+    log.info("[DOWNLOAD] Downloading bike routes...")
     if not force_download and _check_bike_routes_cache():
-        print(f"[DOWNLOAD] Bike routes already fresh at {BIKE_ROUTES_PATH}, skipping")
+        log.info(f"[DOWNLOAD] Bike routes already fresh at {BIKE_ROUTES_PATH}, skipping")
         return pl.read_parquet(BIKE_ROUTES_PATH)
 
     df = _fetch_bike_routes_csv()
@@ -84,6 +87,6 @@ def download_bike_routes(force_download: bool = False) -> pl.DataFrame:
         statistics=True,           # enables min/max skipping
         compression=PARQUET_COMPRESSION,
     )
-    print(f"[PROCESS] Wrote bike routes -> {BIKE_ROUTES_PATH}")
+    log.info(f"[PROCESS] Wrote bike routes -> {BIKE_ROUTES_PATH}")
     return df
     

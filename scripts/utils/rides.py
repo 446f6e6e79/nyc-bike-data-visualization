@@ -1,10 +1,15 @@
+import gc
 import io
+import logging
 import os
+import tempfile
 import requests
 import zipfile
 import polars as pl
 from config import PARQUET_COMPRESSION, YEARLY_CUTOFF, BASE_URL_RIDE_DATA, RIDES_DATA_DIR
 import xml.etree.ElementTree as ET
+
+log = logging.getLogger(__name__)
 
 def _get_response(url: str, stream: bool = False) -> requests.Response:
     """Execute HTTP GET and raise for non-2xx responses."""
@@ -85,7 +90,7 @@ def _filter_files(available_files: list, current_coverage: list, start_date: str
         
         # If the file is fully covered by existing files, skip it
         if is_covered:
-            print(f"[DOWNLOAD] {f} already covered, skipping")
+            log.info(f"[DOWNLOAD] {f} already covered, skipping")
             continue
 
         # If the start value is set and the file ends before the start value, skip it
@@ -97,7 +102,7 @@ def _filter_files(available_files: list, current_coverage: list, start_date: str
         # If the file passes all filters, add it to the list of filtered files
         filtered_files.append(f)
 
-    print(f"[DOWNLOAD] Selected {len(filtered_files)} files")
+    log.info(f"[DOWNLOAD] Selected {len(filtered_files)} files")
     return filtered_files
 
 def _find_available_files(base_data_url: str) -> list[str]:
@@ -108,7 +113,7 @@ def _find_available_files(base_data_url: str) -> list[str]:
     Returns:
         list: A list of file keys available in the S3 bucket.
     """
-    print(f"[DOWNLOAD] Finding files in S3 at {base_data_url}...")
+    log.info(f"[DOWNLOAD] Finding files in S3 at {base_data_url}...")
     # Get S3 bucket index
     response = _get_response(base_data_url)
     
@@ -122,7 +127,7 @@ def _find_available_files(base_data_url: str) -> list[str]:
         if key.endswith(".zip"):
             files.append(key)
 
-    print(f"[DOWNLOAD] Found {len(files)} files")
+    log.info(f"[DOWNLOAD] Found {len(files)} files")
     return files
 
 def _clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
@@ -159,9 +164,30 @@ def _clean_rides_data(df: pl.DataFrame) -> pl.DataFrame:
         .filter(pl.col("ended_at") >= pl.col("started_at"))
     )
 
-def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFrame:
-    """Download and process a single ZIP file in one streaming operation."""
-    print(f"[DOWNLOAD] Downloading {file_key}...")
+def _read_csv_from_zip(zip_file: zipfile.ZipFile, csv_name: str) -> pl.DataFrame:
+    """Read a single CSV out of an open ZipFile into a Polars DataFrame."""
+    log.info(f"[PROCESS] Reading {os.path.basename(csv_name)}")
+    with zip_file.open(csv_name) as source:
+        # Return the DataFrame of the CSV file
+        return pl.read_csv(
+            source,
+            schema_overrides={
+                "start_station_id": pl.Utf8,
+                "end_station_id": pl.Utf8,
+            },
+        )
+
+def _download_and_process_file(file_key: str, base_data_url: str):
+    """Download a single ZIP file, then yield one DataFrame per month it contains.
+
+    The outer ZIP is streamed to a temp file on disk so it never sits in RAM.
+    For the legacy yearly format, each inner monthly ZIP is opened, its CSVs
+    are concatenated into a single per-month DataFrame, and that DataFrame is
+    yielded before the next inner ZIP is touched. This keeps peak memory at
+    one month's worth of rides instead of a full year.
+    """
+    log.info(f"[DOWNLOAD] Downloading {file_key}...")
+    
     # Check if the file exists in the S3 bucket before attempting to download
     response = requests.get(base_data_url + file_key, stream=True)
     response.raise_for_status()
@@ -170,99 +196,108 @@ def _download_and_process_file(file_key: str, base_data_url: str) -> pl.DataFram
     total_size = int(response.headers.get("content-length", 0))
     downloaded_size = 0
     chunk_size = 1024 * 1024 * 10  # 10 MB
-    
-    # Use BytesIO to accumulate chunks for ZIP processing
-    buffer = io.BytesIO()
-    
-    for chunk in response.iter_content(chunk_size=chunk_size):
-        # For each chunk, write it to the buffer and update the downloaded size
-        if chunk:
-            buffer.write(chunk)
-            downloaded_size += len(chunk)
 
-            # If we have the total size information, show progress percentage
-            if total_size > 0:
-                progress_pct = (downloaded_size / total_size) * 100
-                downloaded_mb = downloaded_size / (1024 * 1024)
-                total_mb = total_size / (1024 * 1024)
-                print(
-                    f"\r[DOWNLOAD] Download progress for {file_key}: {progress_pct:5.1f}% "
-                    f"({downloaded_mb:.1f}/{total_mb:.1f} MB)",
-                    end="",
-                    flush=True,
-                )
-            # Otherwise, just show the downloaded size in MB without percentage
-            else:
-                downloaded_mb = downloaded_size / (1024 * 1024)
-                print(
-                    f"\r[DOWNLOAD] Download progress for {file_key}: {downloaded_mb:.1f} MB",
-                    end="",
-                    flush=True,
-                )
+    # Create a temporary file to stream the ZIP content into, avoiding loading the entire file into memory
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip", prefix="citibike-")
+    tmp_path = tmp.name
     
-    print()  # New line after progress is complete
-    print(f"[DOWNLOAD] Finished {file_key}")
-    print("[PROCESS] Extracting CSV files from ZIP...")
-    
-    # Process the ZIP content directly from the buffer
-    buffer.seek(0)
-    csv_frames = []
-    
-    with zipfile.ZipFile(buffer) as outer_zip:
-        names = outer_zip.namelist()
-        has_inner_zips = any(n.endswith(".zip") for n in names)
+    try:
+        try:
+            # For each chunk, write it to disk and update the downloaded size
+            for chunk in response.iter_content(chunk_size=chunk_size):
+                if chunk:
+                    tmp.write(chunk)
+                    downloaded_size += len(chunk)
 
-        if has_inner_zips:
-            # Pre-202401 yearly format: outer zip contains monthly inner zips
-            print("[PROCESS] Detected nested ZIP structure (yearly format)")
-            for inner_name in names:
-                if not inner_name.endswith(".zip"):
-                    continue
-                print(f"[PROCESS] Opening inner ZIP {os.path.basename(inner_name)}")
-                with outer_zip.open(inner_name) as inner_raw:
-                    inner_bytes = io.BytesIO(inner_raw.read())
-                try:
-                    inner_zip_file = zipfile.ZipFile(inner_bytes)
-                except zipfile.BadZipFile:
-                    print(f"[WARN] Skipping {os.path.basename(inner_name)}: not a valid ZIP")
-                    continue
-                with inner_zip_file:
-                    for csv_name in inner_zip_file.namelist():
-                        if csv_name.endswith(".csv"):
-                            print(f"[PROCESS] Reading {os.path.basename(csv_name)}")
-                            with inner_zip_file.open(csv_name) as source:
-                                csv_frames.append(
-                                    pl.read_csv(
-                                        source,
-                                        schema_overrides={
-                                            "start_station_id": pl.Utf8,
-                                            "end_station_id": pl.Utf8,
-                                        },
-                                    )
-                                )
-        else:
-            # Post-202401 monthly format: outer zip contains CSVs directly
-            for name in names:
-                if name.endswith(".csv"):
-                    csv_name = os.path.basename(name)
-                    print(f"[PROCESS] Reading {csv_name}")
-                    with outer_zip.open(name) as source:
-                        csv_frames.append(
-                            pl.read_csv(
-                                source,
-                                schema_overrides={
-                                    "start_station_id": pl.Utf8,
-                                    "end_station_id": pl.Utf8,
-                                },
-                            )
+                    # If we have the total size information, show progress percentage
+                    if total_size > 0:
+                        progress_pct = (downloaded_size / total_size) * 100
+                        downloaded_mb = downloaded_size / (1024 * 1024)
+                        total_mb = total_size / (1024 * 1024)
+                        log.info(
+                            f"\r[DOWNLOAD] Download progress for {file_key}: {progress_pct:5.1f}% "
+                            f"({downloaded_mb:.1f}/{total_mb:.1f} MB)",
+                            end="",
+                            flush=True,
                         )
-    
-    if not csv_frames:
-        print("[WARN] No CSV files found in ZIP")
-        return pl.DataFrame()
-    
-    print(f"[PROCESS] Extracted {len(csv_frames)} CSV files, combining...")
-    return pl.concat(csv_frames, how="diagonal_relaxed")
+                    # Otherwise, just show the downloaded size in MB without percentage
+                    else:
+                        downloaded_mb = downloaded_size / (1024 * 1024)
+                        log.info(
+                            f"\r[DOWNLOAD] Download progress for {file_key}: {downloaded_mb:.1f} MB",
+                            end="",
+                            flush=True,
+                        )
+        finally:
+            # Once the download is complete close the temp file
+            tmp.close()
+
+        print("")  # New line after progress is complete
+        log.info(f"[DOWNLOAD] Finished {file_key}")
+        log.info("[PROCESS] Extracting CSV files from ZIP...")
+
+        # Open the downloaded ZIP file and process its contents
+        with zipfile.ZipFile(tmp_path) as outer_zip:
+            names = outer_zip.namelist()
+            # Check if the ZIP contains inner ZIP files (legacy yearly format)
+            has_inner_zips = any(n.endswith(".zip") for n in names)
+
+            if has_inner_zips:
+                # Pre-202401 yearly format: outer zip contains monthly inner zips.
+                # Yield one DataFrame per inner ZIP so the caller can write parquet
+                # and free memory before the next month is loaded.
+                log.info("[PROCESS] Detected nested ZIP structure (yearly format)")
+                
+                # Process each inner ZIP file one at a time to keep memory usage low
+                for inner_name in names:
+                    
+                    # If the outer ZIP contains any non-ZIP files, skip them
+                    if not inner_name.endswith(".zip"):
+                        continue
+                    
+                    # Open the inner ZIP file directly
+                    log.info(f"[PROCESS] Opening inner ZIP {os.path.basename(inner_name)}")
+                    with outer_zip.open(inner_name) as inner_raw:
+                        inner_bytes = io.BytesIO(inner_raw.read())
+                    try:
+                        inner_zip_file = zipfile.ZipFile(inner_bytes)
+                    #If the inner file isn't a valid ZIP, log a warning and skip it 
+                    except zipfile.BadZipFile:
+                        log.info(f"[WARN] Skipping {os.path.basename(inner_name)}: not a valid ZIP")
+                        del inner_bytes
+                        continue
+                    
+                    # If the inner ZIP is valid, read all CSVs inside it, concatenate them into a single DataFrame, and yield it
+                    month_frames = []
+                    with inner_zip_file:
+                        for csv_name in inner_zip_file.namelist():
+                            if csv_name.endswith(".csv"):
+                                month_frames.append(_read_csv_from_zip(inner_zip_file, csv_name))
+                    # Release the inner ZIP buffer before yielding so it doesn't
+                    # stay alive across the parquet-write that follows.
+                    del inner_bytes
+                    if not month_frames:
+                        log.info(f"[WARN] No CSVs found in {os.path.basename(inner_name)}")
+                        continue
+                    yield pl.concat(month_frames, how="diagonal_relaxed")
+                    del month_frames
+            else:
+                # Post-202401 monthly format: outer zip contains CSVs for a single
+                # month directly. Concat any multi-part CSVs and yield once.
+                month_frames = [
+                    _read_csv_from_zip(outer_zip, name)
+                    for name in names
+                    if name.endswith(".csv")
+                ]
+                if not month_frames:
+                    log.info("[WARN] No CSV files found in ZIP")
+                    return
+                yield pl.concat(month_frames, how="diagonal_relaxed")
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
 
 def download_ride_data(start_date: str, end_date: str, download_jc: bool, current_coverage: list[int]):
     """
@@ -277,39 +312,42 @@ def download_ride_data(start_date: str, end_date: str, download_jc: bool, curren
     filtered_files = _filter_files(available_files, current_coverage, start_date, end_date, download_jc=download_jc)
 
     for f in filtered_files:
-        trip_data = _download_and_process_file(f, BASE_URL_RIDE_DATA)
+        for trip_data in _download_and_process_file(f, BASE_URL_RIDE_DATA):
+            log.info("[PROCESS] Cleaning data...")
+            trip_data = _clean_rides_data(trip_data)
+            log.info("[PROCESS] Data cleaning complete")
 
-        print("[PROCESS] Cleaning data...")
-        trip_data = _clean_rides_data(trip_data)
-        print("[PROCESS] Data cleaning complete")
-
-        # Extract year and month from cleaned datetime column (REQUIRED for partitioning by year and month in parquet output)
-        # Note: this information must be extracted from the ended_at column, not the started_at column, because some files are partitioned by end date rather than start date
-        trip_data = trip_data.with_columns(
-            pl.col("ended_at").dt.date().alias("date"),
-            pl.col("ended_at").dt.year().alias("year"),
-            pl.col("ended_at").dt.month().alias("month"),
-            pl.col("ended_at").dt.hour().alias("hour"),
-            (pl.col("ended_at").dt.weekday() - 1).alias("day_of_week"),
-            (pl.col("ended_at") - pl.col("started_at"))
+            # Extract year and month from cleaned datetime column (REQUIRED for partitioning by year and month in parquet output)
+            # Note: this information must be extracted from the ended_at column, not the started_at column, because some files are partitioned by end date rather than start date
+            trip_data = trip_data.with_columns(
+                pl.col("ended_at").dt.date().alias("date"),
+                pl.col("ended_at").dt.year().alias("year"),
+                pl.col("ended_at").dt.month().alias("month"),
+                pl.col("ended_at").dt.hour().alias("hour"),
+                (pl.col("ended_at").dt.weekday() - 1).alias("day_of_week"),
+                (pl.col("ended_at") - pl.col("started_at"))
 			.dt.total_seconds()
 			.alias("trip_duration_seconds")
-        )
+            )
 
-        # Write the combined DataFrame to a parquet file, partitioned by year and month
-        new_month_pairs = trip_data.select(["year", "month"]).unique().rows()
-        trip_data.write_parquet(
-            RIDES_DATA_DIR,
-            row_group_size=100_000,   # smaller = faster predicate pushdown
-            statistics=True,           # enables min/max skipping
-            partition_by=["year", "month"],
-            compression=PARQUET_COMPRESSION)
+            # Write the per-month DataFrame to a parquet file, partitioned by year and month.
+            # A single inner ZIP can still span more than one month (e.g. trips that ended
+            # in the next month), so we yield every (year, month) pair we actually wrote.
+            new_month_pairs = trip_data.select(["year", "month"]).unique().rows()
+            trip_data.write_parquet(
+                RIDES_DATA_DIR,
+                row_group_size=100_000,   # smaller = faster predicate pushdown
+                statistics=True,           # enables min/max skipping
+                partition_by=["year", "month"],
+                compression=PARQUET_COMPRESSION)
 
-        print(f"[PROCESS] Wrote {trip_data.height} rows -> {RIDES_DATA_DIR} ({f})")
+            log.info(f"[PROCESS] Wrote {trip_data.height} rows -> {RIDES_DATA_DIR} ({f})")
 
-        # Free the full-year DataFrame before suspending at yields — otherwise it
-        # stays alive in the generator frame across all 12 yield points.
-        del trip_data
+            # Free the per-month DataFrame and force the Polars/Arrow allocator to
+            # release before the next inner ZIP is opened — otherwise peak RSS
+            # creeps up across months even though the references are gone.
+            del trip_data
+            gc.collect()
 
-        for year, month in new_month_pairs:
-            yield year, month
+            for year, month in new_month_pairs:
+                yield year, month

@@ -1,9 +1,12 @@
+import logging
 import requests
 import polars as pl
 from calendar import monthrange
 from datetime import date, timedelta
 
 from config import WEATHER_API_URL, NYC_COORDS, WEATHER_TIMEZONE, PARQUET_COMPRESSION, WEATHER_DATA_DIR
+
+log = logging.getLogger(__name__)
 
 def _get_date_range(min_date: str, max_date: str) -> tuple[date, date]:
     """
@@ -63,7 +66,7 @@ def download_weather_data(min_date: str, max_date: str) -> None:
     # Determine the actual date range to retrieve based on provided min and max dates
     start_date, end_date = _get_date_range(min_date, max_date)
 
-    print(f"[DOWNLOAD] Downloading weather {start_date.isoformat()} -> {end_date.isoformat()}...")
+    log.info(f"[DOWNLOAD] Downloading weather {start_date.isoformat()} -> {end_date.isoformat()}...")
 
     response = requests.get(
         WEATHER_API_URL,
@@ -90,4 +93,4 @@ def download_weather_data(min_date: str, max_date: str) -> None:
         partition_by=["year"],          
         compression=PARQUET_COMPRESSION,
     )
-    print(f"[PROCESS] Wrote {weather_data.height} weather rows -> {WEATHER_DATA_DIR}")
+    log.info(f"[PROCESS] Wrote {weather_data.height} weather rows -> {WEATHER_DATA_DIR}")

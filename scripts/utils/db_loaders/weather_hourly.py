@@ -1,5 +1,8 @@
 import polars as pl
 from psycopg2.extras import execute_values
+import logging
+
+log = logging.getLogger(__name__)
 
 def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
     """
@@ -14,7 +17,7 @@ def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
             - wind_speed_10m (float)
     """
     if weather_df.is_empty():
-        print("[DB-LOAD: weather_hourly] 0 rows upserted")
+        log.info("[DB-LOAD: weather_hourly] 0 rows upserted")
         return
 
     weather_hourly = (
@@ -60,4 +63,4 @@ def upsert_weather_hourly(conn, weather_df: pl.DataFrame) -> None:
             """,
             rows,
         )
-    print(f"[DB-LOAD: weather_hourly] Inserted {len(rows)} rows")
+    log.info(f"[DB-LOAD: weather_hourly] Inserted {len(rows)} rows")
