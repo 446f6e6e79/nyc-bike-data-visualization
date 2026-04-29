@@ -4,14 +4,16 @@
     and convert the CSV files inside each downloaded ZIP into a single parquet file.
 """
 import argparse
+import logging
 import os
 import re
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
 from datetime import date
 import shutil
 import psycopg2
 
 from utils.distances import compute_and_save_station_distances
+from utils.logging_setup import configure_logging, log_memory
 from utils.rides import download_ride_data
 from utils.weather import download_weather_data
 from utils.bike_routes import download_bike_routes
@@ -26,6 +28,7 @@ from config import (
     DEFAULT_END_DATE,
     DOWNLOAD_JC,
     PARALLEL_MONTHS,
+    DB_LOADER_WORKERS,
     BIKE_ROUTES_DATA_DIR,
 )
 
@@ -62,6 +65,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--end-date", default=DEFAULT_END_DATE, help="End date in YYYYMM")
     parser.add_argument("--download-jc", action="store_true", default=DOWNLOAD_JC, help="Include JC files")
     parser.add_argument("--parallel-months", type=int, default=PARALLEL_MONTHS, help="Number of months to load into the DB concurrently")
+    parser.add_argument("--db-loader-workers", type=int, default=DB_LOADER_WORKERS, help="Number of inner threads per month for parallel DB inserts")
     parser.add_argument("--force-download", action="store_true", help="Force re-download of all files, even if they already exist")
     return parser.parse_args()
 
@@ -107,17 +111,31 @@ def _effective_date_range(conn, requested_start: str, requested_end: str) -> tup
 
     return str(effective_start), str(effective_end)
 
-def _load_month(year: int, month: int) -> None:
+log = logging.getLogger(__name__)
+
+def _load_month(year: int, month: int, db_loader_workers: int) -> None:
+    """Helper to load a single month of rides data into Postgres, with memory logging and error handling."""
+    log_memory("month-start", month=f"{year}-{month:02d}")
     conn = psycopg2.connect(os.environ["DATABASE_URL"])
     try:
-        load_stats_for_month(conn, year, month)
+        load_stats_for_month(conn, year, month, db_loader_workers)
         conn.commit()
+    except Exception:
+        log.exception(f"[DB] {year}-{month:02d} failed")
+        raise
     finally:
         conn.close()
+        log_memory("month-end", month=f"{year}-{month:02d}")
 
 def main():
+    configure_logging()
     # Parse and validate command-line arguments
     args = parse_args()
+    log.info(
+        f"[CONFIG] parallel_months={args.parallel_months} "
+        f"db_loader_workers={args.db_loader_workers} "
+        f"log_level={os.getenv('LOG_LEVEL', 'INFO')}"
+    )
     validate_yyyymm(args.start_date, "--start-date")
     validate_yyyymm(args.end_date, "--end-date")
     
@@ -159,15 +177,36 @@ def main():
     download_weather_data(start_date, end_date)
     load_weather_hourly(conn)
 
+    # Download and preprocess bike route data, then upsert into Postgres.
+    # Done before the heavy rides loop so an upstream NYC OpenData failure fails fast
+    # instead of after hours of ride processing.
+    df_routes = download_bike_routes(force_download=args.force_download)
+    upsert_bike_routes(conn, df_routes)
+    conn.commit()
+
     # Download ride data and process each month into Postgres as soon as its parquet is ready,
     # overlapping DB loading with the download of the next month.
     # DB coverage is used to skip months already fully loaded, avoiding redundant downloads.
     current_coverage = get_loaded_months(conn)
-    with ThreadPoolExecutor(max_workers=args.parallel_months) as executor:
-        futures = []
-        for year, month in download_ride_data(start_date, end_date, download_jc=args.download_jc, current_coverage=current_coverage):
-            futures.append(executor.submit(_load_month, year, month))
-        for f in futures:
+    # Fail-fast pool: if any month raises, cancel pending work and re-raise immediately
+    # instead of silently continuing to submit (and start) more months.
+    with ThreadPoolExecutor(
+        max_workers=args.parallel_months,
+        thread_name_prefix="month-loader",
+    ) as executor:
+        futures = {
+            executor.submit(_load_month, year, month, args.db_loader_workers): (year, month)
+            for year, month in download_ride_data(
+                start_date,
+                end_date,
+                download_jc=args.download_jc,
+                current_coverage=current_coverage,
+            )
+        }
+        done, not_done = wait(futures, return_when=FIRST_EXCEPTION)
+        for f in not_done:
+            f.cancel()
+        for f in done:
             f.result()
 
     # Check for any coverage gaps
@@ -175,11 +214,6 @@ def main():
 
     # Update dataset_coverage with the new min/max dates after loading
     update_dataset_coverage(conn)
-
-    # Download and preprocess bike route data, then upsert into Postgres
-    df_routes = download_bike_routes(force_download=args.force_download)
-    upsert_bike_routes(conn, df_routes)
-    conn.commit()
 
     # Close the database connection
     conn.close()
