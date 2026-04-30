@@ -1,22 +1,15 @@
 import logging
+
 import polars as pl
 from psycopg2.extras import execute_values
 
 log = logging.getLogger(__name__)
 
-
 def insert_flow_activity_monthly(conn, rides: pl.DataFrame) -> None:
-    """
-    Compute and insert monthly flow activity between station pairs into flow_activity_monthly table.
+    """Insert undirected monthly flow counts between station pairs.
 
-    Arguments:
-    - conn: psycopg2 connection object to the database
-    - rides: Polars DataFrame containing ride data with columns:
-        - date (datetime)
-        - start_station_id (int)
-        - end_station_id (int)
-        - member_casual (str)
-        - rideable_type (str)
+    Each (station_a, station_b) row stores both directions as `a_to_b_count`
+    and `b_to_a_count`, where station_a < station_b by id.
     """
     flow = (
         rides
@@ -49,6 +42,7 @@ def insert_flow_activity_monthly(conn, rides: pl.DataFrame) -> None:
         )
         for r in merged.iter_rows(named=True)
     ]
+
     with conn.cursor() as cur:
         execute_values(
             cur,

@@ -7,8 +7,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR               = PROJECT_ROOT / "data"
 RIDES_DATA_DIR         = DATA_DIR / "rides"
 WEATHER_DATA_DIR       = DATA_DIR / "weather"
-STATION_DATA_DIR       = DATA_DIR / "stations"
-STATION_DISTANCES_PATH = STATION_DATA_DIR / "station_pair_distances.parquet"
+STATION_DATA_DIR        = DATA_DIR / "stations"
+STATION_DISTANCES_PATH  = STATION_DATA_DIR / "station_pair_distances.parquet"
+STATION_METADATA_PATH   = STATION_DATA_DIR / "station_metadata.parquet"
 BIKE_ROUTES_DATA_DIR   = DATA_DIR / "bike_routes"
 BIKE_ROUTES_PATH       = BIKE_ROUTES_DATA_DIR / "bike_routes.parquet"
 DAILY_STATS_DATA_DIR   = DATA_DIR / "daily_stats"
@@ -24,6 +25,9 @@ DEFAULT_START_DATE = "202001"
 _one_month_ago     = datetime.now() - timedelta(days=30)
 DEFAULT_END_DATE   = _one_month_ago.strftime("%Y%m")
 DOWNLOAD_JC        = False
+DOWNLOAD_CHUNK_SIZE_MB = 50  # Size of chunks to read when downloading ride data, in megabytes
+MAX_CACHE_AGE_DAYS = 30  # Max age for cached data files before they're considered stale and re-downloaded
+
 # Months processed concurrently by the outer pool. Default 1 keeps the seeder safe
 # on small CI runners (e.g. ubuntu-latest, 2 vCPU / 7 GB shared with postgres).
 # Override via the --parallel-months CLI flag on machines with more headroom.
@@ -37,6 +41,7 @@ DB_LOADER_WORKERS  = 2
 YEARLY_CUTOFF         = 2023   # Files with only a year <= this are assumed to cover the full year
 PARQUET_COMPRESSION   = "zstd"
 STREET_CIRCUITY_FACTOR = 1.3
+EARTH_RADIUS_KM        = 6371
 
 # Weather retrieval settings
 NYC_COORDS       = (40.7823234, -73.9654161)

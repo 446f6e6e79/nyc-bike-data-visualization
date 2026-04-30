@@ -161,7 +161,7 @@ def main():
 
     # Initialise the database schema from postgres/schemas/*.sql
     init_db(conn)
-    upsert_station_metadata_from_gbfs(conn)
+    upsert_station_metadata_from_gbfs(conn, force_download=args.force_download)
 
     # Expand date range if needed to fill any gap with existing DB coverage
     start_date, end_date = _effective_date_range(conn, args.start_date, args.end_date)
@@ -172,7 +172,7 @@ def main():
     compute_and_save_station_distances(force_download=args.force_download)
 
     # Download hourly weather data and load it into weather_hourly
-    download_weather_data(start_date, end_date)
+    download_weather_data(start_date, end_date, force_download=args.force_download)
     load_weather_hourly(conn)
 
     # Download and preprocess bike route data, then upsert into Postgres.
